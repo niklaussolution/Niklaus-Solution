@@ -20,10 +20,12 @@ import { UserManagement } from "./admin/pages/UserManagement";
 import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
 import { JourneyManagement } from "./admin/pages/JourneyManagement";
+import { ContactSubmissionsManagement } from "./admin/pages/ContactSubmissionsManagement";
 import { ShippingPolicy } from "./app/pages/ShippingPolicy";
 import { TermsAndConditions } from "./app/pages/TermsAndConditions";
 import { CancellationsAndRefunds } from "./app/pages/CancellationsAndRefunds";
 import { PrivacyPolicy } from "./app/pages/PrivacyPolicy";
+import { Contact } from "./app/pages/Contact";
 import "./styles/index.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -31,6 +33,7 @@ createRoot(document.getElementById("root")!).render(
     <AuthProvider>
       <Routes>
         <Route path="/" element={<App />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/cancellations-and-refunds" element={<CancellationsAndRefunds />} />
@@ -162,6 +165,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin"]}>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/contact-submissions"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ContactSubmissionsManagement />
             </ProtectedRoute>
           }
         />

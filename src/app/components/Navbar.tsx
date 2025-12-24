@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../../admin/config/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -15,6 +16,7 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [headerContent, setHeaderContent] = useState<HeaderContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchHeaderContent = async () => {
@@ -76,6 +78,12 @@ export function Navbar() {
                 {item.label}
               </button>
             ))}
+            <button
+              onClick={() => navigate("/contact")}
+              className="text-gray-700 hover:text-orange-500 transition-colors"
+            >
+              Contact
+            </button>
           </div>
 
           {/* CTA Button */}
@@ -117,6 +125,15 @@ export function Navbar() {
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={() => {
+                  navigate("/contact");
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
+              >
+                Contact
+              </button>
               <button
                 onClick={() => scrollToSection("workshops")}
                 className="block w-full bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 transition-colors"
