@@ -113,7 +113,7 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
       // Save to registrations collection with payment details
       const registrationsRef = collection(db, 'registrations');
       
-      await addDoc(registrationsRef, {
+      const registrationData_: any = {
         fullName: registrationData.fullName,
         email: registrationData.email,
         phone: registrationData.phone,
@@ -122,12 +122,18 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
         workshopTitle: registrationData.workshopTitle,
         amount: registrationData.amount / 100, // Store in rupees
         registrationId: regId,
-        paymentId: paymentResponse.razorpay_payment_id,
-        paymentSignature: paymentResponse.razorpay_signature,
+        paymentId: paymentResponse.razorpay_payment_id || 'test_payment',
         paymentStatus: 'completed',
         createdAt: new Date().toISOString(),
         timestamp: new Date().getTime(),
-      });
+      };
+
+      // Only add signature if it exists
+      if (paymentResponse.razorpay_signature) {
+        registrationData_.paymentSignature = paymentResponse.razorpay_signature;
+      }
+
+      await addDoc(registrationsRef, registrationData_);
 
       console.log('Registration saved to Firestore:', regId);
       setStep('success');

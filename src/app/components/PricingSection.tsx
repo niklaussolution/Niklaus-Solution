@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { Check, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "../../admin/config/firebase";
@@ -21,6 +22,7 @@ interface PricingPlan {
 }
 
 export function PricingSection() {
+  const navigate = useNavigate();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -185,7 +187,10 @@ export function PricingSection() {
         >
           <p className="text-gray-600">
             All plans include lifetime access to course materials and updates.{" "}
-            <button className="text-orange-500 hover:underline font-medium">
+            <button 
+              onClick={() => navigate("/contact")}
+              className="text-orange-500 hover:underline font-medium"
+            >
               Contact us
             </button>{" "}
             for custom group pricing.

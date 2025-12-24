@@ -37,7 +37,6 @@ export const LoginPage: React.FC = () => {
         setLoginError(result.error || 'Login failed');
       } else if (result.token && result.admin) {
         login(result.token, result.admin);
-        navigate('/admin/dashboard');
       } else {
         setLoginError('Login failed');
       }
@@ -46,7 +45,7 @@ export const LoginPage: React.FC = () => {
     } finally {
       setLoginLoading(false);
     }
-  }, [loginEmail, loginPassword, login, navigate]);
+  }, [loginEmail, loginPassword, login]);
 
   // Handle signup
   const handleSignup = useCallback(async (e: React.FormEvent) => {
@@ -85,7 +84,6 @@ export const LoginPage: React.FC = () => {
         setSignupError(result.error);
       } else if (result.token && result.admin) {
         login(result.token, result.admin);
-        navigate('/admin/dashboard');
       } else {
         setSignupError('Failed to create account');
       }
@@ -94,7 +92,7 @@ export const LoginPage: React.FC = () => {
     } finally {
       setSignupLoading(false);
     }
-  }, [signupUsername, signupEmail, signupPassword, signupConfirmPassword, login, navigate]);
+  }, [signupUsername, signupEmail, signupPassword, signupConfirmPassword, login]);
 
   // Switch to signup
   const switchToSignup = useCallback(() => {

@@ -9,7 +9,6 @@ export const Sidebar: React.FC = () => {
   const isSuperAdmin = admin?.role === 'super_admin';
 
   const menuItems = [
-    { path: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/admin/workshops', label: 'Workshops', icon: '🎓' },
     { path: '/admin/pricing', label: 'Pricing Plans', icon: '💰' },
     { path: '/admin/registrations', label: 'Registrations', icon: '📋' },
@@ -19,7 +18,6 @@ export const Sidebar: React.FC = () => {
     { path: '/admin/journeys', label: 'Learner Journeys', icon: '🚀' },
     { path: '/admin/videos', label: 'Video Management', icon: '🎥' },
     { path: '/admin/contact-submissions', label: 'Contact Submissions', icon: '💬' },
-    { path: '/admin/users', label: 'User Management', icon: '👥' },
     { path: '/admin/admins', label: 'Admin Users', icon: '🔐', visible: isSuperAdmin },
     { path: '/admin/settings', label: 'Settings', icon: '⚙️', visible: isSuperAdmin },
   ];

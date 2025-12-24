@@ -1,10 +1,11 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import App from "./app/App";
 import { AuthProvider } from "./admin/context/AuthContext";
 import { ProtectedRoute } from "./admin/components/ProtectedRoute";
 import { LoginPage } from "./admin/pages/LoginPage";
-import { Dashboard } from "./admin/pages/Dashboard";
 import { WorkshopsManagement } from "./admin/pages/WorkshopManagement";
 import { PricingManagement } from "./admin/pages/PricingManagement";
 import { RegistrationsManagement } from "./admin/pages/RegistrationsManagement";
@@ -16,7 +17,7 @@ import { CompaniesManagement } from "./admin/pages/CompaniesManagement";
 import { FAQManagement } from "./admin/pages/FAQManagement";
 import { ContentManagement } from "./admin/pages/ContentManagement";
 import { VideoManagement } from "./admin/pages/VideoManagement";
-import { UserManagement } from "./admin/pages/UserManagement";
+
 import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
 import { JourneyManagement } from "./admin/pages/JourneyManagement";
@@ -28,9 +29,21 @@ import { PrivacyPolicy } from "./app/pages/PrivacyPolicy";
 import { Contact } from "./app/pages/Contact";
 import "./styles/index.css";
 
+// ScrollToTop component to handle route changes
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+}
+
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <AuthProvider>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/contact" element={<Contact />} />
@@ -38,16 +51,8 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/cancellations-and-refunds" element={<CancellationsAndRefunds />} />
         <Route path="/shipping-policy" element={<ShippingPolicy />} />
-        <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/workshops" replace />} />
         <Route path="/admin/login" element={<LoginPage />} />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/admin/workshops"
           element={
@@ -144,14 +149,7 @@ createRoot(document.getElementById("root")!).render(
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
-              <UserManagement />
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/admin/admins"
           element={
