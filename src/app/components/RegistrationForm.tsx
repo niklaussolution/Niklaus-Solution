@@ -1,6 +1,24 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { User, Mail, Phone, Building, BookOpen, CheckCircle } from "lucide-react";
+import { User, Mail, Phone, Building, BookOpen, CheckCircle, CreditCard } from "lucide-react";
+import { PaymentForm } from "./PaymentForm";
+
+interface RegistrationData {
+  fullName: string;
+  email: string;
+  phone: string;
+  organization: string;
+  workshop: string;
+}
+
+const WORKSHOP_PRICING: Record<string, number> = {
+  "Ethical Hacking": 2999,
+  "Full Stack Development": 2499,
+  "AI & Machine Learning": 2799,
+  "Cyber Security Basics": 1999,
+  "Cloud Computing": 2199,
+  "Data Science": 2599,
+};
 
 export function RegistrationForm() {
   const [formData, setFormData] = useState({
@@ -11,16 +29,10 @@ export function RegistrationForm() {
     workshop: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const workshops = [
-    "Ethical Hacking",
-    "Full Stack Development",
-    "AI & Machine Learning",
-    "Cyber Security Basics",
-    "Cloud Computing",
-    "Data Science",
-  ];
+  const workshops = Object.keys(WORKSHOP_PRICING);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -66,52 +78,63 @@ export function RegistrationForm() {
     e.preventDefault();
 
     if (validateForm()) {
-      // Simulate form submission
-      console.log("Form submitted:", formData);
-      
-      // In production, this would send email to admin
-      // For now, we'll show success message
-      setIsSubmitted(true);
-
-      // Reset form after 5 seconds
-      setTimeout(() => {
-        setIsSubmitted(false);
-        setFormData({
-          fullName: "",
-          email: "",
-          phone: "",
-          organization: "",
-          workshop: "",
-        });
-      }, 5000);
+      // Show payment form instead of success message
+      setShowPayment(true);
     }
   };
 
-  if (isSubmitted) {
+  const getSelectedWorkshopPrice = (): number => {
+    return WORKSHOP_PRICING[formData.workshop] || 0;
+  };
+
+  if (showPayment) {
     return (
-      <section id="register" className="py-16 md:py-24 bg-gradient-to-b from-white to-orange-50/30">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center"
-          >
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="text-green-500" size={40} />
-            </div>
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-              Registration Successful! 🎉
-            </h3>
-            <p className="text-lg text-gray-600 mb-6">
-              Thank you for registering! We've sent a confirmation email to{" "}
-              <strong>{formData.email}</strong>
-            </p>
-            <p className="text-gray-600">
-              Our team will contact you shortly with workshop details.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <>
+        <PaymentForm
+          registrationData={{
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            organization: formData.organization,
+            workshopId: `workshop_${formData.workshop.toLowerCase().replace(/\s+/g, "_")}`,
+            workshopTitle: formData.workshop,
+            amount: getSelectedWorkshopPrice(),
+          }}
+          onClose={() => {
+            setShowPayment(false);
+            setFormData({
+              fullName: "",
+              email: "",
+              phone: "",
+              organization: "",
+              workshop: "",
+            });
+          }}
+        />
+        <section id="register" className="py-16 md:py-24 bg-gradient-to-b from-white to-orange-50/30">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center"
+            >
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CreditCard className="text-blue-500" size={40} />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                Complete Your Payment
+              </h3>
+              <p className="text-lg text-gray-600 mb-6">
+                Complete your payment above to confirm your registration for{" "}
+                <strong>{formData.workshop}</strong>
+              </p>
+              <p className="text-gray-600">
+                You'll receive your bill and course details immediately after payment.
+              </p>
+            </motion.div>
+          </div>
+        </section>
+      </>
     );
   }
 
@@ -271,7 +294,7 @@ export function RegistrationForm() {
                   <option value="">Select a workshop</option>
                   {workshops.map((workshop) => (
                     <option key={workshop} value={workshop}>
-                      {workshop}
+                      {workshop} - ₹{WORKSHOP_PRICING[workshop]}
                     </option>
                   ))}
                 </select>
@@ -281,16 +304,42 @@ export function RegistrationForm() {
               )}
             </div>
 
+            {/* Price Summary */}
+            {formData.workshop && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-gray-600 text-sm">Workshop Fee</p>
+                    <p className="text-gray-900 font-medium">{formData.workshop}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-orange-600 text-sm">Total Amount</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      ₹{getSelectedWorkshopPrice()}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  (Includes 18% GST)
+                </p>
+              </motion.div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-orange-500 text-white px-6 py-4 rounded-xl hover:bg-orange-600 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 font-semibold flex items-center justify-center gap-2"
             >
-              Register Now
+              <CreditCard size={20} />
+              Proceed to Payment
             </button>
 
             <p className="text-sm text-gray-500 text-center">
-              By registering, you agree to receive communications from Niklaus Solutions
+              Secure payment powered by Razorpay | Your data is encrypted and safe
             </p>
           </form>
         </motion.div>

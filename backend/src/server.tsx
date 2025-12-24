@@ -3,23 +3,24 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { initializeFirebase } from './config/database.js';
+import { initializeFirebase } from '../config/database.js';
 
 // Import routes
-import authRoutes from './routes/auth.js';
-import contentRoutes from './routes/content.js';
-import videoRoutes from './routes/videos.js';
-import userRoutes from './routes/users.js';
-import settingsRoutes from './routes/settings.js';
-import workshopRoutes from './routes/workshops.js';
-import pricingPlanRoutes from './routes/pricingPlans.js';
-import registrationRoutes from './routes/registrations.js';
-import trainerRoutes from './routes/trainers.js';
-import testimonialRoutes from './routes/testimonials.js';
-import featureRoutes from './routes/features.js';
-import scholarshipRoutes from './routes/scholarships.js';
-import companyRoutes from './routes/companies.js';
-import faqRoutes from './routes/faqs.js';
+import authRoutes from '../routes/auth.js';
+import contentRoutes from '../routes/content.js';
+import videoRoutes from '../routes/videos.js';
+import userRoutes from '../routes/users.js';
+import settingsRoutes from '../routes/settings.js';
+import workshopRoutes from '../routes/workshops.js';
+import pricingPlanRoutes from '../routes/pricingPlans.js';
+import registrationRoutes from '../routes/registrations.js';
+import trainerRoutes from '../routes/trainers.js';
+import testimonialRoutes from '../routes/testimonials.js';
+import featureRoutes from '../routes/features.js';
+import scholarshipRoutes from '../routes/scholarships.js';
+import companyRoutes from '../routes/companies.js';
+import faqRoutes from '../routes/faqs.js';
+import paymentRoutes from '../routes/payments.js';
 
 const workspaceEnvPath = path.resolve(__dirname, '..', '..', '.env');
 const backendEnvPath = path.resolve(__dirname, '..', '.env');
@@ -51,6 +52,7 @@ app.use('/api/features', featureRoutes);
 app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/faqs', faqRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {

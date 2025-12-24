@@ -26,7 +26,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="bg-gray-800 text-white w-64 h-full overflow-y-auto flex flex-col">
       <div className="mb-8 p-4 flex-shrink-0">
-        <h2 className="text-xl font-bold">Workshop Admin</h2>
+        <h2 className="text-xl font-bold">Niklaus Solutions Admin</h2>
       </div>
       <ul className="space-y-2 px-4 flex-1">
         {menuItems.map((item) => {

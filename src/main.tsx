@@ -20,6 +20,10 @@ import { UserManagement } from "./admin/pages/UserManagement";
 import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
 import { JourneyManagement } from "./admin/pages/JourneyManagement";
+import { ShippingPolicy } from "./app/pages/ShippingPolicy";
+import { TermsAndConditions } from "./app/pages/TermsAndConditions";
+import { CancellationsAndRefunds } from "./app/pages/CancellationsAndRefunds";
+import { PrivacyPolicy } from "./app/pages/PrivacyPolicy";
 import "./styles/index.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -27,6 +31,10 @@ createRoot(document.getElementById("root")!).render(
     <AuthProvider>
       <Routes>
         <Route path="/" element={<App />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/cancellations-and-refunds" element={<CancellationsAndRefunds />} />
+        <Route path="/shipping-policy" element={<ShippingPolicy />} />
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
         <Route path="/admin/login" element={<LoginPage />} />
         <Route

@@ -1,5 +1,6 @@
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../../admin/config/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -20,6 +21,7 @@ interface FooterContent {
 export function Footer() {
   const [footerContent, setFooterContent] = useState<FooterContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFooterContent = async () => {
@@ -206,10 +208,31 @@ export function Footer() {
           <p className="text-gray-400 text-sm text-center md:text-left">
             {footerContent.copyright}
           </p>
-          <div className="flex gap-6 text-sm">
-            <button className="hover:text-orange-500 transition-colors">Privacy Policy</button>
-            <button className="hover:text-orange-500 transition-colors">Terms of Service</button>
-            <button className="hover:text-orange-500 transition-colors">Cookie Policy</button>
+          <div className="flex gap-6 text-sm flex-wrap justify-center md:justify-end">
+            <button 
+              onClick={() => navigate("/privacy-policy")}
+              className="hover:text-orange-500 transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => navigate("/terms-and-conditions")}
+              className="hover:text-orange-500 transition-colors"
+            >
+              Terms of Service
+            </button>
+            <button 
+              onClick={() => navigate("/cancellations-and-refunds")}
+              className="hover:text-orange-500 transition-colors"
+            >
+              Cancellations & Refunds
+            </button>
+            <button 
+              onClick={() => navigate("/shipping-policy")}
+              className="hover:text-orange-500 transition-colors"
+            >
+              Shipping Policy
+            </button>
           </div>
         </div>
       </div>
