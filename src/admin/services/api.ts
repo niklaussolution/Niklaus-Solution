@@ -386,16 +386,31 @@ export const api = {
     try {
       for (const [key, value] of Object.entries(data)) {
         const settingRef = doc(db, 'settings', key);
-        await updateDoc(settingRef, { key, value, updatedAt: Date.now() }).catch(() =>
-          addDoc(collection(db, 'settings'), {
-            key,
-            value,
-            updatedAt: Date.now(),
-          })
-        );
+        try {
+          // Try to update existing document
+          await updateDoc(settingRef, { 
+            key, 
+            value, 
+            updatedAt: Date.now() 
+          });
+        } catch (updateError: any) {
+          // If document doesn't exist, create it
+          if (updateError.code === 'not-found') {
+            await addDoc(collection(db, 'settings'), {
+              key,
+              value,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            });
+          } else {
+            throw updateError;
+          }
+        }
       }
+      console.log('Settings updated successfully:', data);
       return { message: 'Settings updated successfully' };
     } catch (error: any) {
+      console.error('Error updating settings:', error);
       return { error: error.message };
     }
   },

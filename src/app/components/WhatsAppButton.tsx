@@ -17,6 +17,11 @@ export function WhatsAppButton() {
 
   useEffect(() => {
     fetchWhatsAppSettings();
+    
+    // Refresh settings every 5 seconds to catch updates
+    const interval = setInterval(fetchWhatsAppSettings, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchWhatsAppSettings = async () => {
@@ -30,12 +35,16 @@ export function WhatsAppButton() {
         settingsObj[data.key] = data.value;
       });
 
-      if (settingsObj.whatsapp_phone || settingsObj.whatsapp_message) {
-        setSettings({
-          phoneNumber: settingsObj.whatsapp_phone || settings.phoneNumber,
-          message: settingsObj.whatsapp_message || settings.message,
-        });
-      }
+      // Use default values if settings don't exist
+      const phoneNumber = settingsObj.whatsapp_phone || "919999999999";
+      const message = settingsObj.whatsapp_message || "Hi! I'm interested in learning more about your workshops.";
+      
+      setSettings({
+        phoneNumber,
+        message,
+      });
+      
+      console.log('WhatsApp settings loaded:', { phoneNumber, message });
     } catch (error) {
       console.error("Error fetching WhatsApp settings:", error);
     } finally {

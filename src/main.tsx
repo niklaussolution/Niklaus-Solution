@@ -161,7 +161,7 @@ createRoot(document.getElementById("root")!).render(
         <Route
           path="/admin/settings"
           element={
-            <ProtectedRoute requiredRole={["super_admin"]}>
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <Settings />
             </ProtectedRoute>
           }
