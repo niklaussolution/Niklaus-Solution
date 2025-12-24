@@ -1,10 +1,10 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-// Initialize Razorpay instance
+// Initialize Razorpay instance with credentials from environment variables
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_YOUR_KEY_ID',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET',
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_RvTs4VWeYUMXtm',
+  key_secret: process.env.RAZORPAY_SECRET_KEY || 'VrYIlahgCCDKkb0ffkEEHl8K',
 });
 
 interface PaymentOrderParams {
@@ -65,7 +65,7 @@ export function verifyPaymentSignature(params: VerifyPaymentParams): boolean {
     // Create signature hash
     const hmac = crypto.createHmac(
       'sha256',
-      process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET'
+      process.env.RAZORPAY_SECRET_KEY || 'VrYIlahgCCDKkb0ffkEEHl8K'
     );
     hmac.update(`${orderId}|${paymentId}`);
     const generatedSignature = hmac.digest('hex');

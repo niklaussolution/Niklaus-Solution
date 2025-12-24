@@ -37,9 +37,20 @@ export function Navbar() {
   }, []);
 
   const scrollToSection = (id: string) => {
+    // If clicking on contact from non-home pages, navigate to contact page
+    if (id === "contact" && window.location.pathname !== "/") {
+      navigate("/contact");
+      setIsMenuOpen(false);
+      return;
+    }
+
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+      setIsMenuOpen(false);
+    } else if (id === "contact") {
+      // If element not found and it's contact, navigate to contact page
+      navigate("/contact");
       setIsMenuOpen(false);
     }
   };
@@ -78,12 +89,6 @@ export function Navbar() {
                 {item.label}
               </button>
             ))}
-            <button
-              onClick={() => navigate("/contact")}
-              className="text-gray-700 hover:text-orange-500 transition-colors"
-            >
-              Contact
-            </button>
           </div>
 
           {/* CTA Button */}
@@ -125,15 +130,6 @@ export function Navbar() {
                   {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => {
-                  navigate("/contact");
-                  setIsMenuOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
-              >
-                Contact
-              </button>
               <button
                 onClick={() => scrollToSection("workshops")}
                 className="block w-full bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 transition-colors"
