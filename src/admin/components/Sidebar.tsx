@@ -24,8 +24,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = tru
     { path: '/admin/journeys', label: 'Learner Journeys', icon: '🚀' },
     { path: '/admin/videos', label: 'Video Management', icon: '🎥' },
     { path: '/admin/contact-submissions', label: 'Contact Submissions', icon: '💬' },
+    { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
     { path: '/admin/admins', label: 'Admin Users', icon: '🔐', visible: isSuperAdmin },
-    { path: '/admin/settings', label: 'Settings', icon: '⚙️', visible: isSuperAdmin },
   ];
 
   const handleMenuItemClick = () => {

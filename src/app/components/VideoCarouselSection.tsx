@@ -1,41 +1,128 @@
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { db } from "../../admin/config/firebase";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 
 interface Video {
-  id: number;
+  id: string;
   title: string;
-  url: string;
+  youtubeUrl: string;
+  heading?: string;
+  description?: string;
+  order: number;
+  isActive: boolean;
 }
 
-const videos: Video[] = [
-  {
-    id: 1,
-    title: "Introduction to Nativeva",
-    url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-  },
-  {
-    id: 2,
-    title: "How Nativeva Transforms Careers",
-    url: "https://www.youtube.com/embed/3JZ_D3ELwOQ",
-  },
-  {
-    id: 3,
-    title: "Success Stories from Nativeva",
-    url: "https://www.youtube.com/embed/tgbNymZ7vqY",
-  },
-];
+function extractYoutubeVideoId(url: string): string {
+  try {
+    // Handle youtu.be short URLs
+    if (url.includes('youtu.be/')) {
+      return url.split('youtu.be/')[1]?.split('?')[0] || '';
+    }
+    // Handle youtube.com watch URLs
+    if (url.includes('youtube.com')) {
+      const urlParams = new URLSearchParams(url.split('?')[1] || '');
+      return urlParams.get('v') || '';
+    }
+    // If it's already just the video ID
+    if (!url.includes('/') && !url.includes('?')) {
+      return url;
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
 
 export function VideoCarouselSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sectionHeading, setSectionHeading] = useState("Explore Our Videos");
+  const [sectionDescription, setSectionDescription] = useState("Learn more about Nativeva through our curated video content");
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      setLoading(true);
+      const q = query(
+        collection(db, "videos"),
+        where("isActive", "==", true),
+        orderBy("order", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      const data: Video[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const video = docSnap.data();
+        data.push({
+          id: docSnap.id,
+          title: video.title,
+          youtubeUrl: video.youtubeUrl,
+          heading: video.heading,
+          description: video.description,
+          order: video.order,
+          isActive: video.isActive,
+        } as Video);
+      });
+      setVideos(data);
+      
+      // Get section heading and description from first video or defaults
+      if (data.length > 0 && data[0].heading) {
+        setSectionHeading(data[0].heading);
+        if (data[0].description) {
+          setSectionDescription(data[0].description);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching videos:", err);
+      setVideos([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const nextVideo = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % videos.length);
+    if (videos.length > 0) {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % videos.length);
+    }
   };
 
   const prevVideo = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + videos.length) % videos.length);
+    if (videos.length > 0) {
+      setCurrentIndex((prevIndex) => (prevIndex - 1 + videos.length) % videos.length);
+    }
   };
+
+  if (loading) {
+    return (
+      <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (videos.length === 0) {
+    return (
+      <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12 text-gray-500">
+            <p>No videos available yet.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const currentVideo = videos[currentIndex];
+  const videoId = extractYoutubeVideoId(currentVideo.youtubeUrl);
 
   return (
     <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
@@ -49,10 +136,10 @@ export function VideoCarouselSection() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Explore Our Videos
+            {sectionHeading}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Learn more about Nativeva through our curated video content
+            {sectionDescription}
           </p>
         </motion.div>
 
@@ -60,20 +147,27 @@ export function VideoCarouselSection() {
         <div className="relative">
           {/* Video Display */}
           <motion.div
-            key={videos[currentIndex].id}
+            key={currentVideo.id}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden shadow-lg"
+            className="w-full bg-gray-200 rounded-lg overflow-hidden shadow-lg"
+            style={{ aspectRatio: "16 / 9" }}
           >
-            <iframe
-              src={videos[currentIndex].url}
-              title={videos[currentIndex].title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            ></iframe>
+            {videoId ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title={currentVideo.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                <p className="text-gray-600">Invalid video URL</p>
+              </div>
+            )}
           </motion.div>
 
           {/* Navigation Buttons */}
@@ -86,9 +180,9 @@ export function VideoCarouselSection() {
               <ChevronLeft size={24} className="group-hover:scale-110 transition-transform" />
             </button>
 
-            <div className="text-center">
+            <div className="text-center flex-1 px-4">
               <p className="text-gray-600 font-semibold">
-                {videos[currentIndex].title}
+                {currentVideo.title}
               </p>
             </div>
 

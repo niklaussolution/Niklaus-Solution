@@ -251,74 +251,129 @@ export function WorkshopsSection() {
               <p className="text-gray-600 text-lg">No workshops available at the moment.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-              {workshops.map((workshop, index) => (
-                <motion.div
-                  key={workshop.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden border border-gray-100"
-                >
-                  {/* Color Strip */}
-                  <div className={`h-2 ${workshop.color}`}></div>
-
-                  <div className="p-6 md:p-8">
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-xl md:text-2xl font-bold text-gray-900">
-                        {workshop.title}
-                      </h3>
-                      <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-medium">
-                        ₹{workshop.price}
-                      </span>
-                    </div>
-
-                    <p className="text-gray-600 mb-6">{workshop.description}</p>
-
-                    {/* Info Grid */}
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <Clock size={18} className="text-orange-500" />
-                        <span>{workshop.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <MapPin size={18} className="text-orange-500" />
-                        <span>{workshop.mode}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <Calendar size={18} className="text-orange-500" />
-                        <span>{new Date(workshop.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <Users size={18} className="text-orange-500" />
-                        <span>{workshop.enrolled} / {workshop.capacity} enrolled</span>
-                      </div>
-                    </div>
-
-                    {/* Instructor */}
-                    <div className="mb-6 pb-6 border-b border-gray-200">
-                      <p className="text-sm text-gray-600">
-                        <strong>Instructor:</strong> {workshop.instructorName}
-                      </p>
-                    </div>
-
-                    {/* CTA Button */}
-                    <button
-                      onClick={() => openRegistrationModal(workshop)}
-                      className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors group"
+            <div className="relative">
+              {/* Workshops Cards */}
+              <div 
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 cursor-grab active:cursor-grabbing"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                <AnimatePresence mode="wait">
+                  {getVisibleWorkshops().map((workshop, index) => (
+                    <motion.div
+                      key={workshop.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                      className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden border border-gray-100"
                     >
-                      Register Now
-                      <ArrowRight
-                        size={18}
-                        className="group-hover:translate-x-1 transition-transform"
-                      />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                      {/* Color Strip */}
+                      <div className={`h-2 ${workshop.color}`}></div>
+
+                      <div className="p-6 md:p-8">
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-xl md:text-2xl font-bold text-gray-900">
+                            {workshop.title}
+                          </h3>
+                          <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-medium">
+                            ₹{workshop.price}
+                          </span>
+                        </div>
+
+                        <p className="text-gray-600 mb-6">{workshop.description}</p>
+
+                        {/* Info Grid */}
+                        <div className="space-y-3 mb-6">
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <Clock size={18} className="text-orange-500" />
+                            <span>{workshop.duration}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <MapPin size={18} className="text-orange-500" />
+                            <span>{workshop.mode}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <Calendar size={18} className="text-orange-500" />
+                            <span>{new Date(workshop.startDate).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <Users size={18} className="text-orange-500" />
+                            <span>{workshop.enrolled} / {workshop.capacity} enrolled</span>
+                          </div>
+                        </div>
+
+                        {/* Instructor */}
+                        <div className="mb-6 pb-6 border-b border-gray-200">
+                          <p className="text-sm text-gray-600">
+                            <strong>Instructor:</strong> {workshop.instructorName}
+                          </p>
+                        </div>
+
+                        {/* CTA Button */}
+                        <button
+                          onClick={() => openRegistrationModal(workshop)}
+                          className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors group"
+                        >
+                          Register Now
+                          <ArrowRight
+                            size={18}
+                            className="group-hover:translate-x-1 transition-transform"
+                          />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between items-center mt-8 md:mt-12">
+                <button
+                  onClick={() => {
+                    setDirection(-1);
+                    setCurrentIndex((prev) => (prev - 1 + workshops.length) % workshops.length);
+                  }}
+                  className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
+                  aria-label="Previous workshop"
+                >
+                  <ChevronLeft size={24} className="group-hover:scale-110 transition-transform" />
+                </button>
+
+                {/* Dots Indicator */}
+                <div className="flex items-center gap-2 mx-auto">
+                  {workshops.map((_, index) => (
+                    <motion.button
+                      key={index}
+                      onClick={() => {
+                        setDirection(index > currentIndex ? 1 : -1);
+                        setCurrentIndex(index);
+                      }}
+                      className={`transition-all ${
+                        index === currentIndex
+                          ? "w-8 h-3 bg-gray-900"
+                          : "w-3 h-3 bg-gray-300 hover:bg-gray-400"
+                      } rounded-full`}
+                      aria-label={`Go to workshop ${index + 1}`}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setDirection(1);
+                    setCurrentIndex((prev) => (prev + 1) % workshops.length);
+                  }}
+                  className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
+                  aria-label="Next workshop"
+                >
+                  <ChevronRight size={24} className="group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
             </div>
           )}
         </div>

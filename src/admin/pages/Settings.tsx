@@ -2,20 +2,35 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { CheckCircle, AlertCircle, X } from 'lucide-react';
 
 interface SettingData {
   [key: string]: any;
+}
+
+interface Toast {
+  id: string;
+  type: 'success' | 'error';
+  message: string;
 }
 
 export const Settings: React.FC = () => {
   const { token } = useAuth();
   const [settings, setSettings] = useState<SettingData>({});
   const [loading, setLoading] = useState(true);
-  const [updated, setUpdated] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  const addToast = (message: string, type: 'success' | 'error') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
 
   const fetchSettings = async () => {
     try {
@@ -24,6 +39,7 @@ export const Settings: React.FC = () => {
       setSettings(data || {});
     } catch (error) {
       console.error('Error fetching settings:', error);
+      addToast('Error loading settings', 'error');
     } finally {
       setLoading(false);
     }
@@ -31,19 +47,25 @@ export const Settings: React.FC = () => {
 
   const handleChange = (key: string, value: any) => {
     setSettings({ ...settings, [key]: value });
-    setUpdated(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
+    if (!token) {
+      addToast('Authentication required', 'error');
+      return;
+    }
 
     try {
-      await api.updateSettings(settings, token);
-      setUpdated(true);
-      setTimeout(() => setUpdated(false), 3000);
-    } catch (error) {
+      const result = await api.updateSettings(settings);
+      if (result.error) {
+        addToast(`Error: ${result.error}`, 'error');
+      } else {
+        addToast('Settings updated successfully!', 'success');
+      }
+    } catch (error: any) {
       console.error('Error updating settings:', error);
+      addToast(`Error updating settings: ${error.message}`, 'error');
     }
   };
 
@@ -51,14 +73,33 @@ export const Settings: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div>
-        <h1 className="text-4xl font-bold mb-6 text-gray-800">Settings</h1>
+      <div className="p-3 sm:p-6">
+        {/* Toast Notifications */}
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-white animate-fade-in ${
+                toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              }`}
+            >
+              {toast.type === 'success' ? (
+                <CheckCircle size={20} />
+              ) : (
+                <AlertCircle size={20} />
+              )}
+              <span>{toast.message}</span>
+              <button
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+                className="ml-2 hover:opacity-75"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
 
-        {updated && (
-          <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-            Settings updated successfully!
-          </div>
-        )}
+        <h1 className="text-4xl font-bold mb-6 text-gray-800">Settings</h1>
 
         <div className="bg-white p-6 rounded shadow">
           <form onSubmit={handleSubmit}>
@@ -105,6 +146,37 @@ export const Settings: React.FC = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                   placeholder="+1 (555) 000-0000"
                 />
+              </div>
+
+              {/* WhatsApp Settings Section */}
+              <div className="md:col-span-2 border-t pt-6 mt-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">WhatsApp Button Settings</h3>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-bold mb-2">WhatsApp Phone Number <span className="text-red-500">*</span></label>
+                <input
+                  type="tel"
+                  value={settings.whatsapp_phone || ''}
+                  onChange={(e) => handleChange('whatsapp_phone', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  placeholder="919999999999"
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">Enter phone number with country code (e.g., 919999999999 for India)</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 font-bold mb-2">WhatsApp Message <span className="text-red-500">*</span></label>
+                <textarea
+                  value={settings.whatsapp_message || ''}
+                  onChange={(e) => handleChange('whatsapp_message', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  rows={3}
+                  placeholder="Hi! I'm interested in learning more about your workshops."
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">This message will be pre-filled when users click the WhatsApp button</p>
               </div>
 
               <div className="md:col-span-2">

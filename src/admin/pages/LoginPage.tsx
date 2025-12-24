@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -20,8 +20,15 @@ export const LoginPage: React.FC = () => {
   const [signupError, setSignupError] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect to admin panel if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/workshops', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   
   // Handle login

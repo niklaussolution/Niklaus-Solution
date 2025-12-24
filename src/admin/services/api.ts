@@ -220,6 +220,23 @@ export const api = {
     }
   },
 
+  getAllVideos: async () => {
+    try {
+      const videosRef = collection(db, 'videos');
+      const q = query(videosRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const videos = querySnapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        _id: doc.id,
+        ...(doc.data() as any),
+      }));
+      return videos;
+    } catch (error: any) {
+      console.error('Error fetching all videos:', error);
+      return [];
+    }
+  },
+
   getVideoById: async (id: string) => {
     try {
       const docRef = doc(db, 'videos', id);

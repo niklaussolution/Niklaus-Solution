@@ -1,4 +1,6 @@
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
 
 interface Company {
   id: number;
@@ -70,6 +72,71 @@ const companies: Company[] = [
 ];
 
 export function CompaniesSection() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    touchEndX.current = e.changedTouches[0].clientX;
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        // Swiped left, go to next
+        setDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % companies.length);
+      } else {
+        // Swiped right, go to previous
+        setDirection(-1);
+        setCurrentIndex((prev) => (prev - 1 + companies.length) % companies.length);
+      }
+    }
+  };
+
+  const getVisibleCompanies = () => {
+    if (companies.length === 0) return [];
+    const visible = [];
+    // Show 1 card on mobile, 2 cards on tablet, 4 cards on desktop
+    const cardsToShow = window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 4;
+    for (let i = 0; i < Math.min(cardsToShow, companies.length); i++) {
+      const index = (currentIndex + i) % companies.length;
+      visible.push(companies[index]);
+    }
+    return visible;
+  };
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + companies.length) % companies.length);
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % companies.length);
+  };
+
+  const handleDotClick = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDirection(index > currentIndex ? 1 : -1);
+    setCurrentIndex(index);
+  };
+
   return (
     <section id="companies" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -89,28 +156,74 @@ export function CompaniesSection() {
           </p>
         </motion.div>
 
-        {/* Companies Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {companies.map((company, index) => (
-            <motion.div
-              key={company.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.08 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="group"
+        {/* Companies Carousel */}
+        <div className="relative">
+          {/* Companies Grid */}
+          <div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 cursor-grab active:cursor-grabbing"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <AnimatePresence mode="wait">
+              {getVisibleCompanies().map((company, index) => (
+                <motion.div
+                  key={company.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="group"
+                >
+                  <div className="h-32 md:h-40 bg-white rounded-2xl border-2 border-teal-200 hover:border-orange-500 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center p-6 cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-teal-50 hover:scale-105">
+                    <img
+                      src={company.logo}
+                      alt={company.name}
+                      className="max-w-full max-h-24 object-contain grayscale group-hover:grayscale-0 transition-all duration-300 filter group-hover:drop-shadow-md"
+                      title={company.name}
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-8 md:mt-12">
+            <button
+              type="button"
+              onClick={handlePrevious}
+              className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg hover:scale-110 active:scale-95"
+              aria-label="Previous company"
             >
-              <div className="h-28 md:h-32 bg-white rounded-2xl border-2 border-teal-200 hover:border-orange-500 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center p-4 cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-teal-50">
-                <img
-                  src={company.logo}
-                  alt={company.name}
-                  className="max-w-full max-h-20 object-contain grayscale group-hover:grayscale-0 transition-all duration-300 filter group-hover:drop-shadow-md"
-                  title={company.name}
+              <ChevronLeft size={24} />
+            </button>
+
+            {/* Dots Indicator */}
+            <div className="flex items-center gap-2 mx-auto">
+              {companies.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={(e) => handleDotClick(index, e)}
+                  className={`transition-all ${
+                    index === currentIndex
+                      ? "w-8 h-3 bg-gray-900"
+                      : "w-3 h-3 bg-gray-300 hover:bg-gray-400 hover:scale-110 active:scale-95"
+                  } rounded-full`}
+                  aria-label={`Go to company ${index + 1}`}
                 />
-              </div>
-            </motion.div>
-          ))}
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNext}
+              className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg hover:scale-110 active:scale-95"
+              aria-label="Next company"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Bottom CTA */}
@@ -119,23 +232,26 @@ export function CompaniesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
           viewport={{ once: true }}
-          className="text-center mt-16"
+          className="text-center mt-12 sm:mt-16"
         >
           <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full px-6 py-3 mb-6">
-            <p className="text-orange-700 font-semibold text-sm">
+            <p className="text-orange-700 font-semibold text-xs sm:text-sm">
               🚀 Be part of this success story
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-semibold"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base hover:scale-105 active:scale-95"
           >
             Start Your Journey Today
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
-          </motion.button>
+          </button>
         </motion.div>
       </div>
     </section>

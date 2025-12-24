@@ -37,21 +37,18 @@ export function Navbar() {
   }, []);
 
   const scrollToSection = (id: string) => {
-    // If clicking on contact from non-home pages, navigate to contact page
-    if (id === "contact" && window.location.pathname !== "/") {
+    setIsMenuOpen(false);
+    
+    // Contact always navigates to contact page
+    if (id === "contact") {
       navigate("/contact");
-      setIsMenuOpen(false);
       return;
     }
 
+    // For other sections, try to scroll to element
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
-      setIsMenuOpen(false);
-    } else if (id === "contact") {
-      // If element not found and it's contact, navigate to contact page
-      navigate("/contact");
-      setIsMenuOpen(false);
     }
   };
 

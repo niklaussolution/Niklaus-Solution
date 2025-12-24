@@ -22,7 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (requiredRole && admin && !requiredRole.includes(admin.role)) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/admin/workshops" replace />;
   }
 
   return <>{children}</>;
