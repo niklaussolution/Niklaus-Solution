@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Mail, Phone, MessageSquare, Trash2, Check, Clock } from "lucide-react";
 import { db } from "../../admin/config/firebase";
-import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, addDoc } from "firebase/firestore";
 import { AdminLayout } from "../components/AdminLayout";
 
 interface ContactSubmission {
@@ -34,9 +34,11 @@ export function ContactSubmissionsManagement() {
         id: doc.id,
         ...(doc.data() as any),
       }));
+      console.log('Contact submissions loaded:', data);
       setSubmissions(data);
     } catch (error) {
       console.error("Error fetching submissions:", error);
+      alert('Error loading contact submissions. Make sure you have permission to view this collection.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +52,28 @@ export function ContactSubmissionsManagement() {
         setShowDetails(false);
       } catch (error) {
         console.error("Error deleting submission:", error);
+        alert('Error deleting submission');
       }
+    }
+  };
+
+  const addTestSubmission = async () => {
+    try {
+      const contactsRef = collection(db, "contactSubmissions");
+      await addDoc(contactsRef, {
+        fullName: "Test User",
+        email: "test@example.com",
+        phone: "9876543210",
+        subject: "Test Submission",
+        message: "This is a test contact submission to verify the system is working.",
+        submittedAt: new Date(),
+        status: "new",
+      });
+      fetchSubmissions();
+      alert('Test submission added successfully!');
+    } catch (error) {
+      console.error("Error adding test submission:", error);
+      alert('Error adding test submission');
     }
   };
 
@@ -131,9 +154,17 @@ export function ContactSubmissionsManagement() {
             <h1 className="text-3xl font-bold text-gray-900">Contact Submissions</h1>
             <p className="text-gray-600 mt-2">Manage and respond to contact form submissions</p>
           </div>
-          <div className="bg-orange-100 px-4 py-3 rounded-lg">
-            <p className="text-sm text-gray-600">Total Submissions</p>
-            <p className="text-2xl font-bold text-orange-600">{submissions.length}</p>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={addTestSubmission}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-semibold"
+            >
+              + Add Test
+            </button>
+            <div className="bg-orange-100 px-4 py-3 rounded-lg">
+              <p className="text-sm text-gray-600">Total Submissions</p>
+              <p className="text-2xl font-bold text-orange-600">{submissions.length}</p>
+            </div>
           </div>
         </div>
 

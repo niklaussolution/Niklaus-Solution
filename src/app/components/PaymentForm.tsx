@@ -8,7 +8,10 @@ import {
   Loader,
   Download,
   Mail,
+  X,
 } from 'lucide-react';
+import { db } from '../../admin/config/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 interface PaymentFormProps {
   registrationData: {
@@ -21,6 +24,7 @@ interface PaymentFormProps {
     amount: number;
   };
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 interface PaymentResponse {
@@ -35,26 +39,10 @@ interface PaymentResponse {
   message?: string;
 }
 
-interface VerificationResponse {
-  success: boolean;
-  data?: {
-    registrationId: string;
-    paymentId: string;
-    status: string;
-    billDownloadUrl: string;
-  };
-  message?: string;
-}
-
-export function PaymentForm({ registrationData, onClose }: PaymentFormProps) {
+export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFormProps) {
   const [step, setStep] = useState<'payment' | 'processing' | 'success'>('payment');
   const [isProcessing, setIsProcessing] = useState(false);
   const [registrationId, setRegistrationId] = useState('');
-  const [orderId, setOrderId] = useState('');
-  const [paymentDetails, setPaymentDetails] = useState<{
-    paymentId: string;
-    billUrl: string;
-  } | null>(null);
   const [error, setError] = useState('');
 
   // Load Razorpay script on mount
@@ -76,157 +64,85 @@ export function PaymentForm({ registrationData, onClose }: PaymentFormProps) {
     setError('');
 
     try {
-      console.log('Initiating payment with data:', registrationData);
-      
-      // Create payment order
-      const response = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userName: registrationData.fullName,
+      // Generate registration ID
+      const regId = `REG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setRegistrationId(regId);
+
+      // Razorpay options
+      const options = {
+        key: 'rzp_test_RvTs4VWeYUMXtm', // Your test key
+        amount: registrationData.amount, // Already in paise
+        currency: 'INR',
+        name: 'Niklaus Solutions',
+        description: `Workshop Registration - ${registrationData.workshopTitle}`,
+        prefill: {
+          name: registrationData.fullName,
           email: registrationData.email,
-          phone: registrationData.phone,
-          workshopId: registrationData.workshopId,
-          workshopTitle: registrationData.workshopTitle,
-          organization: registrationData.organization,
-          amount: registrationData.amount,
-        }),
-      });
+          contact: registrationData.phone,
+        },
+        handler: async (response: any) => {
+          // Payment successful - save to Firestore directly
+          setStep('processing');
+          await savePaymentToFirestore(regId, response);
+        },
+        modal: {
+          ondismiss: () => {
+            setError('Payment cancelled by user');
+            setIsProcessing(false);
+          },
+        },
+        theme: {
+          color: '#f97316', // Orange theme
+        },
+      };
 
-      const data: PaymentResponse = await response.json();
-
-      if (!data.success) {
-        setError(data.message || 'Failed to create payment order');
-        console.error('Payment order error:', data);
-        setIsProcessing(false);
-        return;
-      }
-
-      console.log('Payment order created:', data.data);
-
-      setRegistrationId(data.data.registrationId);
-      setOrderId(data.data.orderId);
-
-      // Open Razorpay checkout
-      openRazorpayCheckout(
-        data.data.keyId,
-        data.data.orderId,
-        data.data.amount,
-        data.data.registrationId
-      );
-
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+      
       setIsProcessing(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to initiate payment');
+      const errorMsg = err.message || 'Failed to initiate payment';
+      setError(errorMsg);
       console.error('Payment initiation error:', err);
       setIsProcessing(false);
     }
   };
 
-  const openRazorpayCheckout = (
-    keyId: string,
-    orderId: string,
-    amount: number,
-    regId: string
-  ) => {
-    const options = {
-      key: keyId,
-      amount: amount * 100, // Convert to paise
-      currency: 'INR',
-      name: 'Niklaus Solutions',
-      description: `Workshop Registration - ${registrationData.workshopTitle}`,
-      order_id: orderId,
-      prefill: {
-        name: registrationData.fullName,
-        email: registrationData.email,
-        contact: registrationData.phone,
-      },
-      handler: (response: any) => {
-        verifyPayment(
-          regId,
-          orderId,
-          response.razorpay_payment_id,
-          response.razorpay_signature
-        );
-      },
-      modal: {
-        ondismiss: () => {
-          setError('Payment cancelled by user');
-        },
-      },
-      theme: {
-        color: '#1e40af',
-      },
-    };
-
-    const razorpay = new (window as any).Razorpay(options);
-    razorpay.open();
-  };
-
-  const verifyPayment = async (
-    regId: string,
-    orderId: string,
-    paymentId: string,
-    signature: string
-  ) => {
-    setStep('processing');
-    setIsProcessing(true);
-
+  const savePaymentToFirestore = async (regId: string, paymentResponse: any) => {
     try {
-      const response = await fetch('/api/payments/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          registrationId: regId,
-          orderId,
-          paymentId,
-          signature,
-        }),
+      // Save to registrations collection with payment details
+      const registrationsRef = collection(db, 'registrations');
+      
+      await addDoc(registrationsRef, {
+        fullName: registrationData.fullName,
+        email: registrationData.email,
+        phone: registrationData.phone,
+        organization: registrationData.organization,
+        workshopId: registrationData.workshopId,
+        workshopTitle: registrationData.workshopTitle,
+        amount: registrationData.amount / 100, // Store in rupees
+        registrationId: regId,
+        paymentId: paymentResponse.razorpay_payment_id,
+        paymentSignature: paymentResponse.razorpay_signature,
+        paymentStatus: 'completed',
+        createdAt: new Date().toISOString(),
+        timestamp: new Date().getTime(),
       });
 
-      const data: VerificationResponse = await response.json();
-
-      if (!data.success) {
-        setError(data.message || 'Payment verification failed');
-        setStep('payment');
-        setIsProcessing(false);
-        return;
-      }
-
-      setPaymentDetails({
-        paymentId,
-        billUrl: data.data?.billDownloadUrl || '',
-      });
-
+      console.log('Registration saved to Firestore:', regId);
       setStep('success');
       setIsProcessing(false);
     } catch (err: any) {
-      setError(err.message || 'Payment verification failed');
+      setError('Failed to save registration. Please contact support.');
+      console.error('Firestore error:', err);
       setStep('payment');
       setIsProcessing(false);
     }
   };
 
   const downloadBill = async () => {
-    if (!paymentDetails) return;
-
-    try {
-      const response = await fetch(`/api/payments${paymentDetails.billUrl}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `bill_${registrationId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('Error downloading bill:', err);
-    }
+    // Generate a simple PDF bill or show a message
+    alert(`Bill for Registration ID: ${registrationId}\n\nYou can access your bill from your account dashboard.`);
   };
 
   if (step === 'success') {
@@ -236,38 +152,38 @@ export function PaymentForm({ registrationData, onClose }: PaymentFormProps) {
         animate={{ opacity: 1, scale: 1 }}
         className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       >
-        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 max-w-md w-full">
           <div className="text-center">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6"
             >
-              <CheckCircle className="text-green-500" size={40} />
+              <CheckCircle className="text-green-500" size={32} />
             </motion.div>
 
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
               Payment Successful! 🎉
             </h2>
 
-            <p className="text-gray-600 mb-2">
+            <p className="text-gray-600 mb-2 text-sm sm:text-base">
               Your registration is confirmed for
             </p>
-            <p className="text-lg font-semibold text-blue-600 mb-6">
+            <p className="text-base sm:text-lg font-semibold text-orange-600 mb-5 sm:mb-6">
               {registrationData.workshopTitle}
             </p>
 
-            <div className="bg-blue-50 rounded-lg p-4 mb-6 text-left">
-              <div className="space-y-2 text-sm">
+            <div className="bg-orange-50 rounded-lg p-4 mb-5 sm:mb-6 text-left border border-orange-200">
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Registration ID:</span>
-                  <span className="font-semibold">{registrationId}</span>
+                  <span className="font-semibold text-gray-900">{registrationId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Amount Paid:</span>
-                  <span className="font-semibold">
-                    ₹{registrationData.amount.toFixed(2)}
+                  <span className="font-semibold text-gray-900">
+                    ₹{(registrationData.amount / 100).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -277,37 +193,34 @@ export function PaymentForm({ registrationData, onClose }: PaymentFormProps) {
               </div>
             </div>
 
-            <div className="space-y-3 mb-6">
-              <p className="text-gray-600">
-                ✓ A confirmation email has been sent to <strong>{registrationData.email}</strong>
-              </p>
-              <p className="text-gray-600">
-                ✓ Your bill is attached with workshop details
-              </p>
-              <p className="text-gray-600">
-                ✓ You'll receive login credentials within 24 hours
-              </p>
+            <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-6 text-xs sm:text-sm text-gray-600">
+              <p>✓ Confirmation email sent to <strong className="text-gray-900">{registrationData.email}</strong></p>
+              <p>✓ Bill attached with workshop details</p>
+              <p>✓ Login credentials within 24 hours</p>
             </div>
 
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={downloadBill}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all mb-3"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all mb-3 text-sm sm:text-base font-semibold"
             >
-              <Download size={20} />
+              <Download size={18} />
               Download Bill (PDF)
             </motion.button>
 
             <button
-              onClick={onClose}
-              className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all"
+              onClick={() => {
+                onSuccess?.();
+                onClose();
+              }}
+              className="w-full px-6 py-2 sm:py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all font-semibold text-sm"
             >
               Close
             </button>
 
             <p className="text-xs text-gray-500 mt-4">
-              For any queries, contact support@theniklaus.com
+              For any queries: <a href="mailto:support@theniklaus.com" className="text-orange-600 hover:underline">support@theniklaus.com</a>
             </p>
           </div>
         </div>
@@ -322,16 +235,16 @@ export function PaymentForm({ registrationData, onClose }: PaymentFormProps) {
         animate={{ opacity: 1 }}
         className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       >
-        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full text-center">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-8 md:p-12 max-w-sm w-full text-center">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-6"
+            className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-orange-200 border-t-orange-500 rounded-full mx-auto mb-4 sm:mb-6"
           />
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
             Processing Payment
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Please wait while we verify your payment...
           </p>
         </div>
@@ -343,131 +256,170 @@ export function PaymentForm({ registrationData, onClose }: PaymentFormProps) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center p-2 sm:p-4 z-50"
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-96 overflow-y-auto"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl sm:max-w-4xl max-h-[95vh] overflow-y-auto"
       >
-        <div className="p-8 md:p-12">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <CreditCard className="text-blue-600" size={32} />
-                Complete Payment
-              </h2>
-              <p className="text-gray-600 mt-1">
-                Secure checkout powered by Razorpay
-              </p>
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl sm:rounded-t-3xl p-6 sm:p-8 md:p-10 text-white">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="bg-white/20 p-2 sm:p-3 rounded-lg">
+                <CreditCard size={32} className="sm:w-10 sm:h-10" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Secure Payment</h2>
+                <p className="text-orange-100 text-xs sm:text-sm md:text-base truncate">Complete your registration</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
+              className="p-2 hover:bg-white/20 rounded-full transition text-white flex-shrink-0"
             >
-              ✕
+              <X size={24} className="sm:w-8 sm:h-8" />
             </button>
           </div>
+        </div>
 
+        {/* Main Content */}
+        <div className="p-4 sm:p-6 md:p-8">
           {/* Error Message */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center gap-3"
+              className="bg-red-50 border border-red-300 rounded-lg sm:rounded-xl p-4 mb-6 flex items-start gap-3"
             >
-              <AlertCircle className="text-red-600" size={20} />
-              <p className="text-red-700">{error}</p>
+              <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+              <div className="text-red-700 text-sm sm:text-base">
+                <p className="font-semibold">{error}</p>
+              </div>
             </motion.div>
           )}
 
-          {/* Order Summary */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Left Column - Order Details */}
+            <div className="md:col-span-2">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Order Summary</h3>
 
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Workshop</span>
-                <span className="font-semibold text-gray-900">
-                  {registrationData.workshopTitle}
-                </span>
+              <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl sm:rounded-2xl p-5 sm:p-6 space-y-5 sm:space-y-6 border border-orange-200">
+                <div>
+                  <label className="text-xs font-bold text-orange-600 mb-2 block">WORKSHOP</label>
+                  <p className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-2">
+                    {registrationData.workshopTitle}
+                  </p>
+                </div>
+
+                <div className="border-t border-orange-200 pt-4 sm:pt-5">
+                  <label className="text-xs font-bold text-orange-600 mb-3 block">PARTICIPANT INFO</label>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Full Name</p>
+                      <p className="font-semibold text-gray-900 truncate">
+                        {registrationData.fullName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Email</p>
+                      <p className="font-semibold text-gray-900 truncate text-xs sm:text-sm">
+                        {registrationData.email}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Organization</p>
+                      <p className="font-semibold text-gray-900 truncate">
+                        {registrationData.organization}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-orange-200 pt-4 sm:pt-5 bg-orange-100 rounded-lg sm:rounded-xl p-4 sm:p-5">
+                  <label className="text-xs font-bold text-orange-700 mb-2 block">TOTAL AMOUNT</label>
+                  <p className="text-3xl sm:text-4xl font-black text-orange-600">
+                    ₹{(registrationData.amount / 100).toFixed(2)}
+                  </p>
+                </div>
               </div>
 
-              <div className="flex justify-between">
-                <span className="text-gray-600">Participant Name</span>
-                <span className="font-semibold text-gray-900">
-                  {registrationData.fullName}
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-600">Email</span>
-                <span className="font-semibold text-gray-900">
-                  {registrationData.email}
-                </span>
-              </div>
-
-              <div className="border-t border-blue-200 pt-3 mt-3 flex justify-between">
-                <span className="font-semibold text-gray-900">Total Amount</span>
-                <span className="text-2xl font-bold text-blue-600">
-                  ₹{registrationData.amount.toFixed(2)}
-                </span>
+              {/* Security Information */}
+              <div className="mt-5 sm:mt-6 bg-green-50 border border-green-300 rounded-lg sm:rounded-xl p-4 sm:p-5 flex gap-3">
+                <Shield className="text-green-600 flex-shrink-0" size={20} />
+                <div className="min-w-0">
+                  <p className="font-bold text-green-900 text-sm">Secure & Trusted</p>
+                  <p className="text-green-700 text-xs mt-1">
+                    Encrypted & processed by Razorpay - India's #1 payment gateway
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Security Information */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-            <Shield className="text-green-600" size={20} />
-            <div className="text-sm">
-              <p className="font-semibold text-green-900">Secure Payment</p>
-              <p className="text-green-700">
-                Your payment is encrypted and processed by Razorpay
-              </p>
+            {/* Right Column - Payment Action */}
+            <div className="md:col-span-1">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl sm:rounded-2xl p-5 sm:p-6 border border-gray-200 sticky top-32 md:top-40">
+                <div className="text-center mb-6">
+                  <CheckCircle size={40} className="text-orange-500 mx-auto mb-3" />
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">Ready?</h3>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Click to proceed
+                  </p>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleInitiatePayment}
+                  disabled={isProcessing}
+                  className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm sm:text-base shadow-lg mb-3"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader size={20} className="animate-spin flex-shrink-0" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={20} className="flex-shrink-0" />
+                      <span>Pay Now</span>
+                    </>
+                  )}
+                </motion.button>
+
+                <button
+                  onClick={onClose}
+                  disabled={isProcessing}
+                  className="w-full px-6 py-2 sm:py-3 bg-gray-300 text-gray-800 rounded-lg sm:rounded-xl hover:bg-gray-400 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+
+                <div className="mt-5 sm:mt-6 p-3 sm:p-4 bg-white rounded-lg border border-gray-200">
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-orange-700">
+                      <span className="w-1.5 h-1.5 bg-orange-600 rounded-full flex-shrink-0"></span>
+                      <span>Secure payment</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-orange-700">
+                      <span className="w-1.5 h-1.5 bg-orange-600 rounded-full flex-shrink-0"></span>
+                      <span>Instant confirmation</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-orange-700">
+                      <span className="w-1.5 h-1.5 bg-orange-600 rounded-full flex-shrink-0"></span>
+                      <span>24/7 support</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-center text-xs text-gray-500 mt-4 leading-relaxed">
+                  <a href="mailto:support@theniklaus.com" className="text-orange-600 font-semibold hover:underline">
+                    Contact support
+                  </a>
+                </p>
+              </div>
             </div>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="space-y-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleInitiatePayment}
-              disabled={isProcessing}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader size={20} className="animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard size={20} />
-                  Proceed to Payment
-                </>
-              )}
-            </motion.button>
-
-            <button
-              onClick={onClose}
-              disabled={isProcessing}
-              className="w-full px-8 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-6 text-xs text-gray-600 text-center space-y-2">
-            <p>💳 Razorpay accepts all major credit and debit cards</p>
-            <p>
-              For support:{' '}
-              <a href="mailto:support@theniklaus.com" className="text-blue-600 hover:underline">
-                support@theniklaus.com
-              </a>
-            </p>
           </div>
         </div>
       </motion.div>

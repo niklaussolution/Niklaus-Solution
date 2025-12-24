@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin, ArrowRight, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, addDoc } from "firebase/firestore";
+import { PaymentForm } from "./PaymentForm";
 
 interface Workshop {
   id: string;
@@ -27,6 +28,7 @@ interface RegistrationData {
   organization: string;
   workshopId: string;
   workshopTitle: string;
+  price: number;
 }
 
 export function WorkshopsSection() {
@@ -34,6 +36,7 @@ export function WorkshopsSection() {
   const [loading, setLoading] = useState(true);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [registrationData, setRegistrationData] = useState<RegistrationData>({
     fullName: "",
     email: "",
@@ -41,6 +44,7 @@ export function WorkshopsSection() {
     organization: "",
     workshopId: "",
     workshopTitle: "",
+    price: 0,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,6 +79,7 @@ export function WorkshopsSection() {
       organization: "",
       workshopId: workshop.id,
       workshopTitle: workshop.title,
+      price: workshop.price,
     });
     setErrors({});
     setShowModal(true);
@@ -124,19 +129,23 @@ export function WorkshopsSection() {
       return;
     }
 
-    setIsSubmitting(true);
+    // Show payment form instead of submitting directly
+    setShowPaymentForm(true);
+  };
 
+  const handlePaymentSuccess = async () => {
+    // After payment is successful, add registration to Firestore
+    setIsSubmitting(true);
     try {
-      // Add registration to Firestore
-      const { addDoc } = await import("firebase/firestore");
       const registrationsRef = collection(db, "registrations");
       
       await addDoc(registrationsRef, {
         ...registrationData,
         createdAt: new Date().getTime(),
-        status: "pending",
+        status: "completed",
       });
 
+      setShowPaymentForm(false);
       setSubmitSuccess(true);
 
       // Reset form after 3 seconds
@@ -150,11 +159,12 @@ export function WorkshopsSection() {
           organization: "",
           workshopId: "",
           workshopTitle: "",
+          price: 0,
         });
       }, 3000);
     } catch (error) {
       console.error("Error submitting registration:", error);
-      setErrors({ submit: "Failed to submit registration. Please try again." });
+      alert("Error submitting registration. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -407,6 +417,23 @@ export function WorkshopsSection() {
             )}
           </motion.div>
         </div>
+      )}
+
+      {/* Payment Form Modal */}
+      {showPaymentForm && selectedWorkshop && (
+        <PaymentForm
+          registrationData={{
+            fullName: registrationData.fullName,
+            email: registrationData.email,
+            phone: registrationData.phone,
+            organization: registrationData.organization,
+            workshopId: registrationData.workshopId,
+            workshopTitle: registrationData.workshopTitle,
+            amount: registrationData.price * 100, // Convert to paise for Razorpay
+          }}
+          onClose={() => setShowPaymentForm(false)}
+          onSuccess={handlePaymentSuccess}
+        />
       )}
     </>
   );
