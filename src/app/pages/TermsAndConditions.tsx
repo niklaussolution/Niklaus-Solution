@@ -2,9 +2,47 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export function TermsAndConditions() {
   const navigate = useNavigate();
+
+  // Set SEO meta tags for Terms and Conditions page
+  useEffect(() => {
+    document.title = "Terms and Conditions - Niklaus Solutions | Legal Terms";
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute("content", "Terms and Conditions for Niklaus Solutions. Read our complete terms of service, usage policies, and legal agreements.");
+    }
+    
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", "Terms and Conditions - Niklaus Solutions");
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute("content", "Terms and Conditions for Niklaus Solutions - Read our legal terms.");
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute("content", "https://theniklaus.com/terms-and-conditions");
+    
+    const twitterTitle = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute("content", "Terms and Conditions - Niklaus Solutions");
+    
+    const twitterDescription = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDescription) twitterDescription.setAttribute("content", "Terms and Conditions for Niklaus Solutions");
+    
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link') as HTMLLinkElement;
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = 'https://theniklaus.com/terms-and-conditions';
+    
+    return () => {
+      document.title = "Niklaus Solutions | Industry-Oriented Tech Workshops & Training";
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">

@@ -2,9 +2,47 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export function CancellationsAndRefunds() {
   const navigate = useNavigate();
+
+  // Set SEO meta tags for Cancellations and Refunds page
+  useEffect(() => {
+    document.title = "Cancellations & Refunds Policy - Niklaus Solutions";
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute("content", "Cancellations and Refunds Policy for Niklaus Solutions. Learn about our refund process, cancellation procedures, and policies.");
+    }
+    
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", "Cancellations & Refunds Policy - Niklaus Solutions");
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute("content", "Cancellations and Refunds Policy - Niklaus Solutions");
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute("content", "https://theniklaus.com/cancellations-and-refunds");
+    
+    const twitterTitle = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute("content", "Cancellations & Refunds Policy - Niklaus Solutions");
+    
+    const twitterDescription = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDescription) twitterDescription.setAttribute("content", "Cancellations and Refunds Policy - Niklaus Solutions");
+    
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link') as HTMLLinkElement;
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = 'https://theniklaus.com/cancellations-and-refunds';
+    
+    return () => {
+      document.title = "Niklaus Solutions | Industry-Oriented Tech Workshops & Training";
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">

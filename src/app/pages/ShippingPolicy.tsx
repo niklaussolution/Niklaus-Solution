@@ -2,9 +2,47 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export function ShippingPolicy() {
   const navigate = useNavigate();
+
+  // Set SEO meta tags for Shipping Policy page
+  useEffect(() => {
+    document.title = "Shipping Policy - Niklaus Solutions | Delivery Information";
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute("content", "Shipping Policy for Niklaus Solutions. Learn about our shipping methods, delivery times, and shipping costs for workshop materials and certificates.");
+    }
+    
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", "Shipping Policy - Niklaus Solutions");
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute("content", "Shipping Policy - Niklaus Solutions. Learn about delivery and shipping.");
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute("content", "https://theniklaus.com/shipping-policy");
+    
+    const twitterTitle = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute("content", "Shipping Policy - Niklaus Solutions");
+    
+    const twitterDescription = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDescription) twitterDescription.setAttribute("content", "Shipping Policy - Niklaus Solutions");
+    
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link') as HTMLLinkElement;
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = 'https://theniklaus.com/shipping-policy';
+    
+    return () => {
+      document.title = "Niklaus Solutions | Industry-Oriented Tech Workshops & Training";
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">

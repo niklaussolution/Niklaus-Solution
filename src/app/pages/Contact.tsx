@@ -1,7 +1,7 @@
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Mail, Phone, MapPin, MessageCircle, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 
@@ -14,6 +14,47 @@ interface ContactFormData {
 }
 
 export function Contact() {
+  // Set SEO meta tags for Contact page
+  useEffect(() => {
+    document.title = "Contact Us - Niklaus Solutions | Get in Touch";
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute("content", "Get in touch with Niklaus Solutions. Contact us for inquiries about our workshops, training programs, and services. Available via email, phone, or contact form.");
+    }
+    
+    // Update Open Graph tags
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", "Contact Us - Niklaus Solutions");
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute("content", "Get in touch with Niklaus Solutions for tech workshops and training.");
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute("content", "https://theniklaus.com/contact");
+    
+    // Update Twitter tags
+    const twitterTitle = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute("content", "Contact Us - Niklaus Solutions");
+    
+    const twitterDescription = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDescription) twitterDescription.setAttribute("content", "Get in touch with Niklaus Solutions for tech workshops and training.");
+    
+    // Add canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link') as HTMLLinkElement;
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = 'https://theniklaus.com/contact';
+    
+    return () => {
+      // Cleanup: Reset to home page meta tags
+      document.title = "Niklaus Solutions | Industry-Oriented Tech Workshops & Training";
+    };
+  }, []);
   const [formData, setFormData] = useState<ContactFormData>({
     fullName: "",
     email: "",
