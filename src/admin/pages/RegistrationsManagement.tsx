@@ -172,19 +172,21 @@ export const RegistrationsManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div>
+      <div className="p-3 sm:p-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800">Registrations</h1>
-            <p className="text-gray-600 mt-1">Manage user registrations for workshops</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Registrations</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage user registrations for workshops</p>
           </div>
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-xs sm:text-sm w-full sm:w-auto"
           >
-            <Download size={20} />
-            Export CSV
+            <Download size={16} className="sm:block hidden" />
+            <Download size={14} className="sm:hidden" />
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
           </button>
         </div>
 

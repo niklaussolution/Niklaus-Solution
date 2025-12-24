@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
@@ -20,6 +20,8 @@ export function JourneySection() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => {
     fetchLearners();
@@ -45,11 +47,39 @@ export function JourneySection() {
   const getVisibleLearners = () => {
     if (learners.length === 0) return [];
     const visible = [];
-    for (let i = 0; i < Math.min(3, learners.length); i++) {
+    // Show 1 card on mobile, 3 cards on desktop
+    const cardsToShow = window.innerWidth < 768 ? 1 : 3;
+    for (let i = 0; i < Math.min(cardsToShow, learners.length); i++) {
       const index = (currentIndex + i) % learners.length;
       visible.push(learners[index]);
     }
     return visible;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        // Swiped left, go to next
+        setDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % learners.length);
+      } else {
+        // Swiped right, go to previous
+        setDirection(-1);
+        setCurrentIndex((prev) => (prev - 1 + learners.length) % learners.length);
+      }
+    }
   };
 
   if (loading) {
@@ -88,16 +118,22 @@ export function JourneySection() {
         {/* Carousel */}
         <div className="relative">
           {/* Learners Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {getVisibleLearners().map((learner, index) => (
-              <motion.div
-                key={learner.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group"
-              >
-                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 cursor-grab active:cursor-grabbing"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <AnimatePresence mode="wait">
+              {getVisibleLearners().map((learner, index) => (
+                <motion.div
+                  key={learner.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="group"
+                >
+                  <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105">
                   {/* Image Container */}
                   <div className="relative h-64 overflow-hidden bg-gray-200">
                     {learner.photo ? (
@@ -154,23 +190,24 @@ export function JourneySection() {
                 </div>
               </motion.div>
             ))}
+            </AnimatePresence>
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center mt-12">
+          <div className="flex justify-between items-center mt-8 md:mt-12">
             <button
               onClick={() => {
                 setDirection(-1);
                 setCurrentIndex((prev) => (prev - 1 + learners.length) % learners.length);
               }}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
+              className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
               aria-label="Previous learner"
             >
               <ChevronLeft size={24} className="group-hover:scale-110 transition-transform" />
             </button>
 
             {/* Dots Indicator */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mx-auto">
               {learners.map((_, index) => (
                 <motion.button
                   key={index}
@@ -195,7 +232,7 @@ export function JourneySection() {
                 setDirection(1);
                 setCurrentIndex((prev) => (prev + 1) % learners.length);
               }}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
+              className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
               aria-label="Next learner"
             >
               <ChevronRight size={24} className="group-hover:scale-110 transition-transform" />

@@ -147,60 +147,60 @@ export function ContactSubmissionsManagement() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="p-3 sm:p-6 space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Contact Submissions</h1>
-            <p className="text-gray-600 mt-2">Manage and respond to contact form submissions</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Contact Submissions</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-2">Manage and respond to contact form submissions</p>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-2 sm:gap-4 items-center w-full sm:w-auto">
             <button
               onClick={addTestSubmission}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-semibold"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-xs sm:text-sm font-semibold transition"
             >
               + Add Test
             </button>
-            <div className="bg-orange-100 px-4 py-3 rounded-lg">
-              <p className="text-sm text-gray-600">Total Submissions</p>
-              <p className="text-2xl font-bold text-orange-600">{submissions.length}</p>
+            <div className="flex-1 sm:flex-none bg-orange-100 px-3 sm:px-4 py-2 sm:py-3 rounded-lg">
+              <p className="text-xs text-gray-600">Total</p>
+              <p className="text-xl sm:text-2xl font-bold text-orange-600">{submissions.length}</p>
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-red-600 font-semibold">New Submissions</p>
-                <p className="text-3xl font-bold text-red-700">
+                <p className="text-xs sm:text-sm text-red-600 font-semibold">New Submissions</p>
+                <p className="text-2xl sm:text-3xl font-bold text-red-700">
                   {submissions.filter((s) => s.status === "new").length}
                 </p>
               </div>
-              <Clock size={40} className="text-red-400" />
+              <Clock size={32} className="text-red-400 flex-shrink-0" />
             </div>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-yellow-600 font-semibold">Read Submissions</p>
-                <p className="text-3xl font-bold text-yellow-700">
+                <p className="text-xs sm:text-sm text-yellow-600 font-semibold">Read Submissions</p>
+                <p className="text-2xl sm:text-3xl font-bold text-yellow-700">
                   {submissions.filter((s) => s.status === "read").length}
                 </p>
               </div>
-              <MessageSquare size={40} className="text-yellow-400" />
+              <MessageSquare size={32} className="text-yellow-400 flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div className="flex items-center justify-between">
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-green-600 font-semibold">Resolved</p>
-                <p className="text-3xl font-bold text-green-700">
+                <p className="text-xs sm:text-sm text-green-600 font-semibold">Resolved</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-700">
                   {submissions.filter((s) => s.status === "resolved").length}
                 </p>
               </div>
-              <Check size={40} className="text-green-400" />
+              <Check size={32} className="text-green-400 flex-shrink-0" />
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@ export function ContactSubmissionsManagement() {
             <button
               key={status}
               onClick={() => setFilterStatus(status as any)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
                 filterStatus === status
                   ? "bg-orange-500 text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -222,149 +222,193 @@ export function ContactSubmissionsManagement() {
           ))}
         </div>
 
-        {/* Submissions Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Submissions Table/List */}
+        <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
           {filteredSubmissions.length === 0 ? (
             <div className="p-8 text-center text-gray-600">
               <MessageSquare size={48} className="mx-auto mb-4 text-gray-400" />
-              <p>No submissions to display</p>
+              <p className="text-gray-600">No submissions to display</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                      Subject
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                      Submitted
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSubmissions.map((submission) => (
-                    <tr key={submission.id} className="border-b hover:bg-gray-50 transition">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{submission.fullName}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <a
-                          href={`mailto:${submission.email}`}
-                          className="text-orange-600 hover:underline text-sm"
-                        >
-                          {submission.email}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-gray-700 text-sm">{submission.subject}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(
-                            submission.status
-                          )}`}
-                        >
-                          {getStatusIcon(submission.status)}
-                          {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-gray-600 text-sm">{formatDate(submission.submittedAt)}</p>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => {
-                            setSelectedSubmission(submission);
-                            setShowDetails(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm mr-4"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSubmission(submission.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                        Name
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                        Email
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                        Subject
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                        Status
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                        Submitted
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-center text-xs sm:text-sm font-semibold text-gray-700">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredSubmissions.map((submission) => (
+                      <tr key={submission.id} className="border-b hover:bg-gray-50 transition">
+                        <td className="px-4 sm:px-6 py-4">
+                          <p className="font-medium text-gray-900 text-sm">{submission.fullName}</p>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <a
+                            href={`mailto:${submission.email}`}
+                            className="text-orange-600 hover:underline text-xs sm:text-sm"
+                          >
+                            {submission.email}
+                          </a>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <p className="text-gray-700 text-xs sm:text-sm">{submission.subject}</p>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${getStatusColor(
+                              submission.status
+                            )}`}
+                          >
+                            {getStatusIcon(submission.status)}
+                            <span className="hidden sm:inline">{submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}</span>
+                            <span className="sm:hidden">{submission.status.charAt(0).toUpperCase()}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <p className="text-gray-600 text-xs sm:text-sm">{formatDate(submission.submittedAt)}</p>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 text-center">
+                          <button
+                            onClick={() => {
+                              setSelectedSubmission(submission);
+                              setShowDetails(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-semibold text-xs sm:text-sm mr-2 sm:mr-4"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubmission(submission.id)}
+                            className="text-red-600 hover:text-red-800 inline-flex"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="sm:hidden space-y-3 p-4">
+                {filteredSubmissions.map((submission) => (
+                  <div key={submission.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition">
+                    <div className="flex justify-between items-start gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-sm truncate">{submission.fullName}</h3>
+                        <p className="text-xs text-gray-600 truncate">{submission.email}</p>
+                      </div>
+                      <span
+                        className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                          submission.status
+                        )}`}
+                      >
+                        {getStatusIcon(submission.status)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-700 mb-2 line-clamp-2">{submission.subject}</p>
+                    <p className="text-xs text-gray-500 mb-3">{formatDate(submission.submittedAt)}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedSubmission(submission);
+                          setShowDetails(true);
+                        }}
+                        className="flex-1 text-blue-600 hover:text-blue-800 font-semibold text-xs bg-white border border-blue-200 rounded py-1 transition"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSubmission(submission.id)}
+                        className="text-red-600 hover:text-red-800 font-semibold text-xs bg-white border border-red-200 rounded px-2 py-1 transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
         {/* Details Modal */}
         {showDetails && selectedSubmission && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
-              <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Submission Details</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6 flex justify-between items-center">
+                <h2 className="text-lg sm:text-2xl font-bold">Submission Details</h2>
                 <button
                   onClick={() => setShowDetails(false)}
-                  className="text-white hover:bg-orange-700 p-2 rounded"
+                  className="text-white hover:bg-orange-700 p-2 rounded text-xl"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 font-semibold">Full Name</p>
-                    <p className="text-lg text-gray-900">{selectedSubmission.fullName}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 font-semibold">Full Name</p>
+                    <p className="text-sm sm:text-lg text-gray-900">{selectedSubmission.fullName}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 font-semibold">Email</p>
-                    <a href={`mailto:${selectedSubmission.email}`} className="text-lg text-orange-600 hover:underline">
+                    <p className="text-xs sm:text-sm text-gray-600 font-semibold">Email</p>
+                    <a href={`mailto:${selectedSubmission.email}`} className="text-sm sm:text-lg text-orange-600 hover:underline break-all">
                       {selectedSubmission.email}
                     </a>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 font-semibold">Phone</p>
-                    <a href={`tel:${selectedSubmission.phone}`} className="text-lg text-orange-600 hover:underline">
+                    <p className="text-xs sm:text-sm text-gray-600 font-semibold">Phone</p>
+                    <a href={`tel:${selectedSubmission.phone}`} className="text-sm sm:text-lg text-orange-600 hover:underline">
                       {selectedSubmission.phone}
                     </a>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 font-semibold">Submitted</p>
-                    <p className="text-lg text-gray-900">{formatDate(selectedSubmission.submittedAt)}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 font-semibold">Submitted</p>
+                    <p className="text-sm sm:text-lg text-gray-900">{formatDate(selectedSubmission.submittedAt)}</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 font-semibold">Subject</p>
-                  <p className="text-lg text-gray-900">{selectedSubmission.subject}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-1">Subject</p>
+                  <p className="text-sm sm:text-lg text-gray-900">{selectedSubmission.subject}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 font-semibold">Message</p>
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{selectedSubmission.message}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-2">Message</p>
+                  <p className="text-xs sm:text-sm text-gray-700 bg-gray-50 p-3 sm:p-4 rounded-lg whitespace-pre-wrap break-words">{selectedSubmission.message}</p>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 font-semibold mb-3">Status</p>
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-3">Status</p>
                   <div className="flex gap-2 flex-wrap">
                     {["new", "read", "resolved"].map((status) => (
                       <button
                         key={status}
                         onClick={() => handleStatusChange(selectedSubmission.id, status as any)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        className={`px-3 sm:px-4 py-1 sm:py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
                           selectedSubmission.status === status
                             ? "bg-orange-500 text-white"
                             : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
@@ -376,22 +420,22 @@ export function ContactSubmissionsManagement() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <a
                     href={`mailto:${selectedSubmission.email}`}
-                    className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition flex items-center justify-center gap-2"
+                    className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition flex items-center justify-center gap-2 text-sm font-semibold"
                   >
                     <Mail size={18} />
-                    Reply via Email
+                    <span>Reply Email</span>
                   </a>
                   <a
                     href={`https://wa.me/${selectedSubmission.phone.replace(/\D/g, "")}?text=Hi%20${selectedSubmission.fullName},%20thanks%20for%20contacting%20us!`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2"
+                    className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2 text-sm font-semibold"
                   >
                     <MessageSquare size={18} />
-                    Reply on WhatsApp
+                    <span>WhatsApp</span>
                   </a>
                 </div>
               </div>

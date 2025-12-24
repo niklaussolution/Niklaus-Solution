@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { Plus } from 'lucide-react';
 
 interface Video {
   _id: string;
@@ -48,9 +49,9 @@ export const VideoManagement: React.FC = () => {
 
     try {
       if (editingId) {
-        await api.updateVideo(editingId, formData, token);
+        await api.updateVideo(editingId, formData);
       } else {
-        await api.createVideo(formData, token);
+        await api.createVideo(formData);
       }
       setFormData({ title: '', youtubeUrl: '', thumbnail: '', order: 0, isActive: true });
       setShowForm(false);
@@ -78,7 +79,7 @@ export const VideoManagement: React.FC = () => {
     if (!confirm('Are you sure?')) return;
 
     try {
-      await api.deleteVideo(id, token);
+      await api.deleteVideo(id);
       fetchVideos();
     } catch (error) {
       console.error('Error deleting video:', error);
@@ -87,18 +88,23 @@ export const VideoManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-bold text-gray-800">Video Management</h1>
+      <div className="p-3 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Video Management</h1>
           <button
             onClick={() => {
               setShowForm(!showForm);
               setEditingId(null);
               setFormData({ title: '', youtubeUrl: '', thumbnail: '', order: 0, isActive: true });
             }}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-xs sm:text-sm w-full sm:w-auto"
           >
-            {showForm ? 'Cancel' : 'Add Video'}
+            {showForm ? 'Cancel' : <>
+              <Plus size={14} className="sm:hidden" />
+              <Plus size={16} className="sm:block hidden" />
+              <span className="hidden sm:inline">Add Video</span>
+              <span className="sm:hidden">Add</span>
+            </>}
           </button>
         </div>
 

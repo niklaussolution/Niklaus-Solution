@@ -222,22 +222,24 @@ export const TestimonialsManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div>
+      <div className="p-3 sm:p-6">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800">Testimonials Management</h1>
-            <p className="text-gray-600 mt-1">Manage customer testimonials and reviews</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Testimonials</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage customer testimonials and reviews</p>
           </div>
           <button
             onClick={() => {
               resetForm();
               setShowForm(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs sm:text-sm w-full sm:w-auto"
           >
-            <Plus size={20} />
-            Add Testimonial
+            <Plus size={14} className="sm:hidden" />
+            <Plus size={16} className="sm:block hidden" />
+            <span className="hidden sm:inline">Add Testimonial</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
 

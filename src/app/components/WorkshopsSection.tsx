@@ -1,6 +1,6 @@
-import { motion } from "motion/react";
-import { Calendar, Clock, MapPin, ArrowRight, Users, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Calendar, Clock, MapPin, ArrowRight, Users, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { PaymentForm } from "./PaymentForm";
@@ -37,6 +37,10 @@ export function WorkshopsSection() {
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
   const [registrationData, setRegistrationData] = useState<RegistrationData>({
     fullName: "",
     email: "",
@@ -120,6 +124,44 @@ export function WorkshopsSection() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const getVisibleWorkshops = () => {
+    if (workshops.length === 0) return [];
+    const visible = [];
+    // Show 1 card on mobile, 2 cards on desktop
+    const cardsToShow = window.innerWidth < 768 ? 1 : 2;
+    for (let i = 0; i < Math.min(cardsToShow, workshops.length); i++) {
+      const index = (currentIndex + i) % workshops.length;
+      visible.push(workshops[index]);
+    }
+    return visible;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        // Swiped left, go to next
+        setDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % workshops.length);
+      } else {
+        // Swiped right, go to previous
+        setDirection(-1);
+        setCurrentIndex((prev) => (prev - 1 + workshops.length) % workshops.length);
+      }
+    }
   };
 
   const handleRegistrationSubmit = async (e: React.FormEvent) => {

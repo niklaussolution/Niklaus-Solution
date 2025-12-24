@@ -2,7 +2,13 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isMobile?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = true, onClose }) => {
   const location = useLocation();
   const { admin } = useAuth();
 
@@ -22,10 +28,25 @@ export const Sidebar: React.FC = () => {
     { path: '/admin/settings', label: 'Settings', icon: '⚙️', visible: isSuperAdmin },
   ];
 
+  const handleMenuItemClick = () => {
+    if (isMobile && onClose) {
+      onClose();
+    }
+  };
+
   return (
     <aside className="bg-gray-800 text-white w-64 h-full overflow-y-auto flex flex-col">
-      <div className="mb-8 p-4 flex-shrink-0">
+      <div className="mb-8 p-4 flex-shrink-0 flex justify-between items-center">
         <h2 className="text-xl font-bold">Niklaus Solutions Admin</h2>
+        {isMobile && (
+          <button
+            onClick={onClose}
+            className="md:hidden text-white text-xl font-bold"
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        )}
       </div>
       <ul className="space-y-2 px-4 flex-1">
         {menuItems.map((item) => {
@@ -35,6 +56,7 @@ export const Sidebar: React.FC = () => {
             <li key={item.path}>
               <Link
                 to={item.path}
+                onClick={handleMenuItemClick}
                 className={`flex items-center space-x-3 p-3 rounded transition ${
                   isActive
                     ? 'bg-blue-600'
