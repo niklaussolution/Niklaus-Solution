@@ -1197,4 +1197,97 @@ export const api = {
       return { error: error.message };
     }
   },
+
+  // Journeys (Learner Success Stories)
+  getJourneys: async (isActive?: boolean) => {
+    try {
+      const journeysRef = collection(db, 'journeys');
+      let q;
+      if (isActive !== undefined) {
+        q = query(journeysRef, where('isActive', '==', isActive), orderBy('order'));
+      } else {
+        q = query(journeysRef, orderBy('order'));
+      }
+      const querySnapshot = await getDocs(q);
+      const journeys = querySnapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        ...(doc.data() as any),
+      }));
+      return journeys;
+    } catch (error: any) {
+      return [];
+    }
+  },
+
+  getJourneyById: async (id: string) => {
+    try {
+      const docRef = doc(db, 'journeys', id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        return { error: 'Journey not found' };
+      }
+      return { id: docSnap.id, ...docSnap.data() };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  createJourney: async (data: any) => {
+    try {
+      const docRef = await addDoc(collection(db, 'journeys'), {
+        ...data,
+        isActive: true,
+        order: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      const newDoc = await getDoc(docRef);
+      return { data: { id: newDoc.id, ...newDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  updateJourney: async (id: string, data: any) => {
+    try {
+      const journeyRef = doc(db, 'journeys', id);
+      await updateDoc(journeyRef, {
+        ...data,
+        updatedAt: Date.now(),
+      });
+      const updatedDoc = await getDoc(journeyRef);
+      return { data: { id: updatedDoc.id, ...(updatedDoc.data() as any) } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  deleteJourney: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'journeys', id));
+      return { message: 'Journey deleted successfully' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // Bulk upload journeys
+  createMultipleJourneys: async (journeys: any[]) => {
+    try {
+      let successCount = 0;
+      for (const journey of journeys) {
+        const docRef = await addDoc(collection(db, 'journeys'), {
+          ...journey,
+          isActive: journey.isActive !== false,
+          order: journey.order || 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        successCount++;
+      }
+      return { data: { created: successCount } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
 };

@@ -16,6 +16,7 @@ export const Sidebar: React.FC = () => {
     { path: '/admin/trainers', label: 'Trainers', icon: '👨‍🏫' },
     { path: '/admin/testimonials', label: 'Testimonials', icon: '⭐' },
     { path: '/admin/content', label: 'Content Management', icon: '📝' },
+    { path: '/admin/journeys', label: 'Learner Journeys', icon: '🚀' },
     { path: '/admin/videos', label: 'Video Management', icon: '🎥' },
     { path: '/admin/users', label: 'User Management', icon: '👥' },
     { path: '/admin/admins', label: 'Admin Users', icon: '🔐', visible: isSuperAdmin },

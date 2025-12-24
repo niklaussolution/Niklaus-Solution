@@ -19,6 +19,7 @@ import { VideoManagement } from "./admin/pages/VideoManagement";
 import { UserManagement } from "./admin/pages/UserManagement";
 import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
+import { JourneyManagement } from "./admin/pages/JourneyManagement";
 import "./styles/index.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -115,7 +116,16 @@ createRoot(document.getElementById("root")!).render(
               <ContentManagement />
             </ProtectedRoute>
           }
-        /><Route
+        />
+        <Route
+          path="/admin/journeys"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <JourneyManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/videos"
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>

@@ -1,98 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { db } from "../../../src/admin/config/firebase";
 
 interface Learner {
-  id: number;
+  id: string;
   name: string;
-  image: string;
+  photo?: string;
   company: string;
-  companyLogo: string;
-  role: string;
+  position: string;
+  workshopName?: string;
+  isActive: boolean;
+  order: number;
 }
 
-const learners: Learner[] = [
-  {
-    id: 1,
-    name: "Pavinath E",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    company: "Maya Technologies",
-    companyLogo: "https://images.unsplash.com/photo-1599927568826-e91a7ce58220?w=100&h=50&fit=crop",
-    role: "Network And Security Engineer",
-  },
-  {
-    id: 2,
-    name: "Ashwin Kumar S",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-    company: "Alcoa AI",
-    companyLogo: "https://images.unsplash.com/photo-1599927568826-e91a7ce58220?w=100&h=50&fit=crop",
-    role: "Android App Pentester",
-  },
-  {
-    id: 3,
-    name: "Prakash Kumar M",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
-    company: "Hobsy",
-    companyLogo: "https://images.unsplash.com/photo-1599927568826-e91a7ce58220?w=100&h=50&fit=crop",
-    role: "Flutter Developer",
-  },
-  {
-    id: 4,
-    name: "Raj Kumar",
-    image: "https://images.unsplash.com/photo-1519085360771-9852ef158dba?w=400&h=400&fit=crop",
-    company: "Tech Innovations",
-    companyLogo: "https://images.unsplash.com/photo-1599927568826-e91a7ce58220?w=100&h=50&fit=crop",
-    role: "Full Stack Developer",
-  },
-  {
-    id: 5,
-    name: "Sneha Sharma",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
-    company: "Design Studios",
-    companyLogo: "https://images.unsplash.com/photo-1599927568826-e91a7ce58220?w=100&h=50&fit=crop",
-    role: "UI/UX Designer",
-  },
-];
-
 export function JourneySection() {
+  const [learners, setLearners] = useState<Learner[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 1000 : -1000,
-      opacity: 0,
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-    },
-    exit: (dir: number) => ({
-      zIndex: 0,
-      x: dir < 0 ? 1000 : -1000,
-      opacity: 0,
-    }),
-  };
+  useEffect(() => {
+    fetchLearners();
+  }, []);
 
-  const next = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % learners.length);
-  };
-
-  const prev = () => {
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + learners.length) % learners.length);
+  const fetchLearners = async () => {
+    try {
+      const journeysRef = collection(db, "journeys");
+      const q = query(journeysRef, where("isActive", "==", true), orderBy("order"));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      } as Learner));
+      setLearners(data);
+    } catch (error) {
+      console.error("Error fetching learners:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getVisibleLearners = () => {
+    if (learners.length === 0) return [];
     const visible = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < Math.min(3, learners.length); i++) {
       const index = (currentIndex + i) % learners.length;
       visible.push(learners[index]);
     }
     return visible;
   };
+
+  if (loading) {
+    return (
+      <section id="journey" className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center min-h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        </div>
+      </section>
+    );
+  }
+
+  if (learners.length === 0) {
+    return null;
+  }
 
   return (
     <section id="journey" className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50">
@@ -128,53 +100,54 @@ export function JourneySection() {
                 <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105">
                   {/* Image Container */}
                   <div className="relative h-64 overflow-hidden bg-gray-200">
-                    <img
-                      src={learner.image}
-                      alt={learner.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                    {learner.photo ? (
+                      <img
+                        src={learner.photo}
+                        alt={learner.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-600">
+                        <span className="text-5xl font-bold text-white">
+                          {learner.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
                   <div className="p-6">
                     {/* Name */}
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
                       {learner.name}
                     </h3>
 
-                    {/* Company Logo */}
-                    <div className="mb-4 h-8 flex items-center">
-                      {learner.companyLogo && (
-                        <img
-                          src={learner.companyLogo}
-                          alt={learner.company}
-                          className="h-full object-contain"
-                        />
-                      )}
-                      {!learner.companyLogo && (
-                        <span className="text-sm font-semibold text-gray-600">
-                          {learner.company}
-                        </span>
-                      )}
+                    {/* Company */}
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold text-gray-600">
+                        {learner.company}
+                      </p>
                     </div>
 
-                    {/* After Nativeva Badge */}
+                    {/* After Workshop Badge */}
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex gap-1">
                         <span className="inline-block w-2 h-2 rounded-full bg-teal-500"></span>
                         <span className="inline-block w-2 h-2 rounded-full bg-teal-300"></span>
                       </div>
-                      <span className="text-sm text-gray-600">After Niklaus</span>
+                      <span className="text-sm text-gray-600">
+                        After {learner.workshopName || "Workshop"}
+                      </span>
                     </div>
 
-                    {/* Role */}
+                    {/* Position */}
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1">
                         <span className="inline-block w-2 h-2 rounded-full bg-teal-500"></span>
                         <span className="inline-block w-2 h-2 rounded-full bg-teal-300"></span>
                       </div>
                       <p className="text-sm font-semibold text-gray-700">
-                        {learner.role}
+                        {learner.position}
                       </p>
                     </div>
                   </div>
@@ -186,7 +159,10 @@ export function JourneySection() {
           {/* Navigation Buttons */}
           <div className="flex justify-between items-center mt-12">
             <button
-              onClick={prev}
+              onClick={() => {
+                setDirection(-1);
+                setCurrentIndex((prev) => (prev - 1 + learners.length) % learners.length);
+              }}
               className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
               aria-label="Previous learner"
             >
@@ -215,7 +191,10 @@ export function JourneySection() {
             </div>
 
             <button
-              onClick={next}
+              onClick={() => {
+                setDirection(1);
+                setCurrentIndex((prev) => (prev + 1) % learners.length);
+              }}
               className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
               aria-label="Next learner"
             >

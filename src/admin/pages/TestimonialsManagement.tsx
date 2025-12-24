@@ -4,7 +4,6 @@ import { db, storage } from '../config/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { AlertCircle, X, Save, Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
-import { migrateTestimonials } from '../utils/testimonialsHelper';
 
 interface Testimonial {
   id: string;
@@ -27,7 +26,6 @@ export const TestimonialsManagement: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isMigrating, setIsMigrating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,21 +63,6 @@ export const TestimonialsManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleMigrate = async () => {
-    setIsMigrating(true);
-    const result = await migrateTestimonials();
-    if (result.success) {
-      setSuccess(result.message);
-      setTimeout(() => {
-        fetchTestimonials();
-        setSuccess('');
-      }, 1000);
-    } else {
-      setError(result.message);
-    }
-    setIsMigrating(false);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -281,24 +264,6 @@ export const TestimonialsManagement: React.FC = () => {
             </div>
             <button onClick={() => setSuccess('')} className="ml-auto">
               <X size={18} className="text-green-600" />
-            </button>
-          </div>
-        )}
-
-        {/* Migration Button */}
-        {testimonials.length === 0 && (
-          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-blue-900">First Time Setup</h3>
-              <p className="text-blue-700 text-sm">Load testimonials from our learners. Do this only once.</p>
-            </div>
-            <button
-              onClick={handleMigrate}
-              disabled={isMigrating}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
-            >
-              <Upload size={18} />
-              {isMigrating ? 'Uploading...' : 'Upload Testimonials'}
             </button>
           </div>
         )}
