@@ -37,22 +37,53 @@ export const LoginPage: React.FC = () => {
     setLoginError('');
     setLoginLoading(true);
 
+    // Validation
+    if (!loginEmail.trim()) {
+      setLoginError('Email is required');
+      setLoginLoading(false);
+      return;
+    }
+    if (!loginPassword.trim()) {
+      setLoginError('Password is required');
+      setLoginLoading(false);
+      return;
+    }
+
     try {
       const result = await api.login({ email: loginEmail, password: loginPassword });
       
       if (result.error) {
-        setLoginError(result.error || 'Login failed');
+        // Provide user-friendly error messages
+        const errorMessage = result.error.toLowerCase();
+        if (errorMessage.includes('user-not-found') || errorMessage.includes('not found')) {
+          setLoginError('Email not found. Please check your email or sign up.');
+        } else if (errorMessage.includes('wrong-password') || errorMessage.includes('invalid-password')) {
+          setLoginError('Incorrect password. Please try again.');
+        } else if (errorMessage.includes('invalid-email') || errorMessage.includes('invalid')) {
+          setLoginError('Invalid email format. Please check your email.');
+        } else if (errorMessage.includes('too-many-requests')) {
+          setLoginError('Too many login attempts. Please try again later.');
+        } else if (errorMessage.includes('user-disabled')) {
+          setLoginError('Your account has been disabled. Please contact support.');
+        } else if (errorMessage.includes('firebase') || errorMessage.includes('400')) {
+          setLoginError('Firebase configuration error. Please contact admin.');
+          console.error('Firebase error details:', result.error);
+        } else {
+          setLoginError(result.error || 'Login failed. Please try again.');
+        }
       } else if (result.token && result.admin) {
         login(result.token, result.admin);
+        navigate('/admin/workshops', { replace: true });
       } else {
-        setLoginError('Login failed');
+        setLoginError('Login failed. Please try again.');
       }
-    } catch (err) {
-      setLoginError('An error occurred. Please try again.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setLoginError('Network error. Please check your connection and try again.');
     } finally {
       setLoginLoading(false);
     }
-  }, [loginEmail, loginPassword, login]);
+  }, [loginEmail, loginPassword, login, navigate]);
 
   // Handle signup
   const handleSignup = useCallback(async (e: React.FormEvent) => {
