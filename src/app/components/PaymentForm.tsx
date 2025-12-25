@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { db } from '../../admin/config/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { generatePDFBill } from '../../utils/billGenerator';
 
 interface PaymentFormProps {
   registrationData: {
@@ -43,6 +44,7 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
   const [step, setStep] = useState<'payment' | 'processing' | 'success'>('payment');
   const [isProcessing, setIsProcessing] = useState(false);
   const [registrationId, setRegistrationId] = useState('');
+  const [paymentId, setPaymentId] = useState('');
   const [error, setError] = useState('');
 
   // Load Razorpay script on mount
@@ -70,7 +72,7 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
 
       // Razorpay options
       const options = {
-        key: 'rzp_test_RvTs4VWeYUMXtm', // Your test key
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // From environment variables
         amount: registrationData.amount, // Already in paise
         currency: 'INR',
         name: 'Niklaus Solutions',
@@ -113,6 +115,9 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
       // Save to registrations collection with payment details
       const registrationsRef = collection(db, 'registrations');
       
+      const payId = paymentResponse.razorpay_payment_id || 'test_payment';
+      setPaymentId(payId);
+
       const registrationData_: any = {
         fullName: registrationData.fullName,
         email: registrationData.email,
@@ -122,7 +127,7 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
         workshopTitle: registrationData.workshopTitle,
         amount: registrationData.amount / 100, // Store in rupees
         registrationId: regId,
-        paymentId: paymentResponse.razorpay_payment_id || 'test_payment',
+        paymentId: payId,
         paymentStatus: 'completed',
         createdAt: new Date().toISOString(),
         timestamp: new Date().getTime(),
@@ -147,8 +152,22 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
   };
 
   const downloadBill = async () => {
-    // Generate a simple PDF bill or show a message
-    alert(`Bill for Registration ID: ${registrationId}\n\nYou can access your bill from your account dashboard.`);
+    try {
+      generatePDFBill({
+        registrationId: registrationId,
+        fullName: registrationData.fullName,
+        email: registrationData.email,
+        phone: registrationData.phone,
+        organization: registrationData.organization,
+        workshopTitle: registrationData.workshopTitle,
+        amount: registrationData.amount / 100, // Convert from paise to rupees
+        paymentDate: new Date().toISOString(),
+        paymentId: paymentId,
+      });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      alert('Failed to generate bill. Please try again.');
+    }
   };
 
   if (step === 'success') {

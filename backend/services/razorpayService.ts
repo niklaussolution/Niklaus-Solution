@@ -3,8 +3,12 @@ import crypto from 'crypto';
 
 // Initialize Razorpay instance with credentials from environment variables
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_RvTs4VWeYUMXtm',
-  key_secret: process.env.RAZORPAY_SECRET_KEY || 'VrYIlahgCCDKkb0ffkEEHl8K',
+  key_id: process.env.RAZORPAY_KEY_ID || (() => {
+    throw new Error('RAZORPAY_KEY_ID environment variable is not set');
+  })(),
+  key_secret: process.env.RAZORPAY_SECRET_KEY || (() => {
+    throw new Error('RAZORPAY_SECRET_KEY environment variable is not set');
+  })(),
 });
 
 interface PaymentOrderParams {
@@ -63,10 +67,11 @@ export function verifyPaymentSignature(params: VerifyPaymentParams): boolean {
     const { orderId, paymentId, signature } = params;
 
     // Create signature hash
-    const hmac = crypto.createHmac(
-      'sha256',
-      process.env.RAZORPAY_SECRET_KEY || 'VrYIlahgCCDKkb0ffkEEHl8K'
-    );
+    const secretKey = process.env.RAZORPAY_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error('RAZORPAY_SECRET_KEY environment variable is not set');
+    }
+    const hmac = crypto.createHmac('sha256', secretKey);
     hmac.update(`${orderId}|${paymentId}`);
     const generatedSignature = hmac.digest('hex');
 
