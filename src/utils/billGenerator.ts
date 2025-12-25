@@ -168,13 +168,46 @@ a { color: #ff9500; text-decoration: none; }
     jsPDF: { orientation: 'portrait' as any, unit: 'mm', format: 'a4' },
   };
 
-  html2pdf()
-    .set(opt)
-    .from(htmlContent)
-    .save()
-    .catch((error: any) => {
-      console.error('PDF generation error:', error);
-    });
+  // Create an iframe to render HTML without affecting main page layout
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
+  try {
+    // Write HTML content to iframe document
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(htmlContent);
+      iframeDoc.close();
+
+      // Wait for iframe content to fully load before generating PDF
+      iframe.onload = () => {
+        setTimeout(() => {
+          html2pdf()
+            .set(opt)
+            .from(iframeDoc.body)
+            .save()
+            .finally(() => {
+              // Clean up iframe
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+              }
+            });
+        }, 500);
+      };
+
+      // Trigger load event
+      if (iframeDoc.readyState === 'complete') {
+        iframe.onload?.(new Event('load'));
+      }
+    }
+  } catch (err) {
+    console.error('Error in PDF generation:', err);
+    if (document.body.contains(iframe)) {
+      document.body.removeChild(iframe);
+    }
+  }
 };
 
 export const generateAndEmailBill = async (billData: BillData) => {
