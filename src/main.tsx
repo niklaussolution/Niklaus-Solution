@@ -11,6 +11,7 @@ import { PricingManagement } from "./admin/pages/PricingManagement";
 import { RegistrationsManagement } from "./admin/pages/RegistrationsManagement";
 import { TrainersManagement } from "./admin/pages/TrainersManagement";
 import { TestimonialsManagement } from "./admin/pages/TestimonialsManagement";
+import { StudentProjectsManagement } from "./admin/pages/StudentProjectsManagement";
 import { FeaturesManagement } from "./admin/pages/FeaturesManagement";
 import { ScholarshipsManagement } from "./admin/pages/ScholarshipsManagement";
 import { CompaniesManagement } from "./admin/pages/CompaniesManagement";
@@ -90,6 +91,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <TestimonialsManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/student-projects"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <StudentProjectsManagement />
             </ProtectedRoute>
           }
         />

@@ -5,6 +5,7 @@ import { WhyChooseSection } from "./components/WhyChooseSection";
 import { TrainersSection } from "./components/TrainersSection";
 import { TestimonialsSection } from "./components/TestimonialsSection";
 import { PricingSection } from "./components/PricingSection";
+import { StudentProjectsSection } from "./components/StudentProjectsSection";
 import { FreeTrialSection } from "./components/FreeTrialSection";
 import { JourneySection } from "./components/JourneySection";
 import { KeyFeaturesSection } from "./components/KeyFeaturesSection";
@@ -24,6 +25,7 @@ export default function App() {
       <WorkshopsSection />
       <WhyChooseSection />
       <PricingSection />
+      <StudentProjectsSection />
       <FreeTrialSection />
       <JourneySection />
       <KeyFeaturesSection />

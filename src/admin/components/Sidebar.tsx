@@ -21,6 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = tru
     { path: '/admin/registrations', label: 'Registrations', icon: '📋' },
     { path: '/admin/trainers', label: 'Trainers', icon: '👨‍🏫' },
     { path: '/admin/testimonials', label: 'Testimonials', icon: '⭐' },
+    { path: '/admin/student-projects', label: 'Student Projects', icon: '🎨' },
     { path: '/admin/content', label: 'Content Management', icon: '📝' },
     { path: '/admin/journeys', label: 'Learner Journeys', icon: '🚀' },
     { path: '/admin/videos', label: 'Video Management', icon: '🎥' },

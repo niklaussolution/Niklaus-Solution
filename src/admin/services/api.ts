@@ -1322,4 +1322,66 @@ export const api = {
       return { error: error.message };
     }
   },
+
+  // Student Projects
+  getStudentProjects: async () => {
+    try {
+      const q = query(collection(db, 'studentProjects'), orderBy('order', 'asc'));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getStudentProjectById: async (id: string) => {
+    try {
+      const docRef = doc(db, 'studentProjects', id);
+      const docSnap = await getDoc(docRef);
+      return { data: { id: docSnap.id, ...docSnap.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  createStudentProject: async (data: any) => {
+    try {
+      const projectsRef = collection(db, 'studentProjects');
+      const docRef = await addDoc(projectsRef, {
+        ...data,
+        isActive: true,
+        order: data.order || 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      const newDoc = await getDoc(docRef);
+      return { data: { id: newDoc.id, ...newDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  updateStudentProject: async (id: string, data: any) => {
+    try {
+      const projectRef = doc(db, 'studentProjects', id);
+      await updateDoc(projectRef, {
+        ...data,
+        updatedAt: Date.now(),
+      });
+      const updatedDoc = await getDoc(projectRef);
+      return { data: { id: updatedDoc.id, ...updatedDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  deleteStudentProject: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'studentProjects', id));
+      return { message: 'Student project deleted successfully' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
 };
+

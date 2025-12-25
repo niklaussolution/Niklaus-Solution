@@ -26,6 +26,7 @@ import {
   Trash2,
   Upload,
   Image as ImageIcon,
+  Edit,
 } from 'lucide-react';
 import { initializeAllContent } from '../utils/contentInitializer';
 
@@ -2016,27 +2017,147 @@ export const ContentManagement: React.FC = () => {
                   )}
                 </div>
 
-                {/* Companies List */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {/* Companies List with Edit Option */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {companiesContent.companies.map((company) => (
                     <div
                       key={company.id}
-                      className="flex flex-col items-center gap-2 p-4 border border-gray-300 rounded-lg"
+                      className={`flex flex-col gap-3 p-4 border-2 rounded-lg transition ${
+                        editingCompanyId === company.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 bg-white'
+                      }`}
                     >
-                      <img
-                        src={company.logoUrl}
-                        alt={company.name}
-                        className="h-16 w-16 object-contain"
-                      />
-                      <p className="text-sm font-medium text-center">{company.name}</p>
-                      <button
-                        onClick={() =>
-                          handleDeleteCompanyLogo(company.logoUrl, company.id)
-                        }
-                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-xs w-full"
-                      >
-                        Remove
-                      </button>
+                      {editingCompanyId === company.id ? (
+                        <>
+                          {/* Edit Mode */}
+                          <div className="space-y-3">
+                            {/* Logo URL Input */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Logo URL
+                              </label>
+                              <input
+                                type="text"
+                                value={company.logoUrl}
+                                onChange={(e) => {
+                                  const updatedCompanies = companiesContent.companies.map((c) =>
+                                    c.id === company.id ? { ...c, logoUrl: e.target.value } : c
+                                  );
+                                  setCompaniesContent({
+                                    ...companiesContent,
+                                    companies: updatedCompanies,
+                                  });
+                                }}
+                                placeholder="https://example.com/logo.png"
+                                className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+
+                            {/* Company Name Input */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Company Name
+                              </label>
+                              <input
+                                type="text"
+                                value={company.name}
+                                onChange={(e) => {
+                                  const updatedCompanies = companiesContent.companies.map((c) =>
+                                    c.id === company.id ? { ...c, name: e.target.value } : c
+                                  );
+                                  setCompaniesContent({
+                                    ...companiesContent,
+                                    companies: updatedCompanies,
+                                  });
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded focus:outline-none focus:border-blue-500 font-medium"
+                              />
+                            </div>
+
+                            {/* Company ID (Read-only) */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Company ID
+                              </label>
+                              <input
+                                type="text"
+                                value={company.id}
+                                disabled
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded bg-gray-100 text-gray-600"
+                              />
+                            </div>
+
+                            {/* Logo Preview */}
+                            {company.logoUrl && (
+                              <div className="flex items-center justify-center h-20 bg-gray-100 rounded">
+                                <img
+                                  src={company.logoUrl}
+                                  alt={company.name}
+                                  className="max-h-16 max-w-full object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setEditingCompanyId(null)}
+                                className="flex-1 px-2 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition text-xs font-semibold"
+                              >
+                                Done
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingCompanyId(null);
+                                }}
+                                className="flex-1 px-2 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition text-xs font-semibold"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {/* View Mode */}
+                          <div className="flex items-center justify-center h-16 bg-gray-100 rounded">
+                            {company.logoUrl ? (
+                              <img
+                                src={company.logoUrl}
+                                alt={company.name}
+                                className="max-h-14 max-w-full object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <span className="text-gray-400 text-xs">No logo</span>
+                            )}
+                          </div>
+                          <p className="text-sm font-medium text-center text-gray-900">{company.name}</p>
+                          <p className="text-xs text-gray-500 text-center break-all">{company.id}</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditingCompanyId(company.id)}
+                              className="flex-1 px-2 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-xs flex items-center justify-center gap-1 font-semibold"
+                            >
+                              <Edit size={14} /> Edit
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeleteCompanyLogo(company.logoUrl, company.id)
+                              }
+                              className="flex-1 px-2 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition text-xs flex items-center justify-center gap-1 font-semibold"
+                            >
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

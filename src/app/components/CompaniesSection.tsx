@@ -1,81 +1,56 @@
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef } from "react";
+import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { db } from "../../admin/config/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 interface Company {
-  id: number;
+  id: string;
   name: string;
-  logo: string;
+  logoUrl?: string;
 }
 
-const companies: Company[] = [
-  {
-    id: 1,
-    name: "TCS",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Tata_Consultancy_Services_Logo.svg/1200px-Tata_Consultancy_Services_Logo.svg.png",
-  },
-  {
-    id: 2,
-    name: "Zoho",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Zoho_logo.svg/1200px-Zoho_logo.svg.png",
-  },
-  {
-    id: 3,
-    name: "Instamojo",
-    logo: "https://upload.wikimedia.org/wikipedia/en/3/30/Instamojo_logo.png",
-  },
-  {
-    id: 4,
-    name: "Amazon",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/1200px-Amazon_logo.svg.png",
-  },
-  {
-    id: 5,
-    name: "PayPal",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Paypal_2014_logo.png/1200px-Paypal_2014_logo.png",
-  },
-  {
-    id: 6,
-    name: "Wipro",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Wipro_Logo.svg/1200px-Wipro_Logo.svg.png",
-  },
-  {
-    id: 7,
-    name: "Oracle",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Oracle_logo.svg/1200px-Oracle_logo.svg.png",
-  },
-  {
-    id: 8,
-    name: "Flipkart",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flipkart_logo.svg/1200px-Flipkart_logo.svg.png",
-  },
-  {
-    id: 9,
-    name: "Microsoft",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/1200px-Microsoft_logo_%282012%29.svg.png",
-  },
-  {
-    id: 10,
-    name: "Capgemini",
-    logo: "https://upload.wikimedia.org/wikipedia/en/c/c1/Capgemini_logo.png",
-  },
-  {
-    id: 11,
-    name: "Lenovo",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Lenovo_logo_2015.svg/1200px-Lenovo_logo_2015.svg.png",
-  },
-  {
-    id: 12,
-    name: "Paytm",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/e/e1/Paytm_logo.svg/1200px-Paytm_logo.svg.png",
-  },
-];
+interface CompaniesContent {
+  heading: string;
+  subheading: string;
+  motivationalText: string;
+  companies: Company[];
+  updatedAt?: number;
+}
 
 export function CompaniesSection() {
+  const [content, setContent] = useState<CompaniesContent | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setLoading(true);
+        const contentRef = doc(db, 'content', 'companies');
+        const docSnap = await getDoc(contentRef);
+        
+        if (docSnap.exists()) {
+          setContent(docSnap.data() as CompaniesContent);
+        } else {
+          setError('Companies content not found');
+        }
+      } catch (err) {
+        console.error('Error fetching companies content:', err);
+        setError('Failed to load companies');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContent();
+  }, []);
+
+  const companies = content?.companies || [];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -149,14 +124,40 @@ export function CompaniesSection() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Our Learners Work At
+            {content?.heading || "Our Learners Work At"}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Join thousands of successful learners now working at leading companies worldwide
+            {content?.subheading || "Join thousands of successful learners now working at leading companies worldwide"}
           </p>
         </motion.div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center gap-2 text-gray-600">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-orange-500 border-t-transparent"></div>
+              Loading companies...
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 flex items-center gap-2 text-red-700">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && companies.length === 0 && !error && (
+          <div className="text-center py-12">
+            <p className="text-gray-600">No companies available at the moment.</p>
+          </div>
+        )}
+
         {/* Companies Carousel */}
+        {!loading && companies.length > 0 && (
         <div className="relative">
           {/* Companies Grid */}
           <div 
@@ -175,12 +176,16 @@ export function CompaniesSection() {
                   className="group"
                 >
                   <div className="h-32 md:h-40 bg-white rounded-2xl border-2 border-teal-200 hover:border-orange-500 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center p-6 cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-teal-50 hover:scale-105">
-                    <img
-                      src={company.logo}
-                      alt={company.name}
-                      className="max-w-full max-h-24 object-contain grayscale group-hover:grayscale-0 transition-all duration-300 filter group-hover:drop-shadow-md"
-                      title={company.name}
-                    />
+                    {company.logoUrl ? (
+                      <img
+                        src={company.logoUrl}
+                        alt={company.name}
+                        className="max-w-full max-h-24 object-contain transition-all duration-300 filter group-hover:drop-shadow-md"
+                        title={company.name}
+                      />
+                    ) : (
+                      <span className="text-gray-700 font-semibold text-center">{company.name}</span>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -225,8 +230,10 @@ export function CompaniesSection() {
             </button>
           </div>
         </div>
+        )}
 
         {/* Bottom CTA */}
+        {!loading && companies.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -236,7 +243,7 @@ export function CompaniesSection() {
         >
           <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full px-6 py-3 mb-6">
             <p className="text-orange-700 font-semibold text-xs sm:text-sm">
-              🚀 Be part of this success story
+              {content?.motivationalText || "🚀 Be part of this success story Start Your Journey Today"}
             </p>
           </div>
           <button
@@ -253,6 +260,7 @@ export function CompaniesSection() {
             </svg>
           </button>
         </motion.div>
+        )}
       </div>
     </section>
   );
