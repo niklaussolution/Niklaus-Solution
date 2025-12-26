@@ -42,20 +42,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       to_email: 'niklaussolution@gmail.com',
     };
 
-    // EmailJS REST API endpoint
-    const url = `https://api.emailjs.com/api/v1.0/email/send`;
+    // EmailJS REST API endpoint - using server-side authentication
+    const url = `https://api.emailjs.com/api/v1.0/email/send/`;
 
-    const response = await axios.post(url, {
-      service_id: serviceID,
-      template_id: templateID,
-      user_id: publicKey,
-      accessToken: privateKey,
-      template_params: templateParams,
-    });
+    const response = await axios.post(url, 
+      {
+        service_id: serviceID,
+        template_id: templateID,
+        user_id: publicKey,
+        template_params: templateParams,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        auth: {
+          username: publicKey,
+          password: privateKey,
+        }
+      }
+    );
 
     return res.status(200).json({ success: true, message: 'Email sent successfully', data: response.data });
   } catch (error: any) {
     console.error('EmailJS API error:', error?.response?.data || error.message);
-    return res.status(500).json({ error: error?.response?.data || error.message });
+    return res.status(500).json({ error: error?.response?.data?.message || error.message || 'Failed to send email' });
   }
 }
