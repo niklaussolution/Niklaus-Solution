@@ -20,15 +20,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const details = req.body;
+    
     // Fetch EmailJS credentials from environment variables
     const serviceID = process.env.EMAILJS_SERVICE_ID;
     const templateID = process.env.EMAILJS_TEMPLATE_ID;
     const publicKey = process.env.EMAILJS_PUBLIC_KEY;
     const privateKey = process.env.EMAILJS_PRIVATE_KEY;
 
+    // Log for debugging
+    console.log('EmailJS Credentials Status:', {
+      serviceID: !!serviceID,
+      templateID: !!templateID,
+      publicKey: !!publicKey,
+      privateKey: !!privateKey,
+    });
+
     if (!serviceID || !templateID || !publicKey || !privateKey) {
       console.error('Missing EmailJS credentials');
-      return res.status(500).json({ error: 'Missing EmailJS credentials' });
+      return res.status(500).json({ error: 'Missing EmailJS credentials in environment' });
     }
 
     // Format registration details for the email
@@ -42,30 +51,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       to_email: 'niklaussolution@gmail.com',
     };
 
-    // EmailJS REST API endpoint - using server-side authentication
-    const url = `https://api.emailjs.com/api/v1.0/email/send/`;
+    // EmailJS REST API endpoint
+    const url = `https://api.emailjs.com/api/v1.0/email/send`;
 
-    const response = await axios.post(url, 
-      {
-        service_id: serviceID,
-        template_id: templateID,
-        user_id: publicKey,
-        template_params: templateParams,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        auth: {
-          username: publicKey,
-          password: privateKey,
-        }
+    console.log('Sending to EmailJS with service:', serviceID);
+
+    const response = await axios.post(url, {
+      service_id: serviceID,
+      template_id: templateID,
+      user_id: publicKey,
+      accessToken: privateKey,
+      template_params: templateParams,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
       }
-    );
+    });
 
+    console.log('EmailJS Response:', response.status);
     return res.status(200).json({ success: true, message: 'Email sent successfully', data: response.data });
   } catch (error: any) {
-    console.error('EmailJS API error:', error?.response?.data || error.message);
-    return res.status(500).json({ error: error?.response?.data?.message || error.message || 'Failed to send email' });
+    console.error('EmailJS API error:', {
+      status: error?.response?.status,
+      data: error?.response?.data,
+      message: error.message,
+    });
+    return res.status(500).json({ 
+      error: error?.response?.data?.message || error.message || 'Failed to send email',
+      details: error?.response?.data
+    });
   }
 }
