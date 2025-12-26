@@ -1,18 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import axios from 'axios';
+import nodemailer from 'nodemailer';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('=== API Called ===');
   console.log('Method:', req.method);
-  console.log('Body:', req.body);
+  console.log('Body:', JSON.stringify(req.body));
   
-  // CORS headers - MUST be set first
+  // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, PATCH, DELETE, POST, PUT');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
     console.log('OPTIONS request - returning 200');
     res.status(200).end();
@@ -28,94 +27,88 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const details = req.body;
     console.log('Registration details received:', JSON.stringify(details));
     
-    // Fetch EmailJS credentials from environment variables
-    const serviceID = process.env.EMAILJS_SERVICE_ID;
-    const templateID = process.env.EMAILJS_TEMPLATE_ID;
-    const publicKey = process.env.EMAILJS_PUBLIC_KEY;
-    const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+    // Get email credentials from environment
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASSWORD;
+    const emailTo = 'niklaussolution@gmail.com';
 
-    console.log('=== Environment Variables Check ===');
-    console.log('serviceID exists:', !!serviceID, 'value:', serviceID);
-    console.log('templateID exists:', !!templateID, 'value:', templateID);
-    console.log('publicKey exists:', !!publicKey, 'value:', publicKey);
-    console.log('privateKey exists:', !!privateKey, 'value:', privateKey);
+    console.log('=== Email Service Setup ===');
+    console.log('emailUser exists:', !!emailUser);
+    console.log('emailPass exists:', !!emailPass);
 
-    if (!serviceID || !templateID || !publicKey || !privateKey) {
-      console.error('❌ Missing EmailJS credentials');
+    if (!emailUser || !emailPass) {
+      console.error('❌ Missing email credentials');
       return res.status(500).json({ 
-        error: 'Missing EmailJS credentials',
-        provided: {
-          serviceID: !!serviceID,
-          templateID: !!templateID,
-          publicKey: !!publicKey,
-          privateKey: !!privateKey,
-        }
+        error: 'Email service not configured',
+        details: 'Missing EMAIL_USER or EMAIL_PASSWORD environment variables'
       });
     }
 
-    console.log('✅ All credentials found');
+    // Create transporter using Gmail SMTP
+    console.log('Creating nodemailer transporter...');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
 
-    // Format registration details for the email
+    // Verify transporter connection
+    console.log('Verifying transporter connection...');
+    try {
+      await transporter.verify();
+      console.log('✅ Transporter verified successfully');
+    } catch (verifyError: any) {
+      console.error('❌ Transporter verification failed:', verifyError.message);
+      throw verifyError;
+    }
+
+    // Format email content
     const registrationDetailsString = Object.entries(details)
       .map(([key, value]) => `${key}: ${value}`)
       .join('\n');
 
-    const templateParams = {
-      ...details,
-      registration_details: registrationDetailsString,
-      to_email: 'niklaussolution@gmail.com',
+    const mailOptions = {
+      from: emailUser,
+      to: emailTo,
+      subject: `New Workshop Registration - ${details.workshop || 'Workshop'}`,
+      html: `
+        <h2>New Registration Received</h2>
+        <p><strong>Registration Details:</strong></p>
+        <pre>${registrationDetailsString}</pre>
+        <hr>
+        <p><small>This email was sent from your workshop registration system.</small></p>
+      `,
+      text: `New Registration:\n\n${registrationDetailsString}`,
     };
 
-    console.log('Template params prepared:', JSON.stringify(templateParams));
+    console.log('📧 Sending email to:', emailTo);
+    console.log('Email subject:', mailOptions.subject);
 
-    // EmailJS REST API endpoint
-    const url = `https://api.emailjs.com/api/v1.0/email/send`;
+    const info = await transporter.sendMail(mailOptions);
 
-    console.log('🔄 Sending request to EmailJS...');
-    console.log('URL:', url);
-    console.log('Service ID:', serviceID);
-    console.log('Template ID:', templateID);
+    console.log('✅ Email sent successfully');
+    console.log('Message ID:', info.messageId);
+    console.log('Response:', info.response);
 
-    const response = await axios.post(url, {
-      service_id: serviceID,
-      template_id: templateID,
-      user_id: publicKey,
-      accessToken: privateKey,
-      template_params: templateParams,
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    console.log('✅ EmailJS Response Status:', response.status);
-    console.log('✅ EmailJS Response Data:', JSON.stringify(response.data));
-    
     return res.status(200).json({ 
       success: true, 
-      message: 'Email sent successfully', 
-      data: response.data 
+      message: 'Email sent successfully',
+      messageId: info.messageId
     });
+
   } catch (error: any) {
     console.error('❌ ERROR DETAILS:');
     console.error('Error Type:', error.constructor.name);
     console.error('Error Message:', error.message);
     console.error('Error Code:', error.code);
-    
-    if (error.response) {
-      console.error('Response Status:', error.response.status);
-      console.error('Response Data:', JSON.stringify(error.response.data));
-      console.error('Response Headers:', JSON.stringify(error.response.headers));
-    } else if (error.request) {
-      console.error('Request made but no response:', error.request);
-    } else {
-      console.error('Error setting up request:', error.message);
-    }
+    console.error('Full Error:', JSON.stringify(error, null, 2));
     
     return res.status(500).json({ 
-      error: error?.response?.data?.message || error.message || 'Failed to send email',
-      details: error?.response?.data,
-      errorType: error.constructor.name
+      error: error.message || 'Failed to send email',
+      errorType: error.constructor.name,
+      code: error.code
     });
   }
 }
