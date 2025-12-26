@@ -180,12 +180,28 @@ export function WorkshopsSection() {
     setIsSubmitting(true);
     try {
       const registrationsRef = collection(db, "registrations");
-      
       await addDoc(registrationsRef, {
         ...registrationData,
         createdAt: new Date().getTime(),
         status: "completed",
       });
+
+      // Send registration details to team via EmailJS API (Vercel serverless function)
+      try {
+        const payload = {
+          ...registrationData,
+          notes: 'Real registration notification',
+        };
+        const response = await fetch('/api/registrations/notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json().catch(() => ({}));
+        console.log('EmailJS notification response:', response.status, result);
+      } catch (emailError) {
+        console.error('Failed to send registration notification email:', emailError);
+      }
 
       setShowPaymentForm(false);
       setSubmitSuccess(true);
@@ -419,6 +435,43 @@ export function WorkshopsSection() {
 
                 {/* Modal Body */}
                 <form onSubmit={handleRegistrationSubmit} className="p-6 space-y-4">
+                            {/* Test Notification Button */}
+                            <button
+                              type="button"
+                              className="w-full mb-2 bg-gradient-to-r from-gray-200 to-orange-100 text-orange-700 px-6 py-3 rounded-xl hover:from-orange-300 hover:to-orange-200 transition-all shadow flex items-center justify-center gap-2 border border-orange-200"
+                              onClick={async () => {
+                                const payload = {
+                                  ...registrationData,
+                                  workshopId: selectedWorkshop?.id || '',
+                                  workshopTitle: selectedWorkshop?.title || '',
+                                  price: selectedWorkshop?.price || 0,
+                                  notes: 'Test registration notification (no payment)'
+                                };
+                                console.log('Sending test notification payload:', payload);
+                                try {
+                                  const response = await fetch('/api/registrations/test-notification', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload),
+                                  });
+                                  const result = await response.json().catch(() => ({}));
+                                  console.log('Test notification response:', response.status, result);
+                                  if (response.ok) {
+                                    alert('Test notification sent! Check your team email.');
+                                  } else {
+                                    alert('Failed to send test notification.');
+                                  }
+                                } catch (err) {
+                                  console.error('Test notification error:', err);
+                                  alert('Failed to send test notification.');
+                                }
+                              }}
+                            >
+                              <span style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                                Test Email Notification (No Payment)
+                              </span>
+                            </button>
                   {errors.submit && (
                     <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
                       {errors.submit}

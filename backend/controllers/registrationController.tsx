@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getDatabase } from '../config/database';
-import { IRegistration, REGISTRATIONS_COLLECTION } from '../models/Registration';
+import { getDatabase } from '../config/database.js';
+import { IRegistration, REGISTRATIONS_COLLECTION } from '../models/Registration.js';
 
 const db = getDatabase();
 
@@ -136,6 +136,17 @@ export const createRegistration = async (req: Request, res: Response) => {
 
     const docRef = await db.collection(REGISTRATIONS_COLLECTION).add(newRegistration);
 
+    // Forward registration details to team member using backend emailjs utility
+    try {
+      const { forwardRegistrationToTeam } = await import('../utils/emailForwarder.js');
+      await forwardRegistrationToTeam({
+        ...newRegistration,
+        id: docRef.id,
+      });
+    } catch (emailError) {
+      console.error('Failed to forward registration to team:', emailError);
+      // Optionally, you can still proceed even if email fails
+    }
     res.status(201).json({
       success: true,
       message: 'Registration created successfully',
