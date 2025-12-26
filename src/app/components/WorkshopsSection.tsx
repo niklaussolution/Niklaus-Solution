@@ -449,7 +449,7 @@ export function WorkshopsSection() {
                                 };
                                 console.log('Sending test notification payload:', payload);
                                 try {
-                                  const response = await fetch('/api/registrations/test-notification', {
+                                  const response = await fetch('/api/registrations/notification', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(payload),

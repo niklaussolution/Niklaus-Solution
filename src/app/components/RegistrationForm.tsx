@@ -33,12 +33,16 @@ export function RegistrationForm() {
         notes: 'Test registration notification (no payment)'
       };
       try {
-        await fetch('/api/registrations/test-notification', {
+        const response = await fetch('/api/registrations/notification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(testData),
         });
-        alert('Test notification sent! Check your team email.');
+        if (response.ok) {
+          alert('Test notification sent! Check your team email.');
+        } else {
+          alert(`Failed: ${response.status}`);
+        }
       } catch (err) {
         alert('Failed to send test notification.');
       }
