@@ -57,7 +57,10 @@ export function Navbar() {
       <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
-            <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
+            <div className="flex-shrink-0 flex items-center">
+              <div className="w-8 md:w-10 h-8 md:h-10 bg-gray-200 rounded animate-pulse mr-3"></div>
+              <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
+            </div>
           </div>
         </div>
       </nav>
@@ -69,7 +72,12 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center">
+            <img 
+              src="/icons/logo.png" 
+              alt="Niklaus Solutions Logo" 
+              className="h-8 md:h-10 mr-3"
+            />
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">
               {headerContent.logo} <span className="text-orange-500">{headerContent.logoHighlight}</span>
             </h1>

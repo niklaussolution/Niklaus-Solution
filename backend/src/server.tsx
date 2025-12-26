@@ -21,6 +21,7 @@ import scholarshipRoutes from '../routes/scholarships.js';
 import companyRoutes from '../routes/companies.js';
 import faqRoutes from '../routes/faqs.js';
 import paymentRoutes from '../routes/payments.js';
+import certificateRoutes from '../routes/certificates.js';
 
 const workspaceEnvPath = path.resolve(__dirname, '..', '..', '.env');
 const backendEnvPath = path.resolve(__dirname, '..', '.env');
@@ -53,6 +54,7 @@ app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/faqs', faqRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/certificates', certificateRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {

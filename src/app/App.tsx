@@ -16,6 +16,7 @@ import { Footer } from "./components/Footer";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { VideoCarouselSection } from "./components/VideoCarouselSection";
+import { CertificateDownload } from "./pages/CertificateDownload";
 
 export default function App() {
   return (
@@ -35,6 +36,10 @@ export default function App() {
       <TrainersSection />
       <TestimonialsSection />
       <VideoCarouselSection />
+
+      {/* Certificates Section */}
+      <CertificateDownload />
+
       <Footer />
       <WhatsAppButton />
       <ScrollToTop />

@@ -134,7 +134,7 @@ export function generateOrganizationSchema() {
     url: 'https://theniklaus.com',
     description:
       'Industry-oriented tech workshops and training programs in cybersecurity, full stack development, AI/ML, and more.',
-    logo: 'https://theniklaus.com/logo.png',
+    logo: '/icons/logo.png',
     sameAs: [
       'https://www.facebook.com/niklaussolutions',
       'https://twitter.com/NiklausSolutions',

@@ -18,6 +18,7 @@ import { CompaniesManagement } from "./admin/pages/CompaniesManagement";
 import { FAQManagement } from "./admin/pages/FAQManagement";
 import { ContentManagement } from "./admin/pages/ContentManagement";
 import { VideoManagement } from "./admin/pages/VideoManagement";
+import { CertificatesManagement } from "./admin/pages/CertificatesManagement";
 
 import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
@@ -28,6 +29,7 @@ import { TermsAndConditions } from "./app/pages/TermsAndConditions";
 import { CancellationsAndRefunds } from "./app/pages/CancellationsAndRefunds";
 import { PrivacyPolicy } from "./app/pages/PrivacyPolicy";
 import { Contact } from "./app/pages/Contact";
+/* import MyCertificates from "./app/pages/MyCertificates"; */
 import "./styles/index.css";
 
 // ScrollToTop component to handle route changes
@@ -48,6 +50,8 @@ createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/contact" element={<Contact />} />
+        {/* Redirect legacy /my-certificates route to the Certificates section on Home */}
+        <Route path="/my-certificates" element={<Navigate to="/#certificates" replace />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/cancellations-and-refunds" element={<CancellationsAndRefunds />} />
@@ -155,6 +159,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <VideoManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/certificates"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <CertificatesManagement />
             </ProtectedRoute>
           }
         />
