@@ -21,32 +21,6 @@ const WORKSHOP_PRICING: Record<string, number> = {
 };
 
 export function RegistrationForm() {
-    // Test email notification handler
-    const handleTestNotification = async () => {
-      const testData = {
-        fullName: formData.fullName || 'Test User',
-        email: formData.email || 'test@example.com',
-        phone: formData.phone || '9999999999',
-        organization: formData.organization || 'Test Org',
-        workshop: formData.workshop || 'Ethical Hacking',
-        amount: WORKSHOP_PRICING[formData.workshop] || WORKSHOP_PRICING['Ethical Hacking'],
-        notes: 'Test registration notification (no payment)'
-      };
-      try {
-        const response = await fetch('/api/registrations/notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(testData),
-        });
-        if (response.ok) {
-          alert('Test notification sent! Check your team email.');
-        } else {
-          alert(`Failed: ${response.status}`);
-        }
-      } catch (err) {
-        alert('Failed to send test notification.');
-      }
-    };
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -364,15 +338,6 @@ export function RegistrationForm() {
               Proceed to Payment
             </button>
 
-            {/* Test Notification Button */}
-            <button
-              type="button"
-              className="w-full mt-2 bg-gradient-to-r from-gray-200 to-orange-100 text-orange-700 px-6 py-3 rounded-xl hover:from-orange-300 hover:to-orange-200 transition-all shadow flex items-center justify-center gap-2 border border-orange-200"
-              onClick={handleTestNotification}
-            >
-              <CheckCircle size={18} />
-              Test Email Notification (No Payment)
-            </button>
 
             <p className="text-sm text-gray-500 text-center">
               Secure payment powered by Razorpay | Your data is encrypted and safe
