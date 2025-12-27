@@ -75,7 +75,7 @@ export const generatePDFBill = (billData: BillData) => {
   doc.setFont('helvetica', 'bold');
   doc.text('Service Description', margin + 2, y + 7);
   doc.text('Quantity', pageWidth / 2, y + 7, { align: 'center' });
-  doc.text('Amount (₹)', pageWidth - margin - 2, y + 7, { align: 'right' });
+  doc.text('Amount', pageWidth - margin - 2, y + 7, { align: 'right' });
 
   // Table Row
   y += 12;
@@ -88,7 +88,7 @@ export const generatePDFBill = (billData: BillData) => {
   doc.text('1', pageWidth / 2, y + 8, { align: 'center' });
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(orange[0], orange[1], orange[2]);
-  doc.text(`₹${billData.amount.toFixed(2)}`, pageWidth - margin - 2, y + 8, { align: 'right' });
+  doc.text(`${billData.amount.toFixed(2)}`, pageWidth - margin - 2, y + 8, { align: 'right' });
 
   // Total
   y += 18;
@@ -99,7 +99,7 @@ export const generatePDFBill = (billData: BillData) => {
   doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
   doc.text('Total Amount:', pageWidth - margin - 60, y + 8);
   doc.setTextColor(orange[0], orange[1], orange[2]);
-  doc.text(`₹${billData.amount.toFixed(2)}`, pageWidth - margin - 2, y + 8, { align: 'right' });
+  doc.text(`${billData.amount.toFixed(2)}`, pageWidth - margin - 2, y + 8, { align: 'right' });
 
   // Payment Status
   y += 16;
