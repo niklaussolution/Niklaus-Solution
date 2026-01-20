@@ -84,7 +84,7 @@ export const companyController = {
         return { success: false, error: 'Company not found' };
       }
 
-      // Validation
+      // Validations
       if (data.contact?.email && !data.contact.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
         return { success: false, error: 'Valid email is required' };
       }
