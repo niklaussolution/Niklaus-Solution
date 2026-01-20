@@ -1,0 +1,21 @@
+# Niklaus Solutions - Robots.txt for SEO
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*.env
+Disallow: /*.json
+Disallow: /node_modules/
+
+# Specific crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Crawl delay
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://theniklaus.com/sitemap.xml
