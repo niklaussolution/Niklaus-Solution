@@ -129,8 +129,6 @@ export const CertificateDownload: React.FC = () => {
             </div>
           )}
 
-          {/* Note: Verification is performed directly against Firestore (no backend required) */}
-          <p className="text-xs text-gray-500 text-center mb-4">Verification is performed directly against Firestore — no backend required.</p>
           {!certificate ? (
             <form onSubmit={handleVerifyAndDownload} className="space-y-6">
               {/* Certificate ID Input */}
@@ -219,7 +217,6 @@ export const CertificateDownload: React.FC = () => {
                 onClick={() => {
                   setCertificate(null);
                   setCertificateId('');
-                  setDateOfBirth('');
                   setSuccess('');
                 }}
                 className="w-full py-3 px-4 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
