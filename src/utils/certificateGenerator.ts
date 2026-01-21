@@ -109,7 +109,7 @@ export const generateCertificatePDF = async (certificateData: Certificate) => {
     }
 
     // Logo Centered in Orange Panel - Inside hexagon - Much bigger size
-    const logoDataUrl = await loadImageAsDataUrl('/public/icons/logo.png');
+    const logoDataUrl = await loadImageAsDataUrl('/icons/logo.png');
     if (logoDataUrl) {
       doc.addImage(logoDataUrl, 'PNG', centerX - 40, centerY - 50, 80, 80);
     }
@@ -191,7 +191,7 @@ export const generateCertificatePDF = async (certificateData: Certificate) => {
 
     // CO-FOUNDER SIGNATURE (LEFT HALF OF WHITE PANEL)
     // Load and add Co-Founder signature
-    const signature2DataUrl = await loadImageAsDataUrl('/public/signature2.png');
+    const signature2DataUrl = await loadImageAsDataUrl('/signature2.png');
     if (signature2DataUrl) {
       doc.addImage(signature2DataUrl, 'PNG', coFounderX - 18, sigY - 18, 36, 16);
     }
@@ -214,7 +214,7 @@ export const generateCertificatePDF = async (certificateData: Certificate) => {
 
     // CEO SIGNATURE (RIGHT HALF OF WHITE PANEL)
     // Load and add CEO signature
-    const signatureDataUrl = await loadImageAsDataUrl('/public/signature.png');
+    const signatureDataUrl = await loadImageAsDataUrl('/signature.png');
     if (signatureDataUrl) {
       doc.addImage(signatureDataUrl, 'PNG', ceoX - 18, sigY - 18, 36, 16);
     }
