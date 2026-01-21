@@ -184,17 +184,42 @@ export const generateCertificatePDF = async (certificateData: Certificate) => {
     doc.setTextColor(highlightBlue[0], highlightBlue[1], highlightBlue[2]);
     doc.text(certificateData.companyName || 'NIKLAUS SOLUTIONS', rightSideX + rightSideWidth / 2, currentY, { align: 'center' });
 
-    // --- 3. SIGNATURE SECTION (Only CEO) ---
+    // --- 3. SIGNATURE SECTION (Split white panel - Co-Founder Left, CEO Right) ---
     const sigY = pageHeight - 35;
-    const ceoX = rightSideX + rightSideWidth / 2;
+    const coFounderX = rightSideX + (rightSideWidth / 4);
+    const ceoX = rightSideX + (rightSideWidth * 3 / 4);
 
+    // CO-FOUNDER SIGNATURE (LEFT HALF OF WHITE PANEL)
+    // Load and add Co-Founder signature
+    const signature2DataUrl = await loadImageAsDataUrl('/public/signature2.png');
+    if (signature2DataUrl) {
+      doc.addImage(signature2DataUrl, 'PNG', coFounderX - 18, sigY - 18, 36, 16);
+    }
+
+    // Signature line for Co-Founder
+    doc.setDrawColor(darkGray[0], darkGray[1], darkGray[2]);
+    doc.setLineWidth(0.8);
+    doc.line(coFounderX - 22, sigY, coFounderX + 22, sigY);
+
+    // Co-Founder Name and Title
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TAMILSELVAN', coFounderX, sigY + 8, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(textGray[0], textGray[1], textGray[2]);
+    doc.text('CO-FOUNDER', coFounderX, sigY + 13, { align: 'center' });
+
+    // CEO SIGNATURE (RIGHT HALF OF WHITE PANEL)
     // Load and add CEO signature
     const signatureDataUrl = await loadImageAsDataUrl('/public/signature.png');
     if (signatureDataUrl) {
       doc.addImage(signatureDataUrl, 'PNG', ceoX - 18, sigY - 18, 36, 16);
     }
 
-    // Signature line
+    // Signature line for CEO
     doc.setDrawColor(darkGray[0], darkGray[1], darkGray[2]);
     doc.setLineWidth(0.8);
     doc.line(ceoX - 22, sigY, ceoX + 22, sigY);

@@ -1,5 +1,5 @@
-import { getDatabase } from '../config/database';
-import { ICompany, COMPANIES_COLLECTION } from '../models/Company';
+import { getDatabase } from '../config/database.js';
+import { ICompany, COMPANIES_COLLECTION } from '../models/Company.js';
 
 const db = getDatabase();
 
