@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../admin/config/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { ContactFormPopup } from "./ContactFormPopup";
 
 interface HeaderContent {
   logo: string;
@@ -16,6 +17,7 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [headerContent, setHeaderContent] = useState<HeaderContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,10 +46,20 @@ export function Navbar() {
       return;
     }
 
-    // For other sections, try to scroll to element
+    // Check if element exists on current page
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+    } else {
+      // If element doesn't exist, navigate to home first
+      navigate("/");
+      // Scroll to section after navigation
+      setTimeout(() => {
+        const targetElement = document.getElementById(id);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 300);
     }
   };
 
@@ -96,10 +108,16 @@ export function Navbar() {
           </div>
 
           {/* CTA Button */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => setIsContactFormOpen(true)}
+              className="bg-orange-500 text-white px-6 py-2.5 rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
+            >
+              Get in Touch
+            </button>
             <button
               onClick={() => scrollToSection("workshops")}
-              className="bg-orange-500 text-white px-6 py-2.5 rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
+              className="bg-gray-100 text-gray-900 px-6 py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-md hover:shadow-lg"
             >
               {headerContent.ctaButton}
             </button>
@@ -135,8 +153,17 @@ export function Navbar() {
                 </button>
               ))}
               <button
-                onClick={() => scrollToSection("workshops")}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsContactFormOpen(true);
+                }}
                 className="block w-full bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Get in Touch
+              </button>
+              <button
+                onClick={() => scrollToSection("workshops")}
+                className="block w-full bg-gray-100 text-gray-900 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 {headerContent.ctaButton}
               </button>
@@ -144,6 +171,9 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Contact Form Popup */}
+      <ContactFormPopup isOpen={isContactFormOpen} onClose={() => setIsContactFormOpen(false)} />
     </nav>
   );
 }

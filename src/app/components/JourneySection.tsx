@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../../../src/admin/config/firebase";
+
+interface JourneySectionProps {
+  onOpenContactForm?: () => void;
+}
 
 interface Learner {
   id: string;
@@ -15,7 +19,7 @@ interface Learner {
   order: number;
 }
 
-export function JourneySection() {
+export function JourneySection({ onOpenContactForm }: JourneySectionProps) {
   const [learners, setLearners] = useState<Learner[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -238,6 +242,25 @@ export function JourneySection() {
             </button>
           </div>
         </div>
+
+        {/* Get in Touch Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mt-12"
+        >
+          <motion.button
+            onClick={onOpenContactForm}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-medium"
+          >
+            <MessageCircle size={20} />
+            Get in Touch
+          </motion.button>
+        </motion.div>
       </div>
     </section>
   );

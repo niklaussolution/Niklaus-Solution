@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from "motion/react";
-import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Quote, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { db } from '../../admin/config/firebase';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+
+interface TestimonialsSectionProps {
+  onOpenContactForm?: () => void;
+}
 
 interface Testimonial {
   id: string;
@@ -16,7 +20,7 @@ interface Testimonial {
   order: number;
 }
 
-export const TestimonialsSection: React.FC = () => {
+export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ onOpenContactForm }) => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -261,6 +265,25 @@ export const TestimonialsSection: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Get in Touch Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="text-center mt-12"
+      >
+        <motion.button
+          onClick={onOpenContactForm}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-medium"
+        >
+          <MessageCircle size={20} />
+          Get in Touch
+        </motion.button>
+      </motion.div>
     </section>
   );
 };

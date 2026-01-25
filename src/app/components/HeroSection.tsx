@@ -4,6 +4,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useEffect, useState } from "react";
 import { db } from "../../admin/config/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { ContactFormPopup } from "./ContactFormPopup";
 
 interface HeroContent {
   badge: string;
@@ -25,6 +26,7 @@ interface HeroContent {
 export function HeroSection() {
   const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
   useEffect(() => {
     const fetchHeroContent = async () => {
@@ -109,12 +111,10 @@ export function HeroSection() {
                 {heroContent.primaryButtonText}
               </button>
               <button
-                onClick={downloadBrochure}
-                disabled={!heroContent?.brochureUrl}
-                className="flex items-center justify-center gap-2 bg-white text-gray-700 px-8 py-4 rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:text-orange-500 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setIsContactFormOpen(true)}
+                className="flex items-center justify-center gap-2 bg-white text-gray-700 px-8 py-4 rounded-xl border-2 border-orange-500 hover:bg-orange-50 transition-all shadow-md hover:shadow-lg font-semibold"
               >
-                <Download size={20} />
-                {heroContent.secondaryButtonText}
+                Get in Touch
               </button>
             </div>
 
@@ -204,6 +204,9 @@ export function HeroSection() {
       {/* Decorative Elements */}
       <div className="absolute top-20 right-10 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="absolute bottom-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+
+      {/* Contact Form Popup */}
+      <ContactFormPopup isOpen={isContactFormOpen} onClose={() => setIsContactFormOpen(false)} />
     </section>
   );
 }

@@ -1,8 +1,12 @@
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, MessageCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { db } from "../../admin/config/firebase";
 import { doc, getDoc } from "firebase/firestore";
+
+interface CompaniesSectionProps {
+  onOpenContactForm?: () => void;
+}
 
 interface Company {
   id: string;
@@ -18,7 +22,7 @@ interface CompaniesContent {
   updatedAt?: number;
 }
 
-export function CompaniesSection() {
+export function CompaniesSection({ onOpenContactForm }: CompaniesSectionProps) {
   const [content, setContent] = useState<CompaniesContent | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
@@ -247,16 +251,11 @@ export function CompaniesSection() {
           </div>
           <button
             type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
+            onClick={onOpenContactForm}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base hover:scale-105 active:scale-95"
           >
-            Start Your Journey Today
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+            <MessageCircle size={18} />
+            Get in Touch
           </button>
         </motion.div>
         )}

@@ -179,11 +179,23 @@ export function PaymentForm({ registrationData, onClose, onSuccess }: PaymentFor
       }
 
       setPaymentId(paymentResponse.razorpay_payment_id);
+      
+      // Track Lead event on Meta Pixel
+      if (window.fbq) {
+        window.fbq('track', 'Lead');
+      }
+      
       setStep('success');
       setIsProcessing(false);
     } catch (err: any) {
       console.error('Error storing registration:', err);
       setError('Registration saved but confirmation delayed. Check your email.');
+      
+      // Track Lead event on Meta Pixel even for error case (registration was saved)
+      if (window.fbq) {
+        window.fbq('track', 'Lead');
+      }
+      
       setStep('success');
       setIsProcessing(false);
     }

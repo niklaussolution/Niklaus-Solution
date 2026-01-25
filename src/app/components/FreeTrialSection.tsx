@@ -1,10 +1,14 @@
 import { motion } from "motion/react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 
 interface CourseCard {
   title: string;
   code: string;
   description: string;
+}
+
+interface FreeTrialSectionProps {
+  onOpenContactForm?: () => void;
 }
 
 const courses: CourseCard[] = [
@@ -16,7 +20,7 @@ const courses: CourseCard[] = [
   { title: "WD", code: "WordPress Development", description: "" },
 ];
 
-export function FreeTrialSection() {
+export function FreeTrialSection({ onOpenContactForm }: FreeTrialSectionProps) {
   return (
     <section id="free-trial" className="relative py-16 md:py-24 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 overflow-hidden">
       {/* Decorative background elements */}
@@ -46,10 +50,21 @@ export function FreeTrialSection() {
               Niklaus Free Trial is now live! Enjoy absolutely no fees during the trial period, with zero limits, zero barriers, and 100% full access. Stop waiting—start your free trial today!
             </p>
 
-            <button className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-4 rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 font-semibold">
-              Get Free Trial Courses
-              <ArrowRight size={20} />
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-4 rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 font-semibold">
+                Get Free Trial Courses
+                <ArrowRight size={20} />
+              </button>
+              <motion.button
+                onClick={onOpenContactForm}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-semibold"
+              >
+                <MessageCircle size={20} />
+                Get in Touch
+              </motion.button>
+            </div>
           </motion.div>
 
           {/* Right Content - Free Trial Badge & Courses Grid */}
@@ -123,6 +138,25 @@ export function FreeTrialSection() {
                 </motion.div>
               ))}
             </div>
+
+            {/* CTA Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mt-12 text-center"
+            >
+              <motion.button
+                onClick={onOpenContactForm}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-medium"
+              >
+                <MessageCircle size={20} />
+                Get in Touch
+              </motion.button>
+            </motion.div>
           </motion.div>
         </div>
       </div>

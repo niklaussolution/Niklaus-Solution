@@ -5,6 +5,10 @@ import { db } from "../../admin/config/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { PaymentForm } from "./PaymentForm";
 
+interface WorkshopsSectionProps {
+  onOpenContactForm?: () => void;
+}
+
 // Declare fbq for Meta Pixel tracking
 declare global {
   interface Window {
@@ -38,7 +42,7 @@ interface RegistrationData {
   price: number;
 }
 
-export function WorkshopsSection() {
+export function WorkshopsSection({ onOpenContactForm }: WorkshopsSectionProps) {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
@@ -48,6 +52,8 @@ export function WorkshopsSection() {
   const [direction, setDirection] = useState(0);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const workshopsRef = useRef<HTMLDivElement>(null);
+  const [hasAutoOpenedForm, setHasAutoOpenedForm] = useState(false);
   const [registrationData, setRegistrationData] = useState<RegistrationData>({
     fullName: "",
     email: "",
@@ -64,6 +70,33 @@ export function WorkshopsSection() {
   useEffect(() => {
     fetchWorkshops();
   }, []);
+
+  // Auto-open contact form when user scrolls to workshops section
+  useEffect(() => {
+    if (!workshopsRef.current || !onOpenContactForm || hasAutoOpenedForm) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Auto-open when section is 40% visible
+        if (entry.isIntersecting && !hasAutoOpenedForm) {
+          // Add a small delay to make it feel natural
+          setTimeout(() => {
+            onOpenContactForm?.();
+            setHasAutoOpenedForm(true);
+          }, 1500);
+        }
+      },
+      { threshold: 0.4 }
+    );
+
+    observer.observe(workshopsRef.current);
+
+    return () => {
+      if (workshopsRef.current) {
+        observer.unobserve(workshopsRef.current);
+      }
+    };
+  }, [onOpenContactForm, hasAutoOpenedForm]);
 
   const fetchWorkshops = async () => {
     try {
@@ -239,7 +272,7 @@ export function WorkshopsSection() {
 
   if (loading) {
     return (
-      <section id="workshops" className="py-16 md:py-24 bg-white">
+      <section id="workshops" ref={workshopsRef} className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-600">Loading workshops...</p>
         </div>
@@ -249,7 +282,7 @@ export function WorkshopsSection() {
 
   return (
     <>
-      <section id="workshops" className="py-16 md:py-24 bg-white">
+      <section id="workshops" ref={workshopsRef} className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <motion.div

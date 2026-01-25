@@ -1,5 +1,9 @@
 import { motion } from "motion/react";
-import { Users, Target, Award, Briefcase } from "lucide-react";
+import { Users, Target, Award, Briefcase, MessageCircle } from "lucide-react";
+
+interface WhyChooseSectionProps {
+  onOpenContactForm?: () => void;
+}
 
 const features = [
   {
@@ -28,7 +32,7 @@ const features = [
   },
 ];
 
-export function WhyChooseSection() {
+export function WhyChooseSection({ onOpenContactForm }: WhyChooseSectionProps) {
   return (
     <section id="about" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -105,6 +109,25 @@ export function WhyChooseSection() {
             <div className="text-3xl md:text-4xl font-bold text-orange-500 mb-2">200+</div>
             <div className="text-gray-600">Industry Partners</div>
           </div>
+        </motion.div>
+
+        {/* Get in Touch Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-center mt-12"
+        >
+          <motion.button
+            onClick={onOpenContactForm}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-medium"
+          >
+            <MessageCircle size={20} />
+            Get in Touch
+          </motion.button>
         </motion.div>
       </div>
     </section>

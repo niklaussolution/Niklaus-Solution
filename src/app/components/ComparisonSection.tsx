@@ -1,11 +1,15 @@
 import { motion } from "motion/react";
-import { Check, X, Zap } from "lucide-react";
+import { Check, X, Zap, MessageCircle } from "lucide-react";
 
 interface ComparisonFeature {
   title: string;
   niklaus: boolean;
   free: boolean;
   others: boolean;
+}
+
+interface ComparisonSectionProps {
+  onOpenContactForm?: () => void;
 }
 
 const features: ComparisonFeature[] = [
@@ -53,7 +57,7 @@ const features: ComparisonFeature[] = [
   },
 ];
 
-export function ComparisonSection() {
+export function ComparisonSection({ onOpenContactForm }: ComparisonSectionProps) {
   return (
     <section id="comparison" className="relative py-16 md:py-24 bg-gradient-to-b from-slate-950 to-slate-900 overflow-hidden">
       {/* Decorative elements */}
@@ -263,13 +267,24 @@ export function ComparisonSection() {
             <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400 animate-pulse flex-shrink-0" />
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base"
-          >
-            Explore Offerings
-          </motion.button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base"
+            >
+              Explore Offerings
+            </motion.button>
+            <motion.button
+              onClick={onOpenContactForm}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base"
+            >
+              <MessageCircle size={18} />
+              Get in Touch
+            </motion.button>
+          </div>
         </motion.div>
       </div>
     </section>

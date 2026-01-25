@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useState, useRef } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { ExternalLink, AlertCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { ExternalLink, AlertCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 
 interface StudentProject {
   id: string;
@@ -16,6 +16,10 @@ interface StudentProject {
   demoType: 'link' | 'video' | 'image';
   isActive?: boolean;
   order?: number;
+}
+
+interface StudentProjectsSectionProps {
+  onOpenContactForm?: () => void;
 }
 
 type DemoViewType = 'link' | 'video' | 'image' | 'photo';
@@ -62,7 +66,7 @@ const isValidImageUrl = (url: string): boolean => {
   }
 };
 
-export function StudentProjectsSection() {
+export function StudentProjectsSection({ onOpenContactForm }: StudentProjectsSectionProps) {
   const [projects, setProjects] = useState<StudentProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -211,6 +215,7 @@ export function StudentProjectsSection() {
                     displayDescription={displayDescription}
                     isDescriptionTruncated={isDescriptionTruncated}
                     onToggleExpand={() => setExpandedProjectId(isExpanded ? null : project.id)}
+                    onOpenContactForm={onOpenContactForm}
                   />
                 </motion.div>
               );
@@ -244,6 +249,7 @@ export function StudentProjectsSection() {
                           displayDescription={displayDescription}
                           isDescriptionTruncated={isDescriptionTruncated}
                           onToggleExpand={() => setExpandedProjectId(isExpanded ? null : project.id)}
+                          onOpenContactForm={onOpenContactForm}
                         />
                       );
                     })()}
@@ -302,9 +308,10 @@ interface ProjectCardProps {
   displayDescription: string;
   isDescriptionTruncated: boolean;
   onToggleExpand: () => void;
+  onOpenContactForm?: () => void;
 }
 
-function ProjectCard({ project, isExpanded, displayDescription, isDescriptionTruncated, onToggleExpand }: ProjectCardProps) {
+function ProjectCard({ project, isExpanded, displayDescription, isDescriptionTruncated, onToggleExpand, onOpenContactForm }: ProjectCardProps) {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
       {/* Student Avatar Section */}
@@ -403,6 +410,24 @@ function ProjectCard({ project, isExpanded, displayDescription, isDescriptionTru
               )}
             </div>
             <p className="text-xs text-gray-500 text-center">Video Demo</p>
+          </div>
+        )}
+
+        {/* Image Demo */}
+        {project.demoType === 'image' && (
+          <div className="space-y-2">
+            <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg w-full" style={{ height: '260px' }}>
+              <img
+                src={project.demoLink}
+                alt="Project demo"
+                className="w-full h-full object-contain bg-white"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="12" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 text-center">Screenshot</p>
           </div>
         )}
 

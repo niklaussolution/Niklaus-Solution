@@ -165,7 +165,7 @@ export function generateLocalBusinessSchema() {
       // Add your actual address here
       addressCountry: 'IN',
     },
-    telephone: '+91-XXXXX-XXXXX', // Add actual phone
+    telephone: '+91 6380516533, +91 8862459821',
     email: 'info@theniklaus.com',
   };
 }

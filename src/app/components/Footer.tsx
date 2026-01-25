@@ -2,7 +2,8 @@ import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube } 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../admin/config/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { ContactFormPopup } from "./ContactFormPopup";
 
 interface FooterContent {
   company: {
@@ -18,9 +19,16 @@ interface FooterContent {
   copyright: string;
 }
 
+interface Workshop {
+  id: string;
+  title: string;
+}
+
 export function Footer() {
   const [footerContent, setFooterContent] = useState<FooterContent | null>(null);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +39,15 @@ export function Footer() {
         if (docSnap.exists()) {
           setFooterContent(docSnap.data() as FooterContent);
         }
+
+        // Fetch workshops
+        const workshopsRef = collection(db, "workshops");
+        const snapshot = await getDocs(workshopsRef);
+        const workshopsData: Workshop[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          title: (doc.data() as any).title,
+        }));
+        setWorkshops(workshopsData.slice(0, 5)); // Limit to 5 workshops
       } catch (error) {
       } finally {
         setLoading(false);
@@ -139,29 +156,29 @@ export function Footer() {
 
           {/* Workshops */}
           <div>
-            <h4 className="text-white font-bold mb-4">Popular Workshops</h4>
+            <h4 className="text-white font-bold mb-4">Available Workshops</h4>
             <ul className="space-y-3">
-              <li className="hover:text-orange-500 transition-colors cursor-pointer">
-                Ethical Hacking
-              </li>
-              <li className="hover:text-orange-500 transition-colors cursor-pointer">
-                Full Stack Development
-              </li>
-              <li className="hover:text-orange-500 transition-colors cursor-pointer">
-                AI & Machine Learning
-              </li>
-              <li className="hover:text-orange-500 transition-colors cursor-pointer">
-                Cyber Security
-              </li>
-              <li className="hover:text-orange-500 transition-colors cursor-pointer">
-                Cloud Computing
-              </li>
+              {workshops.length > 0 ? (
+                workshops.map((workshop) => (
+                  <li key={workshop.id} className="hover:text-orange-500 transition-colors cursor-pointer">
+                    {workshop.title}
+                  </li>
+                ))
+              ) : (
+                <li className="text-gray-500">No workshops available</li>
+              )}
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
             <h4 className="text-white font-bold mb-4">Contact Us</h4>
+            <button
+              onClick={() => setIsContactFormOpen(true)}
+              className="w-full bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 transition-colors font-semibold mb-4"
+            >
+              Get in Touch
+            </button>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <Mail size={20} className="text-orange-500 shrink-0 mt-1" />
@@ -204,37 +221,43 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-400 text-sm text-center md:text-left">
+          <p className="text-gray-400 text-xs md:text-sm text-center md:text-left">
             {footerContent.copyright}
           </p>
-          <div className="flex gap-6 text-sm flex-wrap justify-center md:justify-end">
+          <div className="flex gap-3 text-xs flex-wrap justify-center md:justify-end">
             <button 
               onClick={() => navigate("/privacy-policy")}
               className="hover:text-orange-500 transition-colors"
             >
-              Privacy Policy
+              Privacy
             </button>
+            <span className="text-gray-600">|</span>
             <button 
               onClick={() => navigate("/terms-and-conditions")}
               className="hover:text-orange-500 transition-colors"
             >
-              Terms of Service
+              Terms
             </button>
+            <span className="text-gray-600">|</span>
             <button 
               onClick={() => navigate("/cancellations-and-refunds")}
               className="hover:text-orange-500 transition-colors"
             >
-              Cancellations & Refunds
+              Refunds
             </button>
+            <span className="text-gray-600">|</span>
             <button 
               onClick={() => navigate("/shipping-policy")}
               className="hover:text-orange-500 transition-colors"
             >
-              Shipping Policy
+              Shipping
             </button>
           </div>
         </div>
       </div>
+
+      {/* Contact Form Popup */}
+      <ContactFormPopup isOpen={isContactFormOpen} onClose={() => setIsContactFormOpen(false)} />
     </footer>
   );
 }

@@ -12,9 +12,14 @@ import {
   Lightbulb,
   CheckCircle,
   AlertCircle,
+  MessageCircle,
 } from "lucide-react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+
+interface KeyFeaturesSectionProps {
+  onOpenContactForm?: () => void;
+}
 
 interface Feature {
   id: string;
@@ -47,7 +52,7 @@ const getIconComponent = (index: number) => {
   return iconMap[icon] || <CheckCircle className="w-8 h-8 text-blue-600" />;
 };
 
-export function KeyFeaturesSection() {
+export function KeyFeaturesSection({ onOpenContactForm }: KeyFeaturesSectionProps) {
   const [content, setContent] = useState<KeyFeaturesContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -163,21 +168,12 @@ export function KeyFeaturesSection() {
           viewport={{ once: true }}
           className="text-center mt-16"
         >
-          <button className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 md:px-10 py-3 md:py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm md:text-base">
-            Explore All Features
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
+          <button 
+            onClick={onOpenContactForm}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 md:px-10 py-3 md:py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 font-semibold text-sm md:text-base"
+          >
+            <MessageCircle size={20} />
+            Get in Touch
           </button>
         </motion.div>
       </div>

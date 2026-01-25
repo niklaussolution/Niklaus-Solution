@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { Linkedin, Github, Globe, ChevronLeft, ChevronRight } from "lucide-react";
+import { Linkedin, Github, Globe, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -10,6 +10,10 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../admin/config/firebase";
+
+interface TrainersSectionProps {
+  onOpenContactForm?: () => void;
+}
 
 interface Trainer {
   id: string;
@@ -28,7 +32,7 @@ interface Trainer {
   order: number;
 }
 
-export function TrainersSection() {
+export function TrainersSection({ onOpenContactForm }: TrainersSectionProps) {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -270,6 +274,27 @@ export function TrainersSection() {
           <div className="text-center py-12">
             <p className="text-gray-600 text-lg">No trainers available at the moment.</p>
           </div>
+        )}
+
+        {/* Get in Touch Button */}
+        {!loading && trainers.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mt-12"
+          >
+            <motion.button
+              onClick={onOpenContactForm}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-medium"
+            >
+              <MessageCircle size={20} />
+              Get in Touch
+            </motion.button>
+          </motion.div>
         )}
       </div>
     </section>

@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -21,7 +21,11 @@ interface PricingPlan {
   validTo?: string;
 }
 
-export function PricingSection() {
+interface PricingSectionProps {
+  onOpenContactForm?: () => void;
+}
+
+export function PricingSection({ onOpenContactForm }: PricingSectionProps) {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,7 @@ export function PricingSection() {
       });
       setPlans(activePlans);
     } catch (error) {
+      console.error("Error fetching pricing plans:", error);
     } finally {
       setLoading(false);
     }
@@ -182,7 +187,7 @@ export function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12 text-center"
+          className="mt-12 text-center space-y-4"
         >
           <p className="text-gray-600">
             All plans include lifetime access to course materials and updates.{" "}
@@ -194,6 +199,17 @@ export function PricingSection() {
             </button>{" "}
             for custom group pricing.
           </p>
+
+          {/* Get in Touch Button */}
+          <motion.button
+            onClick={onOpenContactForm}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-medium"
+          >
+            <MessageCircle size={20} />
+            Get in Touch
+          </motion.button>
         </motion.div>
       </div>
     </section>

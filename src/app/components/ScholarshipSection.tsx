@@ -1,7 +1,11 @@
 import { motion } from "motion/react";
-import { Award, BookOpen } from "lucide-react";
+import { Award, BookOpen, MessageCircle } from "lucide-react";
 
-export function ScholarshipSection() {
+interface ScholarshipSectionProps {
+  onOpenContactForm?: () => void;
+}
+
+export function ScholarshipSection({ onOpenContactForm }: ScholarshipSectionProps) {
   return (
     <section id="scholarship" className="relative py-16 md:py-24 bg-gradient-to-r from-blue-50 to-indigo-50 overflow-hidden">
       {/* Decorative elements */}
@@ -142,6 +146,17 @@ export function ScholarshipSection() {
               >
                 <BookOpen size={20} />
                 Apply Scholarship
+              </motion.button>
+
+              {/* Get in Touch Button */}
+              <motion.button
+                onClick={onOpenContactForm}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl font-semibold mt-4 ml-4"
+              >
+                <MessageCircle size={20} />
+                Get in Touch
               </motion.button>
 
               {/* Additional info */}
