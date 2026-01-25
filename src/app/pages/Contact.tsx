@@ -210,7 +210,7 @@ export function Contact() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-semibold"
                 >
-                  91 6380516533
+                  +91 6380516533 / +91 8862459821
                   <ArrowRight size={18} />
                 </a>
               </div>
@@ -224,13 +224,23 @@ export function Contact() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Phone</h3>
                 <p className="text-gray-700 mb-4">Call us during business hours</p>
-                <a
-                  href="tel:+918862459821"
-                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
-                >
-                  +91 8862459821
-                  <ArrowRight size={18} />
-                </a>
+                <div className="space-y-2">
+                  <a
+                    href="tel:+916380516533"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
+                  >
+                    +91 6380516533
+                    <ArrowRight size={18} />
+                  </a>
+                  <div className="text-blue-600">/</div>
+                  <a
+                    href="tel:+918862459821"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
+                  >
+                    +91 8862459821
+                    <ArrowRight size={18} />
+                  </a>
+                </div>
               </div>
             </div>
 
