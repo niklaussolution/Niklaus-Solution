@@ -73,8 +73,7 @@ export function WorkshopsSection() {
         workshopsData.map(async (workshop) => {
           const q = query(
             registrationsRef, 
-            where("workshopId", "==", workshop.id),
-            where("paymentStatus", "==", "completed")
+            where("workshopId", "==", workshop.id)
           );
           const registrationSnapshot = await getDocs(q);
           console.log(`Workshop: ${workshop.title} (${workshop.id}), Registrations: ${registrationSnapshot.size}`);
