@@ -5,7 +5,8 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "npm run build && node dist/server.js",
+    "dev": "nodemon --exec 'npm run build && node dist/server.js' --watch src --ext ts",
+    "dev:simple": "npm run build && node dist/server.js",
     "build": "tsc",
     "start": "node dist/server.js"
   },
