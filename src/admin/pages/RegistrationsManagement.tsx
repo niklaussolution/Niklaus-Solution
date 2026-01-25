@@ -167,9 +167,14 @@ export const RegistrationsManagement: React.FC = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setError('');
+    setSuccess('');
+    
     try {
+      console.log('Starting registration process with data:', formData);
+      
       // Add registration directly to Firestore
-      await addDoc(collection(db, 'registrations'), {
+      const registrationData = {
         userName: formData.userName,
         email: formData.email,
         phone: formData.phone,
@@ -182,17 +187,31 @@ export const RegistrationsManagement: React.FC = () => {
         registrationDate: new Date().toISOString(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      });
+      };
+      
+      console.log('Adding registration to collection...');
+      const regRef = await addDoc(collection(db, 'registrations'), registrationData);
+      console.log('Registration added successfully with ID:', regRef.id);
 
       // Increment the workshop's enrolled count
       if (formData.workshopId) {
-        const workshopRef = doc(db, 'workshops', formData.workshopId);
-        await updateDoc(workshopRef, {
-          enrolled: increment(1),
-        });
+        try {
+          const workshopRef = doc(db, 'workshops', formData.workshopId);
+          console.log('Incrementing enrolled count for workshop:', formData.workshopId);
+          await updateDoc(workshopRef, {
+            enrolled: increment(1),
+          });
+          console.log('Workshop enrolled count updated successfully');
+        } catch (workshopErr) {
+          console.warn('Warning: Could not update workshop enrolled count:', workshopErr);
+          // Don't fail the entire operation if workshop update fails
+        }
       }
 
       setSuccess('Registration added successfully!');
+      console.log('Success message displayed');
+      
+      // Reset form
       setFormData({
         userName: '',
         email: '',
@@ -204,11 +223,21 @@ export const RegistrationsManagement: React.FC = () => {
         status: 'Confirmed',
         paymentStatus: 'Completed',
       });
+      setFormErrors({});
       setShowAddModal(false);
+      
+      // Refresh the registrations list
       await fetchRegistrations();
-    } catch (err) {
-      setError('Error adding registration. Please try again.');
-      console.error(err);
+      console.log('Registrations list refreshed');
+    } catch (err: any) {
+      console.error('Error adding registration:', err);
+      const errorMessage = err?.message || 'Error adding registration. Please try again.';
+      setError(errorMessage);
+      
+      // Log more detailed error information
+      if (err?.code) {
+        console.error('Error code:', err.code);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -755,3 +784,5 @@ export const RegistrationsManagement: React.FC = () => {
     </AdminLayout>
   );
 };
+
+export default RegistrationsManagement;
