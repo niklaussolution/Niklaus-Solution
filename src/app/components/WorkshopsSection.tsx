@@ -5,6 +5,13 @@ import { db } from "../../admin/config/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { PaymentForm } from "./PaymentForm";
 
+// Declare fbq for Meta Pixel tracking
+declare global {
+  interface Window {
+    fbq: (command: string, action: string) => void;
+  }
+}
+
 interface Workshop {
   id: string;
   title: string;
@@ -200,6 +207,11 @@ export function WorkshopsSection() {
     try {
       setShowPaymentForm(false);
       setSubmitSuccess(true);
+
+      // Track Lead event with Meta Pixel
+      if (window.fbq) {
+        window.fbq('track', 'Lead');
+      }
 
       // Refresh workshops to show updated enrollment count
       await fetchWorkshops();
