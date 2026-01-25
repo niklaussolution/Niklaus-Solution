@@ -8,20 +8,29 @@ import {
   AlertCircle,
   X,
   Download,
+  Plus,
 } from 'lucide-react';
 import { db } from '../config/firebase';
-import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where, addDoc, updateDoc, increment } from 'firebase/firestore';
 
 interface Registration {
   id: string;
-  fullName: string;
+  userName: string;
   email: string;
   phone: string;
   organization: string;
   workshopId: string;
   workshopTitle: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'Pending' | 'Confirmed' | 'Cancelled';
+  paymentStatus: 'Pending' | 'Completed' | 'Cancelled';
+  amount: number;
   createdAt: number;
+}
+
+interface Workshop {
+  id: string;
+  title: string;
+  price: number;
 }
 
 interface Stats {
@@ -31,24 +40,59 @@ interface Stats {
   cancelled: number;
 }
 
+interface AddRegistrationForm {
+  userName: string;
+  email: string;
+  phone: string;
+  organization: string;
+  workshopId: string;
+  workshopTitle: string;
+  amount: number;
+  status: 'Pending' | 'Confirmed';
+  paymentStatus: 'Pending' | 'Completed';
+}
+
 export const RegistrationsManagement: React.FC = () => {
   const { token } = useAuth();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'Pending' | 'Confirmed' | 'Cancelled'>('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [stats, setStats] = useState<Stats | null>(null);
   const [selectedRegistrations, setSelectedRegistrations] = useState<string[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<AddRegistrationForm>({
+    userName: '',
+    email: '',
+    phone: '',
+    organization: '',
+    workshopId: '',
+    workshopTitle: '',
+    amount: 0,
+    status: 'Confirmed',
+    paymentStatus: 'Completed',
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetchRegistrations();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([fetchRegistrations(), fetchWorkshops()]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchRegistrations = async () => {
     try {
-      setLoading(true);
       const registrationsRef = collection(db, 'registrations');
       const snapshot = await getDocs(registrationsRef);
       const regData: Registration[] = snapshot.docs.map((doc) => ({
@@ -60,16 +104,29 @@ export const RegistrationsManagement: React.FC = () => {
       // Calculate stats
       const stats: Stats = {
         total: regData.length,
-        pending: regData.filter((r) => r.status === 'pending').length,
-        confirmed: regData.filter((r) => r.status === 'confirmed').length,
-        cancelled: regData.filter((r) => r.status === 'cancelled').length,
+        pending: regData.filter((r) => r.status === 'Pending').length,
+        confirmed: regData.filter((r) => r.status === 'Confirmed').length,
+        cancelled: regData.filter((r) => r.status === 'Cancelled').length,
       };
       setStats(stats);
     } catch (error) {
       setError('Error fetching registrations');
       console.error(error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchWorkshops = async () => {
+    try {
+      const workshopsRef = collection(db, 'workshops');
+      const snapshot = await getDocs(workshopsRef);
+      const workshopData: Workshop[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        title: doc.data().title,
+        price: doc.data().price || 0,
+      }));
+      setWorkshops(workshopData);
+    } catch (error) {
+      console.error('Error fetching workshops:', error);
     }
   };
 
@@ -84,6 +141,76 @@ export const RegistrationsManagement: React.FC = () => {
     } catch (error) {
       setError('Error deleting registration');
       console.error(error);
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.userName.trim()) errors.userName = 'Name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      errors.email = 'Invalid email format';
+    if (!formData.phone.trim()) errors.phone = 'Phone is required';
+    else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, '')))
+      errors.phone = 'Phone must be 10 digits';
+    if (!formData.organization.trim()) errors.organization = 'Organization is required';
+    if (!formData.workshopId) errors.workshopId = 'Workshop is required';
+    if (formData.amount <= 0) errors.amount = 'Amount must be greater than 0';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAddRegistration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Add registration directly to Firestore
+      await addDoc(collection(db, 'registrations'), {
+        userName: formData.userName,
+        email: formData.email,
+        phone: formData.phone,
+        organization: formData.organization,
+        workshopId: formData.workshopId,
+        workshopTitle: formData.workshopTitle,
+        amount: formData.amount,
+        status: formData.status,
+        paymentStatus: formData.paymentStatus,
+        registrationDate: new Date().toISOString(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // Increment the workshop's enrolled count
+      if (formData.workshopId) {
+        const workshopRef = doc(db, 'workshops', formData.workshopId);
+        await updateDoc(workshopRef, {
+          enrolled: increment(1),
+        });
+      }
+
+      setSuccess('Registration added successfully!');
+      setFormData({
+        userName: '',
+        email: '',
+        phone: '',
+        organization: '',
+        workshopId: '',
+        workshopTitle: '',
+        amount: 0,
+        status: 'Confirmed',
+        paymentStatus: 'Completed',
+      });
+      setShowAddModal(false);
+      await fetchRegistrations();
+    } catch (err) {
+      setError('Error adding registration. Please try again.');
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,7 +244,7 @@ export const RegistrationsManagement: React.FC = () => {
     ];
 
     const rows = filteredRegistrations.map((reg) => [
-      reg.fullName,
+      reg.userName,
       reg.email,
       reg.phone,
       reg.organization,
@@ -138,7 +265,7 @@ export const RegistrationsManagement: React.FC = () => {
 
   const filteredRegistrations = registrations.filter((reg) => {
     const matchesSearch =
-      reg.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reg.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.phone.includes(searchTerm) ||
       reg.workshopTitle.toLowerCase().includes(searchTerm.toLowerCase());
@@ -150,14 +277,9 @@ export const RegistrationsManagement: React.FC = () => {
   });
 
   const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    confirmed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
-  };
-  const paymentColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    confirmed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
+    Pending: 'bg-yellow-100 text-yellow-800',
+    Confirmed: 'bg-green-100 text-green-800',
+    Cancelled: 'bg-red-100 text-red-800',
   };
 
   if (loading) {
@@ -179,15 +301,26 @@ export const RegistrationsManagement: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Registrations</h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage user registrations for workshops</p>
           </div>
-          <button
-            onClick={exportToCSV}
-            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-xs sm:text-sm w-full sm:w-auto"
-          >
-            <Download size={16} className="sm:block hidden" />
-            <Download size={14} className="sm:hidden" />
-            <span className="hidden sm:inline">Export CSV</span>
-            <span className="sm:hidden">Export</span>
-          </button>
+          <div className="flex gap-2 flex-col sm:flex-row">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-xs sm:text-sm w-full sm:w-auto"
+            >
+              <Plus size={16} className="sm:block hidden" />
+              <Plus size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Add Registration</span>
+              <span className="sm:hidden">Add</span>
+            </button>
+            <button
+              onClick={exportToCSV}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-xs sm:text-sm w-full sm:w-auto"
+            >
+              <Download size={16} className="sm:block hidden" />
+              <Download size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
+            </button>
+          </div>
         </div>
 
         {/* Alerts */}
@@ -263,9 +396,9 @@ export const RegistrationsManagement: React.FC = () => {
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
           </div>
@@ -333,7 +466,7 @@ export const RegistrationsManagement: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        {reg.fullName}
+                        {reg.userName}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {reg.email}
@@ -386,6 +519,239 @@ export const RegistrationsManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Add Registration Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 flex items-center justify-between p-6 border-b bg-white">
+              <h2 className="text-xl font-bold text-gray-900">Add Manual Registration</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleAddRegistration} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.userName}
+                    onChange={(e) => {
+                      setFormData({ ...formData, userName: e.target.value });
+                      if (formErrors.userName) {
+                        setFormErrors({ ...formErrors, userName: '' });
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.userName
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="Full name"
+                  />
+                  {formErrors.userName && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.userName}</p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Email <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (formErrors.email) {
+                        setFormErrors({ ...formErrors, email: '' });
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.email
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="email@example.com"
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.email}</p>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Phone <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: e.target.value });
+                      if (formErrors.phone) {
+                        setFormErrors({ ...formErrors, phone: '' });
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.phone
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="10-digit phone number"
+                  />
+                  {formErrors.phone && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.phone}</p>
+                  )}
+                </div>
+
+                {/* Organization */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Organization <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.organization}
+                    onChange={(e) => {
+                      setFormData({ ...formData, organization: e.target.value });
+                      if (formErrors.organization) {
+                        setFormErrors({ ...formErrors, organization: '' });
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.organization
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="College/Company name"
+                  />
+                  {formErrors.organization && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.organization}</p>
+                  )}
+                </div>
+
+                {/* Workshop */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Workshop <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={formData.workshopId}
+                    onChange={(e) => {
+                      const workshop = workshops.find((w) => w.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        workshopId: e.target.value,
+                        workshopTitle: workshop?.title || '',
+                        amount: workshop?.price || 0,
+                      });
+                      if (formErrors.workshopId) {
+                        setFormErrors({ ...formErrors, workshopId: '' });
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.workshopId
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                  >
+                    <option value="">Select a workshop</option>
+                    {workshops.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.title} - ₹{w.price}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.workshopId && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.workshopId}</p>
+                  )}
+                </div>
+
+                {/* Amount */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Amount <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.amount}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    placeholder="Auto-filled from workshop"
+                  />
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Status <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData({ ...formData, status: e.target.value as 'Pending' | 'Confirmed' })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                  </select>
+                </div>
+
+                {/* Payment Status */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Payment Status <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={formData.paymentStatus}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        paymentStatus: e.target.value as 'Pending' | 'Completed',
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex gap-3 justify-end pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition font-semibold"
+                >
+                  {isSubmitting ? 'Adding...' : 'Add Registration'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };
