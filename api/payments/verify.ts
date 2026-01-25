@@ -8,44 +8,33 @@ const razorpay = new Razorpay({
 });
 
 // Helper function to update registration in Firestore after payment
-async function updateFirestoreRegistrationAfterPayment(
+async function updateRegistrationAfterPayment(
   registrationId: string,
   paymentId: string,
   orderId: string
 ) {
   try {
-    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
-    const apiKey = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
     
-    if (!projectId || !apiKey) {
-      console.error('Firebase configuration missing');
-      return false;
-    }
-
     const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/registrations/${registrationId}`,
+      `${backendUrl}/api/registrations/${registrationId}/status`,
       {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          fields: {
-            paymentStatus: { stringValue: 'Completed' },
-            status: { stringValue: 'Confirmed' },
-            paymentId: { stringValue: paymentId },
-            orderId: { stringValue: orderId },
-            confirmationDate: { stringValue: new Date().toISOString() },
-            updatedAt: { integerValue: Date.now().toString() },
-          },
+          status: 'Confirmed',
+          paymentStatus: 'Completed',
+          paymentId: paymentId,
+          orderId: orderId,
         }),
       }
     );
 
     return response.ok;
   } catch (error) {
-    console.error('Error updating Firestore registration:', error);
+    console.error('Error updating registration:', error);
     return false;
   }
 }
@@ -108,8 +97,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       });
     }
 
-    // Update the registration in Firestore
-    await updateFirestoreRegistrationAfterPayment(registrationId, paymentId, orderId);
+    // Update the registration after payment verification
+    await updateRegistrationAfterPayment(registrationId, paymentId, orderId);
 
     // Return success - payment verified and registration updated
     return res.status(200).json({
