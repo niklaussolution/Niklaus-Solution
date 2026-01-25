@@ -7,6 +7,49 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET_KEY || '',
 });
 
+// Helper function to update registration in Firestore after payment
+async function updateFirestoreRegistrationAfterPayment(
+  registrationId: string,
+  paymentId: string,
+  orderId: string
+) {
+  try {
+    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+    const apiKey = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
+    
+    if (!projectId || !apiKey) {
+      console.error('Firebase configuration missing');
+      return false;
+    }
+
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/registrations/${registrationId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          fields: {
+            paymentStatus: { stringValue: 'Completed' },
+            status: { stringValue: 'Confirmed' },
+            paymentId: { stringValue: paymentId },
+            orderId: { stringValue: orderId },
+            confirmationDate: { stringValue: new Date().toISOString() },
+            updatedAt: { integerValue: Date.now().toString() },
+          },
+        }),
+      }
+    );
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error updating Firestore registration:', error);
+    return false;
+  }
+}
+
 export default async (req: VercelRequest, res: VercelResponse) => {
   // Handle CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -65,7 +108,10 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       });
     }
 
-    // Return success - payment verified
+    // Update the registration in Firestore
+    await updateFirestoreRegistrationAfterPayment(registrationId, paymentId, orderId);
+
+    // Return success - payment verified and registration updated
     return res.status(200).json({
       success: true,
       message: 'Payment verified successfully',

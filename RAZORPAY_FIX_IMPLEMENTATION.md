@@ -99,7 +99,7 @@ Creates a Razorpay order before checkout
 {
   "userName": "John Doe",
   "email": "john@example.com",
-  "phone": "+91-9876543210",
+  "phone": "91 6380516533, +91 8862459821",
   "workshopId": "WS-001",
   "workshopTitle": "React Mastery",
   "organization": "Tech Corp",

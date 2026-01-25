@@ -152,7 +152,7 @@ export function Contact() {
   const whatsappMessage = encodeURIComponent(
     "Hi Niklaus Solutions, I'd like to inquire about your courses and workshops."
   );
-  const whatsappLink = `https://wa.me/919999999999?text=${whatsappMessage}`;
+  const whatsappLink = `https://wa.me/916380516533?text=${whatsappMessage}`;
   const emailLink = `mailto:support@niklaussolutions.com?subject=Inquiry`;
 
   return (
@@ -210,7 +210,7 @@ export function Contact() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-semibold"
                 >
-                  +91 XXXXX XXXXX
+                  91 6380516533
                   <ArrowRight size={18} />
                 </a>
               </div>
@@ -225,10 +225,10 @@ export function Contact() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Phone</h3>
                 <p className="text-gray-700 mb-4">Call us during business hours</p>
                 <a
-                  href="tel:+919999999999"
+                  href="tel:+918862459821"
                   className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
                 >
-                  +91 99999 99999
+                  +91 8862459821
                   <ArrowRight size={18} />
                 </a>
               </div>

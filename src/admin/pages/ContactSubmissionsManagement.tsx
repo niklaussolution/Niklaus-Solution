@@ -63,7 +63,7 @@ export function ContactSubmissionsManagement() {
       await addDoc(contactsRef, {
         fullName: "Test User",
         email: "test@example.com",
-        phone: "9876543210",
+        phone: "91 6380516533",
         subject: "Test Submission",
         message: "This is a test contact submission to verify the system is working.",
         submittedAt: new Date(),

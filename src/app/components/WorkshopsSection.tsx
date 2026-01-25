@@ -195,34 +195,10 @@ export function WorkshopsSection() {
   };
 
   const handlePaymentSuccess = async () => {
-    // After payment is successful, create registration via backend API
+    // After payment is successful, the registration is already updated in Firestore by the verify endpoint
+    // Just refresh and close
     setIsSubmitting(true);
     try {
-      // Call the backend API to create registration (this will also update enrollment count)
-      const payload = {
-        userName: registrationData.fullName,
-        email: registrationData.email,
-        phone: registrationData.phone,
-        workshopId: registrationData.workshopId,
-        workshopTitle: registrationData.workshopTitle,
-        amount: registrationData.price,
-        status: 'Confirmed',
-        paymentStatus: 'Completed',
-        notes: registrationData.organization,
-      };
-
-      const response = await fetch('/api/registrations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create registration');
-      }
-
-      const result = await response.json();
-
       setShowPaymentForm(false);
       setSubmitSuccess(true);
 
@@ -244,7 +220,7 @@ export function WorkshopsSection() {
         });
       }, 3000);
     } catch (error) {
-      alert("Error submitting registration. Please try again.");
+      alert("Error finalizing registration. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
