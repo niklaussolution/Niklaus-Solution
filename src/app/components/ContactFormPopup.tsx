@@ -84,11 +84,13 @@ export function ContactFormPopup({ isOpen, onClose }: ContactFormPopupProps) {
 
     try {
       const contactsRef = collection(db, "contactSubmissions");
-      await addDoc(contactsRef, {
+      const submitData = {
         ...formData,
         submittedAt: Timestamp.now(),
         status: "new",
-      });
+      };
+      console.log('Submitting contact form data:', submitData);
+      await addDoc(contactsRef, submitData);
 
       // Track lead on Meta Pixel
       if (window.fbq) {

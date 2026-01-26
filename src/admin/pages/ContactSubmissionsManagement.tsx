@@ -243,6 +243,9 @@ export function ContactSubmissionsManagement() {
                         Email
                       </th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                        Phone
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
                         Subject
                       </th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
@@ -268,6 +271,14 @@ export function ContactSubmissionsManagement() {
                             className="text-orange-600 hover:underline text-xs sm:text-sm"
                           >
                             {submission.email}
+                          </a>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <a
+                            href={`tel:${submission.phone}`}
+                            className="text-orange-600 hover:underline text-xs sm:text-sm"
+                          >
+                            {submission.phone}
                           </a>
                         </td>
                         <td className="px-4 sm:px-6 py-4">
@@ -318,6 +329,7 @@ export function ContactSubmissionsManagement() {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 text-sm truncate">{submission.fullName}</h3>
                         <p className="text-xs text-gray-600 truncate">{submission.email}</p>
+                        <a href={`tel:${submission.phone}`} className="text-xs text-orange-600 hover:underline truncate block">{submission.phone}</a>
                       </div>
                       <span
                         className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(

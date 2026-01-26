@@ -122,11 +122,13 @@ export function Contact() {
 
     try {
       const contactsRef = collection(db, "contactSubmissions");
-      await addDoc(contactsRef, {
+      const submitData = {
         ...formData,
         submittedAt: Timestamp.now(),
         status: "new",
-      });
+      };
+      console.log('Submitting contact form data:', submitData);
+      await addDoc(contactsRef, submitData);
 
       setSubmitSuccess(true);
       setFormData({

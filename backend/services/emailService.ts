@@ -106,7 +106,7 @@ export async function sendBillEmail(params: EmailBillParams) {
               </div>
 
               <div class="footer">
-                <p>© 2025 Niklaus Solutions. All rights reserved.</p>
+                <p>© 2026 Niklaus Solutions. All rights reserved.</p>
                 <p>Visit us at <a href="https://theniklaus.com">www.theniklaus.com</a></p>
               </div>
             </div>
