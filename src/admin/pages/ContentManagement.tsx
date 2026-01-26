@@ -169,6 +169,7 @@ export const ContentManagement: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pamphletInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [initializing, setInitializing] = useState(false);
@@ -735,9 +736,82 @@ export const ContentManagement: React.FC = () => {
                 </div>
               </div>
 
+              {/* Pamphlet Upload Section */}
+              <div className="border-t pt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Download Pamphlet (PDF)
+                </label>
+                <div className="flex items-center gap-4 mb-4">
+                  {heroContent.brochureUrl && (
+                    <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+                      <span className="text-sm text-blue-700">PDF uploaded</span>
+                      <a
+                        href={heroContent.brochureUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline text-sm"
+                      >
+                        View
+                      </a>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <input
+                    ref={pamphletInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file && file.type === 'application/pdf') {
+                        setUploading(true);
+                        try {
+                          const storageRef = ref(storage, `pamphlets/brochure-${Date.now()}.pdf`);
+                          await uploadBytes(storageRef, file);
+                          const downloadUrl = await getDownloadURL(storageRef);
+                          const updatedHeroContent = {
+                            ...heroContent,
+                            brochureUrl: downloadUrl,
+                          };
+                          setHeroContent(updatedHeroContent);
+                          
+                          // Auto-save to Firebase
+                          await setDoc(doc(db, 'content', 'hero'), {
+                            ...updatedHeroContent,
+                            updatedAt: Date.now(),
+                          });
+                          
+                          setSuccess('Pamphlet uploaded and saved successfully!');
+                          setTimeout(() => setSuccess(''), 3000);
+                        } catch (error) {
+                          console.error('Error uploading pamphlet:', error);
+                          setError('Failed to upload pamphlet');
+                          setTimeout(() => setError(''), 3000);
+                        } finally {
+                          setUploading(false);
+                        }
+                      } else if (file) {
+                        setError('Please select a PDF file');
+                        setTimeout(() => setError(''), 3000);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => pamphletInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition whitespace-nowrap disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <Upload size={18} />
+                    {uploading ? 'Uploading...' : 'Upload PDF'}
+                  </button>
+                </div>
+              </div>
+
               <button
                 onClick={() => handleSave('hero')}
-                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition mt-6"
               >
                 <Save size={20} />
                 Save Hero Content

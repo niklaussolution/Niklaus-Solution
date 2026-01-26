@@ -199,14 +199,16 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <Phone size={20} className="text-orange-500 shrink-0 mt-1" />
                 <div>
-                  {footerContent.contact.phones.map((phone, index) => (
-                    <div key={index}>
-                      <a href={`tel:${phone}`} className="hover:text-orange-500 transition-colors">
-                        {phone}
-                      </a>
-                      {index < footerContent.contact.phones.length - 1 && <br />}
-                    </div>
-                  ))}
+                  <div>
+                    <a href="tel:+916380516533" className="hover:text-orange-500 transition-colors">
+                      +91 6380516533
+                    </a>
+                  </div>
+                  <div>
+                    <a href="tel:+918862459821" className="hover:text-orange-500 transition-colors">
+                      +91 8862459821
+                    </a>
+                  </div>
                 </div>
               </li>
               <li className="flex items-start gap-3">

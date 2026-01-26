@@ -60,6 +60,8 @@ export function HeroSection() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    } else {
+      alert("Pamphlet is not available yet. Please try again later.");
     }
   };
 
@@ -111,8 +113,15 @@ export function HeroSection() {
                 {heroContent.primaryButtonText}
               </button>
               <button
+                onClick={downloadBrochure}
+                className="flex items-center justify-center gap-2 bg-white text-orange-500 px-8 py-4 rounded-xl border-2 border-orange-500 hover:bg-orange-50 transition-all shadow-md hover:shadow-lg font-semibold"
+              >
+                <Download size={20} />
+                Download Pamphlet
+              </button>
+              <button
                 onClick={() => setIsContactFormOpen(true)}
-                className="flex items-center justify-center gap-2 bg-white text-gray-700 px-8 py-4 rounded-xl border-2 border-orange-500 hover:bg-orange-50 transition-all shadow-md hover:shadow-lg font-semibold"
+                className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl border-2 border-gray-300 hover:bg-gray-200 transition-all shadow-md hover:shadow-lg font-semibold"
               >
                 Get in Touch
               </button>

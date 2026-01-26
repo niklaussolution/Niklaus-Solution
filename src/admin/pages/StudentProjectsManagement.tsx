@@ -378,7 +378,8 @@ export const StudentProjectsManagement: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Demo Link / URL *
+                    Live Demo Link / URL *
+                    <span className="text-xs text-blue-600 ml-2">(Redirects users to your project)</span>
                   </label>
                   <input
                     type="text"

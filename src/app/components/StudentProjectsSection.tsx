@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useState, useRef } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { ExternalLink, AlertCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { ExternalLink, AlertCircle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageCircle, LinkIcon } from "lucide-react";
 
 interface StudentProject {
   id: string;
@@ -364,6 +364,22 @@ function ProjectCard({ project, isExpanded, displayDescription, isDescriptionTru
       {/* Demo Container - Always visible */}
       <div className="px-6 pb-6 mt-auto">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Live Demo</p>
+
+        {/* Open Live Demo Button */}
+        {project.demoLink && (
+          <div className="mb-4">
+            <a
+              href={project.demoLink.startsWith('http') ? project.demoLink : `https://${project.demoLink}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg"
+            >
+              <LinkIcon size={18} />
+              Open Live Demo
+              <ExternalLink size={16} />
+            </a>
+          </div>
+        )}
 
         {/* Link Demo - Browser Container */}
         {project.demoType === 'link' && project.demoLink && (
