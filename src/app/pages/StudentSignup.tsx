@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebase';
 import { Navbar } from '../components/Navbar';
 
 export const StudentSignup = () => {
@@ -39,26 +41,44 @@ export const StudentSignup = () => {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const response = await axios.post(
-        `${apiUrl}/auth/student/signup`,
-        {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-        }
+      // Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
       );
+      const user = userCredential.user;
 
-      // Store token and student info
-      localStorage.setItem('studentToken', response.data.token);
-      localStorage.setItem('studentId', response.data.student.id);
-      localStorage.setItem('studentName', response.data.student.name);
+      // Store student data in Firestore
+      const studentData = {
+        firebaseUid: user.uid,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || '',
+        enrolledWorkshops: [],
+        certificates: [],
+        paymentStatus: 'pending',
+        approved: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      // Redirect to student dashboard
-      navigate('/student/dashboard');
+      await setDoc(doc(db, 'students', user.uid), studentData);
+
+      // Show success message and redirect to login
+      setError('');
+      alert('Account created successfully! Your account is pending admin approval. You will be able to login once approved.');
+      navigate('/student/login');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Signup failed');
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email already registered');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else {
+        setError(err.message || 'Signup failed');
+      }
     } finally {
       setLoading(false);
     }

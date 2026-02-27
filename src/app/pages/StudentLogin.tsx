@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebase';
+import { useStudent } from '../context/StudentContext';
 import { Navbar } from '../components/Navbar';
 
 export const StudentLogin = () => {
   const navigate = useNavigate();
+  const { setStudentInfo } = useStudent();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,21 +20,51 @@ export const StudentLogin = () => {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const response = await axios.post(
-        `${apiUrl}/auth/student/login`,
-        { email, password }
-      );
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      // Store token and student info
-      localStorage.setItem('studentToken', response.data.token);
-      localStorage.setItem('studentId', response.data.student.id);
-      localStorage.setItem('studentName', response.data.student.name);
+      // Get student data from Firestore
+      const studentDoc = await getDoc(doc(db, 'students', user.uid));
+      
+      if (!studentDoc.exists()) {
+        setError('Student account not found');
+        setLoading(false);
+        return;
+      }
 
+      const studentData = studentDoc.data();
+
+      // Check if student is approved
+      if (!studentData.approved) {
+        setError('Your account is pending admin approval. Please check back later.');
+        setLoading(false);
+        return;
+      }
+
+      // Get ID token
+      const token = await user.getIdToken();
+
+      // Update context and localStorage
+      setStudentInfo(user.uid, studentData.name, token);
+
+      console.log('Login successful, redirecting to dashboard');
+      
       // Redirect to student dashboard
-      navigate('/student/dashboard');
+      setTimeout(() => {
+        navigate('/student/dashboard', { replace: true });
+      }, 100);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error:', err);
+      if (err.code === 'auth/invalid-email' || err.code === 'auth/user-not-found') {
+        setError('Invalid email or password');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many login attempts. Please try again later');
+      } else {
+        setError(err.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }

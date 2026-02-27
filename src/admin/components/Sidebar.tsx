@@ -19,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = tru
     { path: '/admin/workshops', label: 'Workshops', icon: '🎓' },
     { path: '/admin/pricing', label: 'Pricing Plans', icon: '💰' },
     { path: '/admin/registrations', label: 'Registrations', icon: '📋' },
+    { path: '/admin/students', label: 'Students', icon: '👥' },
     { path: '/admin/certificates', label: 'Certificates', icon: '🏆' },
     { path: '/admin/trainers', label: 'Trainers', icon: '👨‍🏫' },
     { path: '/admin/testimonials', label: 'Testimonials', icon: '⭐' },
