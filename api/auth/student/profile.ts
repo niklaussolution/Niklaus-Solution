@@ -28,13 +28,8 @@ async function verifyToken(req: VercelRequest): Promise<string | null> {
     const decodedToken = await auth.verifyIdToken(token);
     return decodedToken.uid;
   } catch (error) {
-    // Try to verify as custom token by checking if user exists in Firestore
-    try {
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      return payload.uid;
-    } catch {
-      return null;
-    }
+    console.error('Token verification error:', error);
+    return null;
   }
 }
 

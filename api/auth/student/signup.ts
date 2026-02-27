@@ -47,15 +47,37 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Create Firebase auth user
-    const userRecord = await auth.createUser({
-      email,
-      password,
+    // Use Firebase REST API to create a new account
+    const firebaseApiKey = process.env.FIREBASE_API_KEY;
+    if (!firebaseApiKey) {
+      throw new Error('FIREBASE_API_KEY not set');
+    }
+
+    const signUpResponse = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseApiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        returnSecureToken: true,
+      }),
     });
+
+    const signUpData = await signUpResponse.json();
+
+    if (!signUpResponse.ok) {
+      if (signUpData.error?.message === 'EMAIL_EXISTS') {
+        return res.status(400).json({ message: 'Email already registered' });
+      }
+      throw new Error(signUpData.error?.message || 'Signup failed');
+    }
+
+    const uid = signUpData.localId;
+    const idToken = signUpData.idToken;
 
     // Store student info in Firestore
     const studentData = {
-      firebaseUid: userRecord.uid,
+      firebaseUid: uid,
       name,
       email,
       phone: phone || '',
@@ -66,16 +88,13 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       updatedAt: new Date(),
     };
 
-    await db.collection('students').doc(userRecord.uid).set(studentData);
-
-    // Create custom token
-    const customToken = await auth.createCustomToken(userRecord.uid);
+    await db.collection('students').doc(uid).set(studentData);
 
     return res.status(201).json({
       message: 'Student registered successfully',
-      token: customToken,
+      token: idToken,
       student: {
-        id: userRecord.uid,
+        id: uid,
         name: studentData.name,
         email: studentData.email,
         phone: studentData.phone,
@@ -83,21 +102,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     });
   } catch (error: any) {
     console.error('Signup error:', error);
-    
-    // Handle specific Firebase auth errors
-    if (error.code === 'auth/email-already-exists') {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
-    if (error.code === 'auth/weak-password') {
-      return res.status(400).json({ message: 'Password is too weak' });
-    }
-    if (error.code === 'auth/invalid-email') {
-      return res.status(400).json({ message: 'Invalid email address' });
-    }
-
-    return res.status(500).json({ 
-      message: 'Internal server error', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error.message,
     });
   }
 };

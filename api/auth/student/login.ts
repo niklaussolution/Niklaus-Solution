@@ -41,43 +41,63 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // In Firebase Admin SDK, we can't directly verify password
-    // Instead, we'll create a custom token for the user if they exist
-    try {
-      const user = await auth.getUserByEmail(email);
-      
-      // Get student data from Firestore
-      const studentDoc = await db.collection('students').doc(user.uid).get();
-      
-      if (!studentDoc.exists) {
-        return res.status(401).json({ message: 'Student account not found' });
-      }
+    // Use Firebase REST API to sign in with email and password
+    const firebaseApiKey = process.env.FIREBASE_API_KEY;
+    if (!firebaseApiKey) {
+      throw new Error('FIREBASE_API_KEY not set');
+    }
 
-      const studentData = studentDoc.data();
+    const signInResponse = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        returnSecureToken: true,
+      }),
+    });
 
-      // Create a custom token for the student
-      const customToken = await auth.createCustomToken(user.uid);
+    const signInData = await signInResponse.json();
 
-      return res.status(200).json({
-        message: 'Login successful',
-        token: customToken,
-        student: {
-          id: user.uid,
-          name: studentData?.name,
-          email: studentData?.email,
-          phone: studentData?.phone,
-          enrolledWorkshops: studentData?.enrolledWorkshops || [],
-          certificates: studentData?.certificates || [],
-        },
-      });
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+    if (!signInResponse.ok) {
+      if (signInData.error?.message === 'INVALID_PASSWORD' || signInData.error?.message === 'EMAIL_NOT_FOUND') {
         return res.status(401).json({ message: 'Invalid email or password' });
       }
-      throw error;
+      throw new Error(signInData.error?.message || 'Authentication failed');
     }
+
+    const uid = signInData.localId;
+    const idToken = signInData.idToken;
+
+    // Get student data from Firestore
+    const studentDoc = await db.collection('students').doc(uid).get();
+
+    if (!studentDoc.exists) {
+      return res.status(401).json({ message: 'Student account not found' });
+    }
+
+    const studentData = studentDoc.data();
+
+    return res.status(200).json({
+      message: 'Login successful',
+      token: idToken,
+      student: {
+        id: uid,
+        name: studentData?.name,
+        email: studentData?.email,
+        phone: studentData?.phone,
+        enrolledWorkshops: studentData?.enrolledWorkshops || [],
+        certificates: studentData?.certificates || [],
+      },
+    });
   } catch (error: any) {
     console.error('Login error:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
     return res.status(500).json({ 
       message: 'Internal server error', 
       error: error.message 
