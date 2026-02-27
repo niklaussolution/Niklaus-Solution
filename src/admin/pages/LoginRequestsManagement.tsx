@@ -7,42 +7,38 @@ import {
   Search,
   Filter,
   AlertCircle,
-  Download,
+  Clock,
 } from 'lucide-react';
 import { db } from '../../config/firebase';
 import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
 
-interface Student {
+interface LoginRequest {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
   createdAt: any;
   approved: boolean;
-  paymentStatus: string;
+  rejected?: boolean;
 }
 
 interface Stats {
-  total: number;
   pending: number;
   approved: number;
+  rejected: number;
 }
 
-// Helper function to safely convert date
 const formatDate = (date: any): string => {
   if (!date) return 'N/A';
   try {
-    // Check if it's a Firestore Timestamp with toDate method
     if (date.toDate && typeof date.toDate === 'function') {
-      return new Date(date.toDate()).toLocaleDateString();
+      return new Date(date.toDate()).toLocaleString();
     }
-    // Check if it's already a Date object
     if (date instanceof Date) {
-      return date.toLocaleDateString();
+      return date.toLocaleString();
     }
-    // Check if it's a number (timestamp in milliseconds)
     if (typeof date === 'number') {
-      return new Date(date).toLocaleDateString();
+      return new Date(date).toLocaleString();
     }
     return 'N/A';
   } catch (error) {
@@ -50,129 +46,106 @@ const formatDate = (date: any): string => {
   }
 };
 
-export const StudentManagement: React.FC = () => {
+export const LoginRequestsManagement: React.FC = () => {
   const { admin } = useAuth();
-  const [students, setStudents] = useState<Student[]>([]);
+  const [requests, setRequests] = useState<LoginRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterApproved, setFilterApproved] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('pending');
   const [stats, setStats] = useState<Stats>({
-    total: 0,
     pending: 0,
     approved: 0,
+    rejected: 0,
   });
 
   useEffect(() => {
     if (admin) {
-      fetchStudents();
+      fetchLoginRequests();
+      // Refresh every 5 seconds to show real-time updates
+      const interval = setInterval(fetchLoginRequests, 5000);
+      return () => clearInterval(interval);
     }
   }, [admin]);
 
-  const fetchStudents = async () => {
+  const fetchLoginRequests = async () => {
     try {
       setLoading(true);
-      const studentsCollection = collection(db, 'students');
-      const snapshot = await getDocs(studentsCollection);
+      const requestsCollection = collection(db, 'loginRequests');
+      const snapshot = await getDocs(requestsCollection);
 
-      const studentsData: Student[] = snapshot.docs.map((doc) => ({
+      const requestsData: LoginRequest[] = snapshot.docs.map((doc) => ({
         id: doc.id,
-        name: doc.data().name || 'N/A',
-        email: doc.data().email || 'N/A',
-        phone: doc.data().phone || 'N/A',
+        studentId: doc.data().studentId || 'N/A',
+        studentName: doc.data().studentName || 'N/A',
+        studentEmail: doc.data().studentEmail || 'N/A',
         createdAt: doc.data().createdAt,
         approved: doc.data().approved || false,
-        paymentStatus: doc.data().paymentStatus || 'pending',
+        rejected: doc.data().rejected || false,
       }));
 
-      setStudents(studentsData);
+      setRequests(requestsData);
 
       // Calculate stats
-      const total = studentsData.length;
-      const pending = studentsData.filter((s) => !s.approved).length;
-      const approved = studentsData.filter((s) => s.approved).length;
+      const pending = requestsData.filter((r) => !r.approved && !r.rejected).length;
+      const approved = requestsData.filter((r) => r.approved).length;
+      const rejected = requestsData.filter((r) => r.rejected).length;
 
-      setStats({ total, pending, approved });
+      setStats({ pending, approved, rejected });
     } catch (error) {
-      console.error('Error fetching students:', error);
-      alert('Error loading students. Please try again.');
+      console.error('Error fetching login requests:', error);
+      alert('Error loading login requests. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApproveStudent = async (studentId: string) => {
+  const handleApproveLogin = async (requestId: string) => {
     try {
-      await updateDoc(doc(db, 'students', studentId), {
+      await updateDoc(doc(db, 'loginRequests', requestId), {
         approved: true,
+        rejected: false,
+        approvedAt: new Date(),
       });
 
-      // Update local state
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.id === studentId ? { ...s, approved: true } : s
-        )
-      );
-
-      alert('Student approved successfully!');
-      fetchStudents();
+      alert('Login approved!');
+      fetchLoginRequests();
     } catch (error) {
-      console.error('Error approving student:', error);
-      alert('Error approving student. Please try again.');
+      console.error('Error approving login:', error);
+      alert('Error approving login. Please try again.');
     }
   };
 
-  const handleRejectStudent = async (studentId: string) => {
+  const handleRejectLogin = async (requestId: string) => {
     try {
-      await updateDoc(doc(db, 'students', studentId), {
+      await updateDoc(doc(db, 'loginRequests', requestId), {
         approved: false,
+        rejected: true,
+        rejectedAt: new Date(),
       });
 
-      alert('Student rejected successfully!');
-      fetchStudents();
+      alert('Login rejected!');
+      fetchLoginRequests();
     } catch (error) {
-      console.error('Error rejecting student:', error);
-      alert('Error rejecting student. Please try again.');
+      console.error('Error rejecting login:', error);
+      alert('Error rejecting login. Please try again.');
     }
   };
 
-  const filteredStudents = students.filter((student) => {
+  const filteredRequests = requests.filter((request) => {
     const matchesSearch =
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase());
+      request.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.studentEmail.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (filterApproved === 'pending') {
-      return !student.approved && matchesSearch;
-    } else if (filterApproved === 'approved') {
-      return student.approved && matchesSearch;
+    if (filterStatus === 'pending') {
+      return !request.approved && !request.rejected && matchesSearch;
+    } else if (filterStatus === 'approved') {
+      return request.approved && matchesSearch;
+    } else if (filterStatus === 'rejected') {
+      return request.rejected && matchesSearch;
     }
 
     return matchesSearch;
   });
-
-  const handleDownloadCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Status', 'Created At'];
-    const rows = filteredStudents.map((student) => [
-      student.name,
-      student.email,
-      student.phone,
-      student.approved ? 'Approved' : 'Pending',
-      formatDate(student.createdAt),
-    ]);
-
-    const csv = [
-      headers.join(','),
-      ...rows.map((row) =>
-        row.map((cell) => `"${cell}"`).join(',')
-      ),
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
 
   if (loading) {
     return (
@@ -180,7 +153,7 @@ export const StudentManagement: React.FC = () => {
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Loading students...</p>
+            <p className="text-gray-600">Loading login requests...</p>
           </div>
         </div>
       </AdminLayout>
@@ -190,30 +163,18 @@ export const StudentManagement: React.FC = () => {
   return (
     <AdminLayout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Student Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Login Requests</h1>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-              <div className="bg-blue-100 rounded-full p-3">
-                <AlertCircle className="text-blue-600" size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">Pending Approval</p>
+                <p className="text-gray-500 text-sm font-medium">Pending</p>
                 <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
               </div>
               <div className="bg-yellow-100 rounded-full p-3">
-                <AlertCircle className="text-yellow-600" size={24} />
+                <Clock className="text-yellow-600" size={24} />
               </div>
             </div>
           </div>
@@ -226,6 +187,18 @@ export const StudentManagement: React.FC = () => {
               </div>
               <div className="bg-green-100 rounded-full p-3">
                 <CheckCircle className="text-green-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Rejected</p>
+                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+              </div>
+              <div className="bg-red-100 rounded-full p-3">
+                <XCircle className="text-red-600" size={24} />
               </div>
             </div>
           </div>
@@ -248,31 +221,31 @@ export const StudentManagement: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter size={20} className="text-gray-500" />
               <select
-                value={filterApproved}
-                onChange={(e) => setFilterApproved(e.target.value)}
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               >
-                <option value="all">All Students</option>
-                <option value="pending">Pending Approval</option>
+                <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="all">All Requests</option>
               </select>
             </div>
 
             <button
-              onClick={handleDownloadCSV}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+              onClick={fetchLoginRequests}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
             >
-              <Download size={20} />
-              Export CSV
+              Refresh
             </button>
           </div>
         </div>
 
-        {/* Students List */}
+        {/* Login Requests List */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          {filteredStudents.length === 0 ? (
+          {filteredRequests.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
-              <p className="text-lg">No students found</p>
+              <p className="text-lg">No login requests found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -286,13 +259,10 @@ export const StudentManagement: React.FC = () => {
                       Email
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Phone
+                      Requested At
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Joined
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Actions
@@ -300,59 +270,71 @@ export const StudentManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50 transition">
+                  {filteredRequests.map((request) => (
+                    <tr key={request.id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="font-medium text-gray-900">{student.name}</p>
+                        <p className="font-medium text-gray-900">{request.studentName}</p>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                        {student.email}
+                        {request.studentEmail}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                        {student.phone || 'N/A'}
+                        {formatDate(request.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {student.approved ? (
+                        {request.approved ? (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                             <CheckCircle size={16} />
                             Approved
                           </span>
+                        ) : request.rejected ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            <XCircle size={16} />
+                            Rejected
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                            <AlertCircle size={16} />
+                            <Clock size={16} />
                             Pending
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                        {formatDate(student.createdAt)}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
-                          {!student.approved ? (
+                          {!request.approved && !request.rejected && (
                             <>
                               <button
-                                onClick={() => handleApproveStudent(student.id)}
+                                onClick={() => handleApproveLogin(request.id)}
                                 className="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition"
                               >
                                 <CheckCircle size={16} />
                                 Approve
                               </button>
                               <button
-                                onClick={() => handleRejectStudent(student.id)}
+                                onClick={() => handleRejectLogin(request.id)}
                                 className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
                               >
                                 <XCircle size={16} />
                                 Reject
                               </button>
                             </>
-                          ) : (
+                          )}
+                          {request.approved && (
                             <button
-                              onClick={() => handleRejectStudent(student.id)}
+                              onClick={() => handleRejectLogin(request.id)}
                               className="inline-flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition"
                             >
                               <XCircle size={16} />
-                              Revoke
+                              Reject
+                            </button>
+                          )}
+                          {request.rejected && (
+                            <button
+                              onClick={() => handleApproveLogin(request.id)}
+                              className="inline-flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition"
+                            >
+                              <CheckCircle size={16} />
+                              Approve
                             </button>
                           )}
                         </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '../../config/firebase';
 import { useStudent } from '../context/StudentContext';
 import { Navbar } from '../components/Navbar';
@@ -34,25 +34,28 @@ export const StudentLogin = () => {
       }
 
       const studentData = studentDoc.data();
-
-      // Check if student is approved
-      if (!studentData.approved) {
-        setError('Your account is pending admin approval. Please check back later.');
-        setLoading(false);
-        return;
-      }
-
-      // Get ID token
       const token = await user.getIdToken();
 
-      // Update context and localStorage
-      setStudentInfo(user.uid, studentData.name, token);
+      // Create a login request
+      const loginRequest = await addDoc(collection(db, 'loginRequests'), {
+        studentId: user.uid,
+        studentName: studentData.name,
+        studentEmail: email,
+        createdAt: new Date(),
+        approved: false,
+        token: token,
+      });
 
-      console.log('Login successful, redirecting to dashboard');
+      // Store request ID and student info
+      localStorage.setItem('loginRequestId', loginRequest.id);
+      localStorage.setItem('studentId', user.uid);
+      localStorage.setItem('studentName', studentData.name);
+
+      console.log('Login request created, waiting for approval');
       
-      // Redirect to student dashboard
+      // Redirect to waiting approval screen
       setTimeout(() => {
-        navigate('/student/dashboard', { replace: true });
+        navigate('/student/waiting-approval', { replace: true });
       }, 100);
     } catch (err: any) {
       console.error('Login error:', err);

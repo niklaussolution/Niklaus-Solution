@@ -12,7 +12,7 @@ import { RegistrationsManagement } from "./admin/pages/RegistrationsManagement";
 import { TrainersManagement } from "./admin/pages/TrainersManagement";
 import { TestimonialsManagement } from "./admin/pages/TestimonialsManagement";
 import { StudentProjectsManagement } from "./admin/pages/StudentProjectsManagement";
-import { StudentManagement } from "./admin/pages/StudentManagement";
+import { LoginRequestsManagement } from "./admin/pages/LoginRequestsManagement";
 import { FeaturesManagement } from "./admin/pages/FeaturesManagement";
 import { ScholarshipsManagement } from "./admin/pages/ScholarshipsManagement";
 import { CompaniesManagement } from "./admin/pages/CompaniesManagement";
@@ -33,6 +33,7 @@ import { Contact } from "./app/pages/Contact";
 import { StudentLogin } from "./app/pages/StudentLogin";
 import { StudentSignup } from "./app/pages/StudentSignup";
 import { StudentDashboard } from "./app/pages/StudentDashboard";
+import { WaitingForApproval } from "./app/pages/WaitingForApproval";
 import { StudentProvider } from "./app/context/StudentContext";
 import { StudentProtectedRoute } from "./app/components/StudentProtectedRoute";
 /* import MyCertificates from "./app/pages/MyCertificates"; */
@@ -60,6 +61,7 @@ createRoot(document.getElementById("root")!).render(
           {/* Student Routes */}
           <Route path="/student/login" element={<StudentLogin />} />
           <Route path="/student/signup" element={<StudentSignup />} />
+          <Route path="/student/waiting-approval" element={<WaitingForApproval />} />
           <Route
             path="/student/dashboard"
             element={
@@ -125,10 +127,10 @@ createRoot(document.getElementById("root")!).render(
           }
         />
         <Route
-          path="/admin/students"
+          path="/admin/login-requests"
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
-              <StudentManagement />
+              <LoginRequestsManagement />
             </ProtectedRoute>
           }
         />

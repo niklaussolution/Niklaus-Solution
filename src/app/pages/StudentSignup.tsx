@@ -58,7 +58,6 @@ export const StudentSignup = () => {
         enrolledWorkshops: [],
         certificates: [],
         paymentStatus: 'pending',
-        approved: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

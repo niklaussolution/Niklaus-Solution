@@ -46,17 +46,6 @@ export const StudentDashboard = () => {
 
         const studentData = studentDoc.data();
 
-        // Check if student is still approved
-        if (!studentData.approved) {
-          setError('Your account has been deactivated. Please contact support.');
-          await signOut(auth);
-          logout();
-          setTimeout(() => {
-            navigate('/student/login');
-          }, 100);
-          return;
-        }
-
         setStudent({
           id: studentDoc.id,
           name: studentData.name,
