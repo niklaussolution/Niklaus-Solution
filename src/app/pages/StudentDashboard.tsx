@@ -558,7 +558,7 @@ export const StudentDashboard = () => {
             { id: 'wishlist', label: 'Wishlist', icon: Heart },
             { id: 'quiz', label: 'Quiz Attempts', icon: HelpCircle },
             { id: 'orders', label: 'Order History', icon: ShoppingCart },
-            { id: 'qa', label: 'Q&A', icon: MessageSquare },
+            { id: 'qa', label: 'Support Chat', icon: MessageSquare },
             { id: 'settings', label: 'Settings', icon: Settings },
           ].map(({ id, label, icon: Icon }) => (
             <button
