@@ -44,7 +44,7 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [sectionHeading, setSectionHeading] = useState("Explore Our Videos");
-  const [sectionDescription, setSectionDescription] = useState("Learn more about Nativeva through our curated video content");
+  const [sectionDescription, setSectionDescription] = useState("Learn more about Niklaus Solutions through our curated video content");
 
   useEffect(() => {
     fetchVideos();

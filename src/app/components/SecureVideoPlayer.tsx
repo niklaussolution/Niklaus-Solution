@@ -14,7 +14,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   videoUrl,
   videoTitle,
   courseName,
-  userEmail = 'student@nativeva.com',
+  userEmail = 'student@niklaussolutions.com',
   lessonNumber = 1,
   totalLessons = 1,
 }) => {
@@ -351,7 +351,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
               textShadow: '0 0 1px rgba(255,255,255,0.1)'
             }}
           >
-            NATIVE VA PREMIUM SECURITY • {userEmail} • {userEmail} • {userEmail}
+            NIKLAUS SOLUTIONS SECURITY • {userEmail} • {userEmail} • {userEmail}
           </div>
           <div 
             className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
@@ -362,7 +362,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
               textShadow: '0 0 1px rgba(255,255,255,0.1)'
             }}
           >
-            NATIVE VA PREMIUM SECURITY • {userEmail} • {userEmail} • {userEmail}
+            NIKLAUS SOLUTIONS SECURITY • {userEmail} • {userEmail} • {userEmail} 
           </div>
         </div>
 
@@ -370,7 +370,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         <div className="absolute top-4 right-4 pointer-events-none select-none z-20 opacity-40 group-hover:opacity-100 transition-opacity">
            <div className="flex flex-col items-end">
               <div className="h-0.5 w-12 bg-blue-500/50 mb-1" />
-              <p className="text-[8px] font-mono text-blue-400 uppercase tracking-tighter">Native VA Stream x800</p>
+              <p className="text-[8px] font-mono text-blue-400 uppercase tracking-tighter">Niklaus Solutions x800</p>
            </div>
         </div>
       </div>
@@ -423,6 +423,12 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           border-radius: 10px;
         }
       `}</style>
+      
+      {/* Footer Branding */}
+      <div className="bg-[#0f172a] px-6 py-2 border-t border-blue-900/10 flex justify-between items-center text-[9px] font-mono text-gray-500 uppercase tracking-widest">
+        <span>© 2026 Niklaus Solutions</span>
+        <span>Secure Stream Protocol v4.0</span>
+      </div>
     </div>
   );
 };

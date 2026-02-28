@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc, onSnapshot, orderBy } from 'firebase/firestore';
 import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, db, storage } from '../../config/firebase';
 import { useStudent } from '../context/StudentContext';
 import { SecureVideoPlayer } from '../components/SecureVideoPlayer';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Menu, X, LogOut, User, BookOpen, Award, Heart, HelpCircle, ShoppingCart, MessageSquare, Settings, ChevronDown, Upload, Eye, EyeOff, Lock, Globe, Linkedin, Twitter, Github } from 'lucide-react';
+import { Menu, X, LogOut, User, BookOpen, Award, Heart, HelpCircle, ShoppingCart, MessageSquare, Settings, ChevronDown, Upload, Eye, EyeOff, Lock, Globe, Linkedin, Twitter, Github, Play, ShieldCheck, Send } from 'lucide-react';
 
 interface StudentProfile {
   id: string;
@@ -63,6 +63,13 @@ interface Question {
   createdAt: number;
 }
 
+interface ChatMessage {
+  id: string;
+  text: string;
+  sender: 'student' | 'admin';
+  timestamp: number;
+}
+
 interface StudentProgress {
   completedVideos: string[];
   completionPercentage: number;
@@ -85,6 +92,8 @@ export const StudentDashboard = () => {
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [studentProgress, setStudentProgress] = useState<Map<string, StudentProgress>>(new Map());
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
@@ -94,6 +103,11 @@ export const StudentDashboard = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState<any>({});
   const [successMsg, setSuccessMsg] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const fetchStudentProfile = async () => {
@@ -263,6 +277,54 @@ export const StudentDashboard = () => {
 
     fetchEnrolledCoursesVideos();
   }, [student?.enrolledWorkshops, student?.id]);
+
+  // Real-time messenger subscription
+  useEffect(() => {
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId || activePage !== 'qa') return;
+
+    const messagesRef = collection(db, 'students', studentId, 'messages');
+    const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ChatMessage[];
+      setMessages(msgs);
+      setTimeout(scrollToBottom, 100);
+    });
+
+    return () => unsubscribe();
+  }, [activePage]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId || !newMessage.trim()) return;
+
+    const textPayload = newMessage;
+    setNewMessage('');
+
+    try {
+      const messagesRef = collection(db, 'students', studentId, 'messages');
+      await addDoc(messagesRef, {
+        text: textPayload,
+        sender: 'student',
+        timestamp: Date.now()
+      });
+
+      // Update unread status for admin
+      const studentDocRef = doc(db, 'students', studentId);
+      await updateDoc(studentDocRef, {
+        lastMessage: textPayload,
+        lastMessageTime: Date.now(),
+        hasUnread: true
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -479,16 +541,16 @@ export const StudentDashboard = () => {
     <div className="flex h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100 overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-screen w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-40 md:relative md:translate-x-0 ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-40 md:relative md:translate-x-0 flex flex-col ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-6 border-b">
+        <div className="p-6 border-b shrink-0">
           <h1 className="text-2xl font-bold text-gray-800">Student Portal</h1>
           <p className="text-sm text-gray-600 mt-2">Welcome, {student?.name?.split(' ')[0]}!</p>
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2 pb-24">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: BookOpen },
             { id: 'profile', label: 'My Profile', icon: User },
@@ -512,7 +574,7 @@ export const StudentDashboard = () => {
           ))}
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="p-4 border-t shrink-0 bg-white">
           <button
             onClick={handleLogout}
             className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition"
@@ -797,7 +859,7 @@ export const StudentDashboard = () => {
                       <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
                         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
                           <h3 className="text-lg font-bold">{workshop}</h3>
-                          <p className="text-blue-100 text-sm mt-2">Nativeva | {workshop}</p>
+                          <p className="text-blue-100 text-sm mt-2">Niklaus Solutions | {workshop}</p>
                           {workshopVideos.length > 0 && <p className="text-blue-100 text-xs mt-3">📹 {workshopVideos.length} lessons</p>}
                         </div>
 
@@ -913,7 +975,7 @@ export const StudentDashboard = () => {
                           videoUrl={selectedCourseVideo.video.videoUrl}
                           videoTitle={selectedCourseVideo.video.title}
                           courseName={selectedCourseVideo.course}
-                          userEmail={student?.email || 'student@nativeva.com'}
+                          userEmail={student?.email || 'student@niklaussolutions.com'}
                           lessonNumber={selectedCourseVideo.video.order + 1}
                           totalLessons={coursesWithVideos.get(selectedCourseVideo.course)?.length || 0}
                         />
@@ -950,7 +1012,7 @@ export const StudentDashboard = () => {
                       </div>
                       
                       <div className="mt-8 pt-6 border-t border-blue-900/10 flex justify-between items-center text-[10px] font-mono text-gray-600 uppercase tracking-widest">
-                        <span>Native VA Digital Rights Management © 2024</span>
+                        <span>Niklaus Solutions Digital Rights Management © 2026</span>
                         <span>Stream Node: 192.168.1.1</span>
                       </div>
                     </div>
@@ -1048,62 +1110,73 @@ export const StudentDashboard = () => {
           )}
 
           {activePage === 'qa' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Questions & Answers</h2>
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ask a Question</label>
-                  <textarea
-                    value={newQuestion}
-                    onChange={(e) => setNewQuestion(e.target.value)}
-                    placeholder="Type your question here..."
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none mb-3"
-                  />
-                  <button
-                    onClick={handleSubmitQuestion}
-                    disabled={submittingQuestion || !newQuestion.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-lg transition"
-                  >
-                    {submittingQuestion ? 'Submitting...' : 'Submit Question'}
-                  </button>
+            <div className="h-[calc(100vh-140px)] flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+              {/* Chat Header */}
+              <div className="p-4 border-b bg-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                    <MessageSquare size={20} />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-gray-900 border-none m-0 p-0 text-lg">Niklaus Support Chat</h2>
+                    <p className="text-xs text-green-500 flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      Instructor Online
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {questions.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {questions.map((question) => (
-                    <div key={question.id} className="bg-white rounded-lg shadow-md p-6">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-lg font-bold text-gray-800">{question.question}</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          question.status === 'answered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {question.status === 'answered' ? '✓ Answered' : 'Pending'}
-                        </span>
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                    <MessageSquare size={48} className="mb-4 opacity-10" />
+                    <p className="text-sm">Ask any question to get started!</p>
+                  </div>
+                ) : (
+                  messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-4 py-2 rounded-2xl shadow-sm ${
+                          msg.sender === 'student'
+                            ? 'bg-blue-600 text-white rounded-tr-none'
+                            : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                        <p className={`text-[10px] mt-1 ${msg.sender === 'student' ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       </div>
-
-                      {question.replies && question.replies.length > 0 && (
-                        <div className="mt-4 pt-4 border-t space-y-3">
-                          {question.replies.map((reply, idx) => (
-                            <div key={idx} className="bg-gray-50 p-4 rounded-lg">
-                              <p className="text-sm font-semibold text-gray-700 mb-2">Instructor Reply:</p>
-                              <p className="text-gray-700">{reply.reply}</p>
-                              <p className="text-xs text-gray-500 mt-2">{new Date(reply.createdAt).toLocaleDateString()}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  ))}
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your question..."
+                    className="flex-1 px-4 py-3 bg-gray-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newMessage.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-xl transition shadow-lg shadow-blue-200"
+                  >
+                    <Send size={20} />
+                  </button>
                 </div>
-              ) : (
-                <div className="bg-white rounded-lg shadow-md p-20 text-center">
-                  <MessageSquare size={64} className="mx-auto text-gray-300 mb-6" />
-                  <h3 className="text-2xl font-bold text-gray-600 mb-2">No questions</h3>
-                  <p className="text-gray-500 text-lg">Ask questions to clear your doubts</p>
-                </div>
-              )}
+              </form>
             </div>
           )}
 

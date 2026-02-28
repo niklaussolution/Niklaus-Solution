@@ -1,231 +1,247 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { Search, X, Check, AlertCircle } from 'lucide-react';
+import { db } from '../../config/firebase';
+import { collection, query, where, getDocs, onSnapshot, addDoc, orderBy, Timestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { Search, Send, User, BookOpen, Clock, CheckCircle2, MessageCircle, ArrowLeft } from 'lucide-react';
 
-interface Question {
+interface ChatMessage {
   id: string;
-  question: string;
-  studentId: string;
-  workshopId: string;
-  status: 'open' | 'answered' | 'closed';
-  replies: Reply[];
-  createdAt: number;
+  text: string;
+  sender: 'student' | 'admin';
+  timestamp: number;
 }
 
-interface Reply {
-  instructorId: string;
-  reply: string;
-  createdAt: number;
+interface Student {
+  id: string;
+  name: string;
+  email: string;
 }
 
 export const QAManagement: React.FC = () => {
-  const { token } = useAuth();
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'answered' | 'closed'>('open');
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const [submittingReply, setSubmittingReply] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Fetch all students who have enrolled workshops (potential chatters)
   useEffect(() => {
-    fetchQuestions();
-  }, [filterStatus]);
+    const fetchStudents = async () => {
+      try {
+        const studentsRef = collection(db, 'students');
+        const q = query(studentsRef, orderBy('name'));
+        const querySnapshot = await getDocs(q);
+        const studentList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Student[];
+        setStudents(studentList);
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchQuestions = async () => {
+    fetchStudents();
+  }, []);
+
+  // Subscribe to messages when a student is selected
+  useEffect(() => {
+    if (!selectedStudent) return;
+
+    const messagesRef = collection(db, 'students', selectedStudent.id, 'messages');
+    const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ChatMessage[];
+      setMessages(msgs);
+      scrollToBottom();
+    });
+
+    return () => unsubscribe();
+  }, [selectedStudent]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedStudent) return;
+
+    const messageToSend = newMessage;
+    setNewMessage('');
+
     try {
-      setLoading(true);
-      // In a real scenario, you would fetch based on status
-      // For now, we'll fetch all and filter client-side
-      setQuestions([]);
+      const messagesRef = collection(db, 'students', selectedStudent.id, 'messages');
+      await addDoc(messagesRef, {
+        text: messageToSend,
+        sender: 'admin',
+        timestamp: Date.now()
+      });
+      
+      // Also update a "lastMessage" field in the student doc for the list view
+      const studentDocRef = doc(db, 'students', selectedStudent.id);
+      await updateDoc(studentDocRef, {
+        lastMessage: messageToSend,
+        lastMessageTime: Date.now(),
+        hasUnread: false // Admin replied, so no unread for admin
+      });
     } catch (error) {
-      setError('Error fetching questions');
-    } finally {
-      setLoading(false);
+      console.error('Error sending message:', error);
     }
   };
 
-  const handleReplySubmit = async () => {
-    if (!replyText.trim() || !selectedQuestion) return;
-
-    try {
-      setSubmittingReply(true);
-      await api.addReplyToQuestion(selectedQuestion.id, 'admin-id', replyText);
-      setSuccess('Reply added successfully!');
-      setReplyText('');
-      setSelectedQuestion(null);
-      fetchQuestions();
-    } catch (error) {
-      setError('Failed to add reply');
-    } finally {
-      setSubmittingReply(false);
-    }
-  };
-
-  const filteredQuestions = questions.filter(q => {
-    const matchesSearch = q.question.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || q.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredStudents = students.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    s.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Questions & Answers</h1>
-            <p className="text-gray-600 mt-2">Manage student questions and provide responses</p>
-          </div>
-
-          {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg my-6">{error}</div>}
-          {success && <div className="bg-green-100 text-green-700 p-4 rounded-lg my-6">{success}</div>}
-
-          {/* Filter & Search */}
-          <div className="my-6 flex gap-4 flex-wrap">
-            <div className="flex-1 min-w-64">
+      <div className="h-[calc(100vh-64px)] bg-gray-50 flex overflow-hidden">
+        {/* Sidebar: Student List */}
+        <div className={`w-full md:w-80 bg-white border-r flex flex-col transition-all ${selectedStudent ? 'hidden md:flex' : 'flex'}`}>
+          <div className="p-4 border-b">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <MessageCircle className="text-blue-600" />
+              Student Chats
+            </h2>
+            <div className="mt-4 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Search questions..."
+                placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               />
-            </div>
-            <div className="flex gap-2">
-              {['all', 'open', 'answered', 'closed'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status as any)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition ${
-                    filterStatus === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </button>
-              ))}
             </div>
           </div>
 
-          {/* Questions List */}
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            </div>
-          ) : filteredQuestions.length > 0 ? (
-            <div className="grid gap-4">
-              {filteredQuestions.map((question) => (
-                <div key={question.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800">{question.question}</h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Student: {question.studentId} | Workshop: {question.workshopId}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      question.status === 'open' ? 'bg-yellow-100 text-yellow-800' :
-                      question.status === 'answered' ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {question.status.charAt(0).toUpperCase() + question.status.slice(1)}
-                    </span>
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="p-8 text-center text-gray-500">Loading chats...</div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">No students found</div>
+            ) : (
+              filteredStudents.map((student) => (
+                <button
+                  key={student.id}
+                  onClick={() => setSelectedStudent(student)}
+                  className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                    selectedStudent?.id === student.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
+                  }`}
+                >
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                    {student.name.charAt(0)}
                   </div>
-
-                  <p className="text-xs text-gray-500 mb-3">
-                    Asked: {new Date(question.createdAt).toLocaleDateString()}
-                  </p>
-
-                  {question.replies.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                      {question.replies.map((reply, idx) => (
-                        <div key={idx} className="bg-green-50 p-3 rounded-lg border border-green-200">
-                          <p className="text-sm font-semibold text-green-800 mb-1">Instructor Reply:</p>
-                          <p className="text-sm text-gray-700">{reply.reply}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => setSelectedQuestion(question)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
-                  >
-                    {question.replies.length > 0 ? 'Add Another Reply' : 'Reply'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <AlertCircle size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">No questions found</p>
-            </div>
-          )}
-
-          {/* Reply Modal */}
-          {selectedQuestion && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-2xl font-bold text-gray-800">Reply to Question</h2>
-                  <button onClick={() => setSelectedQuestion(null)} className="text-gray-500 hover:text-gray-700">
-                    <X size={24} />
-                  </button>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <p className="font-semibold text-gray-800 mb-2">Question:</p>
-                  <p className="text-gray-700">{selectedQuestion.question}</p>
-                </div>
-
-                {selectedQuestion.replies.length > 0 && (
-                  <div className="mb-6">
-                    <p className="font-semibold text-gray-800 mb-3">Previous Replies:</p>
-                    <div className="space-y-3">
-                      {selectedQuestion.replies.map((reply, idx) => (
-                        <div key={idx} className="bg-green-50 p-4 rounded-lg border border-green-200">
-                          <p className="text-sm font-semibold text-green-800 mb-1">Instructor Reply:</p>
-                          <p className="text-sm text-gray-700">{reply.reply}</p>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="font-bold text-gray-900 truncate">{student.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{student.email}</p>
                   </div>
-                )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
 
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Reply</label>
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    rows={4}
-                    placeholder="Type your response..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleReplySubmit}
-                    disabled={submittingReply || !replyText.trim()}
-                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg flex items-center justify-center gap-2"
+        {/* Chat Area */}
+        <div className={`flex-1 flex flex-col bg-white ${!selectedStudent ? 'hidden md:flex' : 'flex'}`}>
+          {selectedStudent ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-4 border-b flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setSelectedStudent(null)}
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-full"
                   >
-                    <Check size={18} /> {submittingReply ? 'Submitting...' : 'Submit Reply'}
+                    <ArrowLeft size={20} />
                   </button>
-                  <button
-                    onClick={() => setSelectedQuestion(null)}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg"
-                  >
-                    Cancel
-                  </button>
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {selectedStudent.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{selectedStudent.name}</h3>
+                    <p className="text-xs text-green-500 flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      Active Student
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Message List */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                    <MessageCircle size={48} className="mb-4 opacity-20" />
+                    <p>No messages yet. Start the conversation!</p>
+                  </div>
+                ) : (
+                  messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-4 py-2 rounded-2xl shadow-sm ${
+                          msg.sender === 'admin'
+                            ? 'bg-blue-600 text-white rounded-tr-none'
+                            : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                        <p
+                          className={`text-[10px] mt-1 ${
+                            msg.sender === 'admin' ? 'text-blue-100 font-medium' : 'text-gray-400 font-medium'
+                          }`}
+                        >
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Message Input */}
+              <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 px-4 py-3 bg-gray-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newMessage.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-xl transition shadow-lg shadow-blue-200"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+              <div className="bg-blue-50 p-6 rounded-full mb-4">
+                <MessageCircle size={64} className="text-blue-200" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">Your Support Inbox</h3>
+              <p className="max-w-xs text-center mt-2">
+                Select a student from the sidebar to start a real-time chat and answer their questions.
+              </p>
             </div>
           )}
         </div>
@@ -233,5 +249,3 @@ export const QAManagement: React.FC = () => {
     </AdminLayout>
   );
 };
-
-export default QAManagement;
