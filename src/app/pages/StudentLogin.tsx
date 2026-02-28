@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../config/firebase';
 import { useStudent } from '../context/StudentContext';
 import { Navbar } from '../components/Navbar';
@@ -20,6 +20,16 @@ export const StudentLogin = () => {
     setLoading(true);
 
     try {
+      // Check if user is already "waiting for approval" from a previous session
+      const existingRequestId = localStorage.getItem('loginRequestId');
+      const isApproved = localStorage.getItem('isApproved') === 'true';
+      
+      if (existingRequestId && !isApproved) {
+        console.log('Found existing pending login request');
+        navigate('/student/waiting-approval', { replace: true });
+        return;
+      }
+
       // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -36,27 +46,59 @@ export const StudentLogin = () => {
       const studentData = studentDoc.data();
       const token = await user.getIdToken();
 
-      // Create a login request
-      const loginRequest = await addDoc(collection(db, 'loginRequests'), {
-        studentId: user.uid,
-        studentName: studentData.name,
-        studentEmail: email,
-        createdAt: new Date(),
-        approved: false,
-        token: token,
-      });
+      // Check if student was manually registered by admin (skip approval)
+      if (studentData.manuallyRegistered === true) {
+        // Manually registered students don't need admin approval
+        console.log('Student is manually registered, skipping approval process');
+        setStudentInfo(user.uid, studentData.name, token);
+        
+        setTimeout(() => {
+          navigate('/student/dashboard', { replace: true });
+        }, 100);
+      } else {
+        // Regular sign-up students need admin approval
+        // Fetch IP and device info
+        let ipAddress = 'Unknown';
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipResponse.json();
+          ipAddress = ipData.ip;
+        } catch (e) {
+          console.error('Error fetching IP:', e);
+        }
 
-      // Store request ID and student info
-      localStorage.setItem('loginRequestId', loginRequest.id);
-      localStorage.setItem('studentId', user.uid);
-      localStorage.setItem('studentName', studentData.name);
+        const deviceName = `${navigator.platform} - ${navigator.userAgent.split(')')[0].split('(')[1]}`;
 
-      console.log('Login request created, waiting for approval');
-      
-      // Redirect to waiting approval screen
-      setTimeout(() => {
-        navigate('/student/waiting-approval', { replace: true });
-      }, 100);
+        // Create or update existing login request (Unique per student)
+        // Using studentId as the document ID ensures only one document per student
+        const requestRef = doc(db, 'loginRequests', user.uid);
+        await setDoc(requestRef, {
+          studentId: user.uid,
+          studentName: studentData.name,
+          studentEmail: email,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          approved: false,
+          rejected: false,
+          token: token,
+          ipAddress,
+          deviceName,
+          lastLoginTime: new Date(),
+          status: 'pending'
+        }, { merge: true });
+
+        // Store request ID and student info
+        localStorage.setItem('loginRequestId', user.uid);
+        localStorage.setItem('studentId', user.uid);
+        localStorage.setItem('studentName', studentData.name);
+
+        console.log('Login request created/updated, waiting for approval');
+        
+        // Redirect to waiting approval screen
+        setTimeout(() => {
+          navigate('/student/waiting-approval', { replace: true });
+        }, 100);
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       if (err.code === 'auth/invalid-email' || err.code === 'auth/user-not-found') {

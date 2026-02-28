@@ -19,6 +19,7 @@ import { CompaniesManagement } from "./admin/pages/CompaniesManagement";
 import { FAQManagement } from "./admin/pages/FAQManagement";
 import { ContentManagement } from "./admin/pages/ContentManagement";
 import { VideoManagement } from "./admin/pages/VideoManagement";
+import { CourseVideosManagement } from "./admin/pages/CourseVideosManagement";
 import { CertificatesManagement } from "./admin/pages/CertificatesManagement";
 
 import { AdminManagement } from "./admin/pages/AdminManagement";
@@ -83,6 +84,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <WorkshopsManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/course-videos"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <CourseVideosManagement />
             </ProtectedRoute>
           }
         />

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Trash2, Edit, Plus, Search, Filter, X, AlertCircle } from 'lucide-react';
+import { Trash2, Edit, Plus, Search, Filter, X, AlertCircle, Video, Play } from 'lucide-react';
 import { db } from '../config/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 interface Workshop {
   id: string;
@@ -22,6 +22,19 @@ interface Workshop {
   isActive: boolean;
 }
 
+interface CourseVideo {
+  id: string;
+  workshopId: string;
+  title: string;
+  youtubeUrl: string;
+  description: string;
+  thumbnailUrl?: string;
+  duration?: string;
+  order: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
 export const WorkshopsManagement: React.FC = () => {
   const { token } = useAuth();
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
@@ -35,6 +48,22 @@ export const WorkshopsManagement: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerImage, setBannerImage] = useState('');
+  
+  // Video management states
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [workshopVideos, setWorkshopVideos] = useState<CourseVideo[]>([]);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoFormData, setVideoFormData] = useState({
+    title: '',
+    youtubeUrl: '',
+    description: '',
+    duration: '',
+    order: 0,
+    isActive: true,
+  });
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -54,6 +83,20 @@ export const WorkshopsManagement: React.FC = () => {
   useEffect(() => {
     fetchWorkshops();
   }, []);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const fetchWorkshops = async () => {
     try {
@@ -198,6 +241,146 @@ export const WorkshopsManagement: React.FC = () => {
     });
     setEditingId(null);
     setShowForm(false);
+  };
+
+  // Video Management Functions
+  const fetchWorkshopVideos = async (workshopId: string) => {
+    try {
+      setVideoLoading(true);
+      const videosRef = collection(db, 'workshop_videos');
+      const q = query(videosRef, where('workshopId', '==', workshopId));
+      const snapshot = await getDocs(q);
+      const videos = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+      })) as CourseVideo[];
+      setWorkshopVideos(videos.sort((a, b) => a.order - b.order));
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      setError('Error loading videos');
+    } finally {
+      setVideoLoading(false);
+    }
+  };
+
+  const openVideoModal = async (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setShowVideoModal(true);
+    setEditingVideoId(null);
+    setVideoFormData({
+      title: '',
+      youtubeUrl: '',
+      description: '',
+      duration: '',
+      order: 0,
+      isActive: true,
+    });
+    await fetchWorkshopVideos(workshop.id);
+  };
+
+  const closeVideoModal = () => {
+    setShowVideoModal(false);
+    setSelectedWorkshop(null);
+    setWorkshopVideos([]);
+    setEditingVideoId(null);
+    setVideoFormData({
+      title: '',
+      youtubeUrl: '',
+      description: '',
+      duration: '',
+      order: 0,
+      isActive: true,
+    });
+  };
+
+  const handleVideoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedWorkshop) return;
+    if (!videoFormData.title.trim()) {
+      setError('Video title is required');
+      return;
+    }
+    if (!videoFormData.youtubeUrl.trim()) {
+      setError('YouTube URL is required');
+      return;
+    }
+
+    try {
+      const videosRef = collection(db, 'workshop_videos');
+      
+      if (editingVideoId) {
+        // Update video
+        const videoRef = doc(db, 'workshop_videos', editingVideoId);
+        await updateDoc(videoRef, {
+          ...videoFormData,
+          updatedAt: new Date(),
+        });
+        setSuccess('Video updated successfully!');
+      } else {
+        // Create new video
+        await addDoc(videosRef, {
+          workshopId: selectedWorkshop.id,
+          ...videoFormData,
+          createdAt: new Date(),
+        });
+        setSuccess('Video added successfully!');
+      }
+
+      setVideoFormData({
+        title: '',
+        youtubeUrl: '',
+        description: '',
+        duration: '',
+        order: 0,
+        isActive: true,
+      });
+      setEditingVideoId(null);
+      await fetchWorkshopVideos(selectedWorkshop.id);
+    } catch (error) {
+      console.error('Error saving video:', error);
+      setError('Error saving video');
+    }
+  };
+
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!window.confirm('Are you sure you want to delete this video?')) return;
+    if (!selectedWorkshop) return;
+
+    try {
+      const videoRef = doc(db, 'workshop_videos', videoId);
+      await deleteDoc(videoRef);
+      setSuccess('Video deleted successfully!');
+      await fetchWorkshopVideos(selectedWorkshop.id);
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      setError('Error deleting video');
+    }
+  };
+
+  const handleEditVideo = (video: CourseVideo) => {
+    setVideoFormData({
+      title: video.title,
+      youtubeUrl: video.youtubeUrl,
+      description: video.description,
+      duration: video.duration || '',
+      order: video.order,
+      isActive: video.isActive,
+    });
+    setEditingVideoId(video.id);
+  };
+
+  const resetVideoForm = () => {
+    setVideoFormData({
+      title: '',
+      youtubeUrl: '',
+      description: '',
+      duration: '',
+      order: 0,
+      isActive: true,
+    });
+    setEditingVideoId(null);
   };
 
   const filteredWorkshops = workshops.filter((workshop) => {
@@ -688,6 +871,13 @@ export const WorkshopsManagement: React.FC = () => {
                       <td className="px-6 py-4 text-sm">
                         <div className="flex gap-2">
                           <button
+                            onClick={() => openVideoModal(workshop)}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                            title="Manage Videos"
+                          >
+                            <Video size={18} />
+                          </button>
+                          <button
                             onClick={() => handleEdit(workshop)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                             title="Edit"
@@ -749,6 +939,225 @@ export const WorkshopsManagement: React.FC = () => {
               <p className="text-3xl font-bold text-gray-900">
                 {filteredWorkshops.filter((w) => w.isFeatured).length}
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Video Management Modal */}
+        {showVideoModal && selectedWorkshop && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 bg-white">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Videos for {selectedWorkshop.title}
+                </h2>
+                <button
+                  onClick={closeVideoModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 space-y-6">
+                {/* Video Form */}
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    {editingVideoId ? 'Edit Video' : 'Add New Video'}
+                  </h3>
+                  
+                  <form onSubmit={handleVideoSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Video Title */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Video Title <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={videoFormData.title}
+                          onChange={(e) =>
+                            setVideoFormData({ ...videoFormData, title: e.target.value })
+                          }
+                          placeholder="e.g., Introduction to React"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      {/* Video Duration */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Duration (minutes)
+                        </label>
+                        <input
+                          type="text"
+                          value={videoFormData.duration}
+                          onChange={(e) =>
+                            setVideoFormData({ ...videoFormData, duration: e.target.value })
+                          }
+                          placeholder="e.g., 25"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* YouTube URL */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        YouTube URL <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="url"
+                        value={videoFormData.youtubeUrl}
+                        onChange={(e) =>
+                          setVideoFormData({ ...videoFormData, youtubeUrl: e.target.value })
+                        }
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Paste the full YouTube video URL</p>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={videoFormData.description}
+                        onChange={(e) =>
+                          setVideoFormData({ ...videoFormData, description: e.target.value })
+                        }
+                        placeholder="Describe the video content..."
+                        rows={3}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Order and Status */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Order
+                        </label>
+                        <input
+                          type="number"
+                          value={videoFormData.order}
+                          onChange={(e) =>
+                            setVideoFormData({ ...videoFormData, order: parseInt(e.target.value) })
+                          }
+                          min="0"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-2 cursor-pointer mt-8">
+                          <input
+                            type="checkbox"
+                            checked={videoFormData.isActive}
+                            onChange={(e) =>
+                              setVideoFormData({ ...videoFormData, isActive: e.target.checked })
+                            }
+                            className="w-4 h-4 rounded"
+                          />
+                          <span className="text-gray-700 font-medium">Active</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Form Buttons */}
+                    <div className="flex gap-2 pt-4">
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                      >
+                        {editingVideoId ? 'Update Video' : 'Add Video'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetVideoForm}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Videos List */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Videos ({workshopVideos.length})
+                  </h3>
+                  
+                  {videoLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : workshopVideos.length > 0 ? (
+                    <div className="space-y-3">
+                      {workshopVideos.map((video) => (
+                        <div
+                          key={video.id}
+                          className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <Play size={16} className="text-gray-600" />
+                                <h4 className="font-semibold text-gray-900">
+                                  {video.order + 1}. {video.title}
+                                </h4>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {video.description}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                {video.duration && (
+                                  <span>{video.duration} min</span>
+                                )}
+                                <span
+                                  className={`px-2 py-1 rounded ${
+                                    video.isActive
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {video.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditVideo(video)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteVideo(video.id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Video size={32} className="mx-auto mb-2 text-gray-300" />
+                      <p>No videos added yet. Add your first video above!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

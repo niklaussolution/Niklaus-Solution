@@ -1383,5 +1383,363 @@ export const api = {
       return { error: error.message };
     }
   },
+
+  // ===================== WISHLIST MANAGEMENT =====================
+  getWishlist: async (studentId: string) => {
+    try {
+      const q = query(collection(db, 'wishlists'), where('studentId', '==', studentId));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) return { data: [] };
+      return { data: querySnapshot.docs[0].data().workshops || [] };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  addToWishlist: async (studentId: string, workshopId: string) => {
+    try {
+      const q = query(collection(db, 'wishlists'), where('studentId', '==', studentId));
+      const querySnapshot = await getDocs(q);
+      const wishlistRef = querySnapshot.empty ? await addDoc(collection(db, 'wishlists'), { studentId, workshops: [] }) : querySnapshot.docs[0].ref;
+      const wishlistData = (await getDoc(wishlistRef as any)).data() as any;
+      if (!wishlistData.workshops.includes(workshopId)) {
+        await updateDoc(wishlistRef as any, { workshops: [...wishlistData.workshops, workshopId] });
+      }
+      return { message: 'Added to wishlist' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  removeFromWishlist: async (studentId: string, workshopId: string) => {
+    try {
+      const q = query(collection(db, 'wishlists'), where('studentId', '==', studentId));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const wishlistRef = querySnapshot.docs[0].ref;
+        const wishlistData = (await getDoc(wishlistRef)).data() as any;
+        await updateDoc(wishlistRef, { workshops: wishlistData.workshops.filter((id: string) => id !== workshopId) });
+      }
+      return { message: 'Removed from wishlist' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== ORDERS & PURCHASE HISTORY =====================
+  getOrderHistory: async (studentId: string) => {
+    try {
+      const q = query(collection(db, 'registrations'), where('studentId', '==', studentId), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getOrderById: async (orderId: string) => {
+    try {
+      const orderRef = doc(db, 'registrations', orderId);
+      const orderDoc = await getDoc(orderRef);
+      if (!orderDoc.exists()) return { error: 'Order not found' };
+      return { data: { id: orderDoc.id, ...orderDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== QUIZ MANAGEMENT =====================
+  getQuizzes: async (workshopId?: string) => {
+    try {
+      const quizzesRef = collection(db, 'quizzes');
+      let q;
+      if (workshopId) {
+        q = query(quizzesRef, where('workshopId', '==', workshopId), orderBy('order'));
+      } else {
+        q = query(quizzesRef, orderBy('createdAt', 'desc'));
+      }
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Record<string, any>) })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getQuizById: async (quizId: string) => {
+    try {
+      const quizRef = doc(db, 'quizzes', quizId);
+      const quizDoc = await getDoc(quizRef);
+      if (!quizDoc.exists()) return { error: 'Quiz not found' };
+      return { data: { id: quizDoc.id, ...quizDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  createQuiz: async (data: any) => {
+    try {
+      const docRef = await addDoc(collection(db, 'quizzes'), {
+        ...data,
+        isActive: true,
+        order: data.order || 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      return { data: { id: docRef.id, ...data } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  updateQuiz: async (quizId: string, data: any) => {
+    try {
+      const quizRef = doc(db, 'quizzes', quizId);
+      await updateDoc(quizRef, { ...data, updatedAt: Date.now() });
+      const updatedDoc = await getDoc(quizRef);
+      return { data: { id: updatedDoc.id, ...updatedDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  deleteQuiz: async (quizId: string) => {
+    try {
+      await deleteDoc(doc(db, 'quizzes', quizId));
+      return { message: 'Quiz deleted successfully' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== QUIZ ATTEMPTS =====================
+  submitQuizAttempt: async (studentId: string, quizId: string, answers: any, score: number) => {
+    try {
+      const docRef = await addDoc(collection(db, 'quizAttempts'), {
+        studentId,
+        quizId,
+        answers,
+        score,
+        totalQuestions: answers.length,
+        attemptedAt: Date.now(),
+        createdAt: Date.now(),
+      });
+      return { data: { id: docRef.id, studentId, quizId, score } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getQuizAttempts: async (studentId: string, quizId?: string) => {
+    try {
+      let q;
+      if (quizId) {
+        q = query(collection(db, 'quizAttempts'), where('studentId', '==', studentId), where('quizId', '==', quizId), orderBy('attemptedAt', 'desc'));
+      } else {
+        q = query(collection(db, 'quizAttempts'), where('studentId', '==', studentId), orderBy('attemptedAt', 'desc'));
+      }
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Record<string, any>) })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== QUESTION & ANSWER =====================
+  createQuestion: async (studentId: string, workshopId: string, question: string) => {
+    try {
+      const docRef = await addDoc(collection(db, 'questions'), {
+        studentId,
+        workshopId,
+        question,
+        status: 'open',
+        replies: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      return { data: { id: docRef.id, studentId, question } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getQuestions: async (workshopId: string, status?: string) => {
+    try {
+      let q;
+      if (status) {
+        q = query(collection(db, 'questions'), where('workshopId', '==', workshopId), where('status', '==', status), orderBy('createdAt', 'desc'));
+      } else {
+        q = query(collection(db, 'questions'), where('workshopId', '==', workshopId), orderBy('createdAt', 'desc'));
+      }
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Record<string, any>) })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  addReplyToQuestion: async (questionId: string, instructorId: string, reply: string) => {
+    try {
+      const questionRef = doc(db, 'questions', questionId);
+      const questionDoc = await getDoc(questionRef);
+      if (!questionDoc.exists()) return { error: 'Question not found' };
+      const questionData = questionDoc.data() as any;
+      const newReply = { instructorId, reply, createdAt: Date.now() };
+      await updateDoc(questionRef, {
+        replies: [...(questionData.replies || []), newReply],
+        status: 'answered',
+        updatedAt: Date.now(),
+      });
+      return { message: 'Reply added successfully' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== STUDENT PROGRESS TRACKING =====================
+  getStudentProgress: async (studentId: string, workshopId: string) => {
+    try {
+      const q = query(collection(db, 'studentProgress'), where('studentId', '==', studentId), where('workshopId', '==', workshopId));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) return { data: null };
+      return { data: { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  recordVideoCompletion: async (studentId: string, workshopId: string, videoId: string) => {
+    try {
+      const q = query(collection(db, 'studentProgress'), where('studentId', '==', studentId), where('workshopId', '==', workshopId));
+      const querySnapshot = await getDocs(q);
+      let progressRef;
+      if (querySnapshot.empty) {
+        progressRef = await addDoc(collection(db, 'studentProgress'), {
+          studentId,
+          workshopId,
+          completedVideos: [videoId],
+          completionPercentage: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      } else {
+        progressRef = querySnapshot.docs[0].ref;
+        const progressData = querySnapshot.docs[0].data() as any;
+        if (!progressData.completedVideos.includes(videoId)) {
+          await updateDoc(progressRef, {
+            completedVideos: [...progressData.completedVideos, videoId],
+            updatedAt: Date.now(),
+          });
+        }
+      }
+      return { message: 'Progress recorded' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== SESSION MANAGEMENT =====================
+  createLoginSession: async (studentId: string, token: string, deviceInfo: any) => {
+    try {
+      await addDoc(collection(db, 'loginSessions'), {
+        studentId,
+        token,
+        deviceInfo,
+        loginTime: Date.now(),
+        lastActive: Date.now(),
+      });
+      return { message: 'Session created' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getLoginSessions: async (studentId: string) => {
+    try {
+      const q = query(collection(db, 'loginSessions'), where('studentId', '==', studentId), orderBy('loginTime', 'desc'));
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  logoutAllDevices: async (studentId: string) => {
+    try {
+      const q = query(collection(db, 'loginSessions'), where('studentId', '==', studentId));
+      const querySnapshot = await getDocs(q);
+      for (const doc of querySnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+      return { message: 'Logged out from all devices' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== STUDENT PROFILE ENHANCEMENTS =====================
+  updateStudentProfile: async (studentId: string, data: any) => {
+    try {
+      const studentRef = doc(db, 'students', studentId);
+      await updateDoc(studentRef, { ...data, updatedAt: Date.now() });
+      const updatedDoc = await getDoc(studentRef);
+      return { data: { id: updatedDoc.id, ...updatedDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getStudents: async () => {
+    try {
+      const q = query(collection(db, 'students'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getStudentById: async (studentId: string) => {
+    try {
+      const studentRef = doc(db, 'students', studentId);
+      const studentDoc = await getDoc(studentRef);
+      if (!studentDoc.exists()) return { error: 'Student not found' };
+      return { data: { id: studentDoc.id, ...studentDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  deleteStudent: async (studentId: string) => {
+    try {
+      await deleteDoc(doc(db, 'students', studentId));
+      return { message: 'Student deleted successfully' };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  // ===================== INSTRUCTOR PROFILES =====================
+  getInstructors: async (isActive?: boolean) => {
+    try {
+      const q = isActive !== undefined 
+        ? query(collection(db, 'trainers'), where('isActive', '==', isActive), orderBy('order'))
+        : query(collection(db, 'trainers'), orderBy('order'));
+      const querySnapshot = await getDocs(q);
+      return { data: querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+
+  getInstructorById: async (instructorId: string) => {
+    try {
+      const instructorRef = doc(db, 'trainers', instructorId);
+      const instructorDoc = await getDoc(instructorRef);
+      if (!instructorDoc.exists()) return { error: 'Instructor not found' };
+      return { data: { id: instructorDoc.id, ...instructorDoc.data() } };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
 };
 

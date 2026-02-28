@@ -11,7 +11,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { db } from '../config/firebase';
-import { collection, getDocs, deleteDoc, doc, query, where, addDoc, updateDoc, increment } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where, addDoc, updateDoc, increment, getDoc } from 'firebase/firestore';
 
 interface Registration {
   id: string;
@@ -173,6 +173,54 @@ export const RegistrationsManagement: React.FC = () => {
     try {
       console.log('Starting registration process with data:', formData);
       
+      // Find the student by email to get their ID
+      let studentId: string | null = null;
+      let tempPassword: string | null = null;
+      let isNewStudent = false;
+
+      const studentQuery = query(collection(db, 'students'), where('email', '==', formData.email));
+      const studentSnapshot = await getDocs(studentQuery);
+      
+      if (!studentSnapshot.empty) {
+        studentId = studentSnapshot.docs[0].id;
+        console.log('Found existing student with ID:', studentId);
+      } else {
+        // Student doesn't exist - create Firebase account and student record via API
+        console.log('Student not found, creating new Firebase account and student record...');
+        isNewStudent = true;
+        
+        try {
+          const createAccountResponse = await fetch('/api/auth/student/create-admin-account', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              name: formData.userName,
+              phone: formData.phone,
+              organization: formData.organization,
+              workshopTitle: formData.workshopTitle,
+            }),
+          });
+
+          if (!createAccountResponse.ok) {
+            const errorData = await createAccountResponse.json();
+            throw new Error(errorData.message || 'Failed to create account');
+          }
+
+          const accountData = await createAccountResponse.json();
+          studentId = accountData.uid;
+          tempPassword = accountData.tempPassword;
+          console.log('New student account created with ID:', studentId);
+        } catch (createErr: any) {
+          console.error('Failed to create account:', createErr);
+          setError(`Failed to create student account: ${createErr.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
       // Add registration directly to Firestore
       const registrationData = {
         userName: formData.userName,
@@ -184,14 +232,38 @@ export const RegistrationsManagement: React.FC = () => {
         amount: formData.amount,
         status: formData.status,
         paymentStatus: formData.paymentStatus,
+        studentId: studentId,
         registrationDate: new Date().toISOString(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
       
-      console.log('Adding registration to collection...');
+      console.log('Adding registration to collection with studentId:', studentId);
       const regRef = await addDoc(collection(db, 'registrations'), registrationData);
       console.log('Registration added successfully with ID:', regRef.id);
+
+      // Update student's enrolledWorkshops array
+      if (studentId) {
+        try {
+          const studentRef = doc(db, 'students', studentId);
+          const studentDoc = await getDoc(studentRef);
+          if (studentDoc.exists()) {
+            const currentEnrolled = studentDoc.data().enrolledWorkshops || [];
+            if (!currentEnrolled.includes(formData.workshopTitle)) {
+              await updateDoc(studentRef, {
+                enrolledWorkshops: [...currentEnrolled, formData.workshopTitle],
+              });
+              console.log('Student enrolledWorkshops updated with:', formData.workshopTitle);
+            } else {
+              console.log('Student already enrolled in this workshop');
+            }
+          } else {
+            console.warn('Warning: Student document does not exist:', studentId);
+          }
+        } catch (studentErr) {
+          console.warn('Warning: Could not update student enrolledWorkshops:', studentErr);
+        }
+      }
 
       // Increment the workshop's enrolled count
       if (formData.workshopId) {
@@ -204,11 +276,15 @@ export const RegistrationsManagement: React.FC = () => {
           console.log('Workshop enrolled count updated successfully');
         } catch (workshopErr) {
           console.warn('Warning: Could not update workshop enrolled count:', workshopErr);
-          // Don't fail the entire operation if workshop update fails
         }
       }
 
-      setSuccess('Registration added successfully!');
+      // Show success message with temp password if new student
+      let successMsg = 'Registration added successfully!';
+      if (isNewStudent && tempPassword) {
+        successMsg = `Student added successfully! Temporary Password: ${tempPassword}. Student should change password on first login.`;
+      }
+      setSuccess(successMsg);
       console.log('Success message displayed');
       
       // Reset form

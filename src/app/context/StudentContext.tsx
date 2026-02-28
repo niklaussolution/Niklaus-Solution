@@ -21,8 +21,9 @@ export const StudentProvider = ({ children }: { children: ReactNode }) => {
     const storedId = localStorage.getItem('studentId');
     const storedName = localStorage.getItem('studentName');
     const storedToken = localStorage.getItem('studentToken');
+    const isApproved = localStorage.getItem('isApproved') === 'true';
 
-    if (storedId && storedName && storedToken) {
+    if (storedId && storedName && storedToken && isApproved) {
       setStudentId(storedId);
       setStudentName(storedName);
       setToken(storedToken);
@@ -33,6 +34,8 @@ export const StudentProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('studentId');
     localStorage.removeItem('studentName');
     localStorage.removeItem('studentToken');
+    localStorage.removeItem('isApproved');
+    localStorage.removeItem('loginRequestId');
     setStudentId(null);
     setStudentName(null);
     setToken(null);
@@ -45,6 +48,7 @@ export const StudentProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('studentId', id);
     localStorage.setItem('studentName', name);
     localStorage.setItem('studentToken', newToken);
+    localStorage.setItem('isApproved', 'true');
   };
 
   const value: StudentContextType = {

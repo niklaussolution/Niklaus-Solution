@@ -129,7 +129,7 @@ export function Navbar() {
             ) : (
               <>
                 <button
-                  onClick={() => navigate('/student/signup')}
+                  onClick={() => navigate('/student/login')}
                   className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
                 >
                   Login / Signup
@@ -198,7 +198,7 @@ export function Navbar() {
                 <>
                   <button
                     onClick={() => {
-                      navigate('/student/signup');
+                      navigate('/student/login');
                       setIsMenuOpen(false);
                     }}
                     className="block w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"

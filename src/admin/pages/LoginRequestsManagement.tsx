@@ -8,9 +8,13 @@ import {
   Filter,
   AlertCircle,
   Clock,
+  Monitor,
+  Globe,
+  LogOut,
+  Trash2,
 } from 'lucide-react';
 import { db } from '../../config/firebase';
-import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, query, where, deleteDoc } from 'firebase/firestore';
 
 interface LoginRequest {
   id: string;
@@ -18,8 +22,13 @@ interface LoginRequest {
   studentName: string;
   studentEmail: string;
   createdAt: any;
+  updatedAt?: any;
   approved: boolean;
   rejected?: boolean;
+  ipAddress?: string;
+  deviceName?: string;
+  lastLoginTime?: any;
+  status?: string;
 }
 
 interface Stats {
@@ -79,16 +88,24 @@ export const LoginRequestsManagement: React.FC = () => {
         studentName: doc.data().studentName || 'N/A',
         studentEmail: doc.data().studentEmail || 'N/A',
         createdAt: doc.data().createdAt,
+        updatedAt: doc.data().updatedAt,
         approved: doc.data().approved || false,
         rejected: doc.data().rejected || false,
+        ipAddress: doc.data().ipAddress || 'Unknown',
+        deviceName: doc.data().deviceName || 'Unknown',
+        lastLoginTime: doc.data().lastLoginTime,
+        status: doc.data().status || (doc.data().approved ? 'approved' : doc.data().rejected ? 'rejected' : 'pending'),
       }));
 
       setRequests(requestsData);
 
+      // Unique student count (though documents are now unique per studentId)
+      const uniqueRequests = requestsData;
+
       // Calculate stats
-      const pending = requestsData.filter((r) => !r.approved && !r.rejected).length;
-      const approved = requestsData.filter((r) => r.approved).length;
-      const rejected = requestsData.filter((r) => r.rejected).length;
+      const pending = uniqueRequests.filter((r) => !r.approved && !r.rejected).length;
+      const approved = uniqueRequests.filter((r) => r.approved).length;
+      const rejected = uniqueRequests.filter((r) => r.rejected).length;
 
       setStats({ pending, approved, rejected });
     } catch (error) {
@@ -128,6 +145,18 @@ export const LoginRequestsManagement: React.FC = () => {
     } catch (error) {
       console.error('Error rejecting login:', error);
       alert('Error rejecting login. Please try again.');
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!window.confirm('Are you sure you want to delete this login request?')) return;
+    try {
+      await deleteDoc(doc(db, 'loginRequests', requestId));
+      alert('Request deleted!');
+      fetchLoginRequests();
+    } catch (error) {
+      console.error('Error deleting login request:', error);
+      alert('Error deleting request.');
     }
   };
 
@@ -253,13 +282,13 @@ export const LoginRequestsManagement: React.FC = () => {
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Name
+                      Student Details
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Email
+                      Network & Device
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Requested At
+                      Activity
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Status
@@ -272,14 +301,35 @@ export const LoginRequestsManagement: React.FC = () => {
                 <tbody className="divide-y divide-gray-200">
                   {filteredRequests.map((request) => (
                     <tr key={request.id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="font-medium text-gray-900">{request.studentName}</p>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <p className="font-medium text-gray-900">{request.studentName}</p>
+                          <p className="text-sm text-gray-500">{request.studentEmail}</p>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                        {request.studentEmail}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1 text-sm">
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <Globe size={14} className="text-blue-500" />
+                            <span>{request.ipAddress}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <Monitor size={14} className="text-purple-500" />
+                            <span className="truncate max-w-[200px]" title={request.deviceName}>
+                              {request.deviceName}
+                            </span>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                        {formatDate(request.createdAt)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <div className="flex flex-col">
+                          <span>Requested: {formatDate(request.createdAt)}</span>
+                          {request.lastLoginTime && (
+                            <span className="text-xs text-gray-400">
+                              Active: {formatDate(request.lastLoginTime)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {request.approved ? (
@@ -337,6 +387,13 @@ export const LoginRequestsManagement: React.FC = () => {
                               Approve
                             </button>
                           )}
+                          <button
+                            onClick={() => handleDeleteRequest(request.id)}
+                            className="inline-flex items-center gap-1 bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1 rounded text-sm transition"
+                            title="Delete Request"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>

@@ -57,7 +57,6 @@ export const StudentSignup = () => {
         phone: formData.phone || '',
         enrolledWorkshops: [],
         certificates: [],
-        paymentStatus: 'pending',
         createdAt: new Date(),
         updatedAt: new Date(),
       };

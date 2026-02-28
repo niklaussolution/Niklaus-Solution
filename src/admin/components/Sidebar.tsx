@@ -18,6 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = tru
   const menuItems = [
     { path: '/admin/login-requests', label: 'Login Requests', icon: '🔓' },
     { path: '/admin/workshops', label: 'Workshops', icon: '🎓' },
+    { path: '/admin/course-videos', label: 'Course Videos', icon: '📹' },
     { path: '/admin/pricing', label: 'Pricing Plans', icon: '💰' },
     { path: '/admin/registrations', label: 'Registrations', icon: '📋' },
     { path: '/admin/certificates', label: 'Certificates', icon: '🏆' },

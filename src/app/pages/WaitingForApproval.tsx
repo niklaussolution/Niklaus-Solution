@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { useStudent } from '../context/StudentContext';
 import { Navbar } from '../components/Navbar';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 export const WaitingForApproval = () => {
   const navigate = useNavigate();
+  const { setStudentInfo } = useStudent();
   const [status, setStatus] = useState<'waiting' | 'approved' | 'rejected' | 'loading'>('loading');
   const [message, setMessage] = useState('');
 
@@ -24,6 +26,14 @@ export const WaitingForApproval = () => {
       doc(db, 'loginRequests', loginRequestId),
       (docSnapshot) => {
         if (!docSnapshot.exists()) {
+          // If the request was deleted (e.g. by admin to clear old requests), check if we're already approved
+          const isApproved = localStorage.getItem('isApproved') === 'true';
+          const storedToken = localStorage.getItem('studentToken');
+          if (isApproved && storedToken) {
+            navigate('/student/dashboard', { replace: true });
+            return;
+          }
+          
           setStatus('rejected');
           setMessage('Login request not found. Please try again.');
           return;
@@ -33,7 +43,15 @@ export const WaitingForApproval = () => {
 
         if (data.approved === true) {
           // Login approved - set context and redirect
-          localStorage.setItem('studentToken', data.token);
+          const studentId = localStorage.getItem('studentId');
+          const studentName = data.studentName;
+          const token = data.token;
+          
+          // Update StudentContext with approved credentials
+          if (studentId && studentName && token) {
+            setStudentInfo(studentId, studentName, token);
+          }
+          
           setStatus('approved');
           setMessage('Login approved! Redirecting to dashboard...');
           

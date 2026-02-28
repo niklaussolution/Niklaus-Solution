@@ -83,7 +83,6 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       phone: phone || '',
       enrolledWorkshops: [],
       certificates: [],
-      paymentStatus: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
