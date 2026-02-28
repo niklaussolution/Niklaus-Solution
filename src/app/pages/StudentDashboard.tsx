@@ -871,31 +871,88 @@ export const StudentDashboard = () => {
               )}
 
               {selectedCourseVideo && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white">
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">{selectedCourseVideo.video.title}</h2>
-                        <p className="text-sm text-gray-600 mt-1">{selectedCourseVideo.course}</p>
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[60] flex items-center justify-center p-0 md:p-8 animate-in fade-in duration-300">
+                  <div className="bg-[#0f172a] md:rounded-3xl shadow-[0_0_100px_rgba(0,0,0,0.8)] max-w-6xl w-full max-h-[100vh] md:max-h-[95vh] overflow-y-auto border border-blue-900/30 flex flex-col relative">
+                    
+                    {/* Floating Close Button for Mobile/Premium Feel */}
+                    <button 
+                      onClick={() => setSelectedCourseVideo(null)} 
+                      className="absolute top-4 right-4 z-[70] bg-white/10 hover:bg-white/20 p-2 rounded-full border border-white/20 text-white backdrop-blur-md transition-all group"
+                    >
+                      <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                    </button>
+
+                    <div className="p-6 md:p-8 border-b border-blue-900/30 flex flex-col md:flex-row md:justify-between md:items-center bg-[#1e293b]/50 backdrop-blur-md gap-4">
+                      <div className="pr-12 md:pr-0">
+                        <div className="flex items-center gap-2 mb-2">
+                           <span className="bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-blue-400/20">
+                             Now Streaming
+                           </span>
+                           <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
+                        </div>
+                        <h2 className="text-xl md:text-3xl font-black text-white tracking-tight leading-tight">{selectedCourseVideo.video.title}</h2>
+                        <div className="flex items-center gap-3 mt-2 text-gray-400">
+                          <p className="text-xs md:text-sm font-medium flex items-center gap-1.5"><BookOpen size={14} className="text-blue-500" /> {selectedCourseVideo.course}</p>
+                          <span className="h-1 w-1 bg-gray-600 rounded-full" />
+                          <p className="text-xs md:text-sm font-medium flex items-center gap-1.5"><Play size={14} className="text-blue-500" /> Lesson {selectedCourseVideo.video.order + 1}</p>
+                        </div>
                       </div>
-                      <button onClick={() => setSelectedCourseVideo(null)} className="text-gray-500 text-2xl font-bold">✕</button>
+                      
+                      <div className="hidden md:flex flex-col items-end">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">Student ID Verified</p>
+                          <ShieldCheck size={14} className="text-green-500" />
+                        </div>
+                        <p className="text-xs font-mono text-blue-400/70">{student?.email}</p>
+                      </div>
                     </div>
 
-                    <div className="p-6 bg-black">
-                      <SecureVideoPlayer
-                        videoUrl={selectedCourseVideo.video.videoUrl}
-                        videoTitle={selectedCourseVideo.video.title}
-                        courseName={selectedCourseVideo.course}
-                        userEmail={student?.email || 'student@nativeva.com'}
-                        lessonNumber={selectedCourseVideo.video.order + 1}
-                        totalLessons={coursesWithVideos.get(selectedCourseVideo.course)?.length || 0}
-                      />
+                    <div className="flex-1 bg-black flex items-center justify-center p-0 md:p-4">
+                      <div className="w-full max-w-5xl">
+                        <SecureVideoPlayer
+                          videoUrl={selectedCourseVideo.video.videoUrl}
+                          videoTitle={selectedCourseVideo.video.title}
+                          courseName={selectedCourseVideo.course}
+                          userEmail={student?.email || 'student@nativeva.com'}
+                          lessonNumber={selectedCourseVideo.video.order + 1}
+                          totalLessons={coursesWithVideos.get(selectedCourseVideo.course)?.length || 0}
+                        />
+                      </div>
                     </div>
 
-                    <div className="p-6 bg-gray-50 border-t">
-                      <h3 className="font-semibold text-gray-900 mb-2">About this video</h3>
-                      <p className="text-gray-700 text-sm mb-4">{selectedCourseVideo.video.description}</p>
-                      {selectedCourseVideo.video.duration && <p className="text-gray-600 text-sm"><span className="font-semibold">Duration:</span> {selectedCourseVideo.video.duration} minutes</p>}
+                    <div className="p-6 md:p-8 bg-[#0f172a] border-t border-blue-900/30">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2">
+                           <div className="flex items-center gap-3 mb-4">
+                             <div className="h-8 w-1 bg-blue-600 rounded-full" />
+                             <h3 className="font-black text-white uppercase tracking-widest text-sm">Course Overview</h3>
+                           </div>
+                           <p className="text-gray-400 text-sm md:text-base leading-relaxed font-medium">{selectedCourseVideo.video.description}</p>
+                        </div>
+                        
+                        <div className="bg-[#1e293b]/40 rounded-2xl p-6 border border-blue-900/20 backdrop-blur-sm self-start">
+                          <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-4">Content Metadata</h4>
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center pb-3 border-b border-blue-900/10">
+                              <span className="text-xs text-gray-500 font-medium">Video Duration</span>
+                              <span className="text-sm text-gray-200 font-bold">{selectedCourseVideo.video.duration || 'N/A'} mins</span>
+                            </div>
+                            <div className="flex justify-between items-center pb-3 border-b border-blue-900/10">
+                              <span className="text-xs text-gray-500 font-medium">Status</span>
+                              <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20 font-black uppercase">Active</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-gray-500 font-medium">Security Level</span>
+                              <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 font-black uppercase">AES-256</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-8 pt-6 border-t border-blue-900/10 flex justify-between items-center text-[10px] font-mono text-gray-600 uppercase tracking-widest">
+                        <span>Native VA Digital Rights Management © 2024</span>
+                        <span>Stream Node: 192.168.1.1</span>
+                      </div>
                     </div>
                   </div>
                 </div>

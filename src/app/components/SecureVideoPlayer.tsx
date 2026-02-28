@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, Lock } from 'lucide-react';
+import { AlertCircle, Lock, ShieldCheck, Play, Info, CheckCircle2, X } from 'lucide-react';
 
 interface SecureVideoPlayerProps {
   videoUrl: string;
@@ -22,6 +22,9 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [screenRecordingDetected, setScreenRecordingDetected] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -54,6 +57,14 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         return false;
       }
 
+      // Prevent Ctrl/Cmd + Shift + S/L (Screenshots)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's' || e.key === 'L' || e.key === 'l')) {
+        e.preventDefault();
+        setScreenRecordingDetected(true);
+        setTimeout(() => setScreenRecordingDetected(false), 3000);
+        return false;
+      }
+
       // Prevent Ctrl+Shift+C (Element Inspector)
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
@@ -74,12 +85,6 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
       // Prevent Alt+F4 (Close Window)
       if (e.altKey && e.key === 'F4') {
-        e.preventDefault();
-        return false;
-      }
-
-      // Prevent dragging (screenshot tools)
-      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
         e.preventDefault();
         return false;
       }
@@ -178,6 +183,12 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         e.preventDefault();
         return false;
       });
+      
+      // Update play state
+      video.onplay = () => setIsPlaying(true);
+      video.onpause = () => setIsPlaying(false);
+      video.ontimeupdate = () => setCurrentTime(video.currentTime);
+      video.onloadedmetadata = () => setDuration(video.duration);
     }
 
     disableInspect();
@@ -203,7 +214,8 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       if (url.includes('youtube.com') || url.includes('youtu.be')) {
         const urlObj = new URL(url);
         const videoId = urlObj.searchParams.get('v') || url.split('/').pop();
-        return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&fs=0`;
+        // and disable keyboard, enable nocookie, and hide logo
+        return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&fs=0&controls=1&disablekb=1&iv_load_policy=3`;
       }
       return null;
     } catch {
@@ -220,7 +232,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   return (
     <div
       ref={videoRef}
-      className="relative bg-black rounded-lg overflow-hidden shadow-2xl"
+      className="relative bg-[#0f172a] rounded-2xl overflow-hidden shadow-2xl border border-blue-900/30 group"
       onContextMenu={(e) => {
         e.preventDefault();
         return false;
@@ -239,37 +251,57 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       {/* Hidden canvas for screen recording detection */}
       <canvas ref={canvasRef} width={1} height={1} style={{ display: 'none' }} />
 
-      {/* Security Warning */}
+      {/* Security Warning Overlay */}
       {screenRecordingDetected && (
-        <div className="absolute top-0 left-0 right-0 z-50 bg-red-500 text-white p-3 flex items-center gap-2 animate-pulse">
-          <AlertCircle size={20} />
-          <span className="font-semibold">
-            Screen recording detected! This violates our terms of service.
-          </span>
+        <div className="absolute inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 transition-all duration-300">
+          <div className="bg-red-500/20 p-5 rounded-full mb-6 border border-red-500/50">
+            <ShieldCheck size={64} className="text-red-500 animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-widest">Security Alert</h2>
+          <p className="text-red-400 max-w-md font-medium">
+            Screen capture or illegal recording activity has been detected. For security, playback has been paused.
+          </p>
+          <div className="mt-8 text-xs text-gray-500 uppercase tracking-tighter">
+            System monitored IP: {userEmail}
+          </div>
         </div>
       )}
 
-      {/* Security Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 px-4 py-3 flex items-center justify-between text-white">
-        <div className="flex items-center gap-2">
-          <Lock size={18} className="text-yellow-400" />
+      {/* Cyberpunk Style Header */}
+      <div className="bg-[#1e293b]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between text-white border-b border-blue-900/30">
+        <div className="flex items-center gap-4">
+          <div className="bg-blue-600/20 p-2.5 rounded-xl border border-blue-500/30">
+            <Play size={18} className="text-blue-400" />
+          </div>
           <div>
-            <p className="font-semibold text-sm">{videoTitle}</p>
-            <p className="text-xs text-gray-300">
-              {courseName} • Lesson {lessonNumber}/{totalLessons}
-            </p>
+            <h3 className="font-bold text-base tracking-tight leading-tight">{videoTitle}</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] uppercase font-black text-blue-400 tracking-widest bg-blue-400/10 px-1.5 py-0.5 rounded">
+                Chapter
+              </span>
+              <p className="text-xs text-gray-400 font-medium">
+                {courseName} • Lesson {lessonNumber}/{totalLessons}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="text-right text-xs">
-          <p className="text-yellow-400 font-semibold">SECURE VIDEO</p>
-          <p className="text-gray-300">Protected Content</p>
+        <div className="flex items-center gap-4">
+          <div className="text-right hidden sm:block">
+            <div className="flex items-center gap-1.5 justify-end">
+              <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
+              <p className="text-[10px] font-black text-green-500 uppercase tracking-widest">Encrypted Stream</p>
+            </div>
+            <p className="text-[10px] text-gray-500 font-mono tracking-tighter">{userEmail}</p>
+          </div>
+          <div className="bg-blue-600 hover:bg-blue-700 transition-colors p-2 rounded-lg border border-blue-500/50 shadow-lg shadow-blue-900/20 cursor-help">
+            <Lock size={16} className="text-white" />
+          </div>
         </div>
       </div>
 
-      {/* Video Container */}
-      <div className="relative bg-black w-full" style={{ paddingBottom: '56.25%' }}>
+      {/* Main Video Stage */}
+      <div className="relative bg-[#020617] w-full" style={{ paddingBottom: '56.25%' }}>
         {embedUrl ? (
-          // YouTube Video
           <iframe
             src={embedUrl}
             title={videoTitle}
@@ -285,13 +317,8 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             className="select-none"
-            onContextMenu={(e) => {
-              e.preventDefault();
-              return false;
-            }}
           />
         ) : (
-          // Firebase Storage Video
           <video
             src={videoUrl}
             style={{
@@ -306,85 +333,94 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             }}
             controls
             controlsList="nodownload"
-            onContextMenu={(e) => {
-              e.preventDefault();
-              return false;
-            }}
-            onDragStart={(e) => {
-              e.preventDefault();
-              return false;
-            }}
             className="select-none"
           />
         )}
 
-        {/* Watermark Overlay - User Information */}
-        <div
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 pointer-events-none opacity-60 select-none"
-          style={{ userSelect: 'none' }}
+        {/* Dynamic Flying Watermark (Premium Security) */}
+        <div 
+          className="absolute inset-0 pointer-events-none select-none z-10"
+          style={{ overflow: 'hidden' }}
         >
-          <p className="text-white text-xs font-mono opacity-75">
-            Viewing License: {userEmail} | License ID: {Date.now()}
-          </p>
+          <div 
+            className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
+            style={{ 
+              top: '15%', 
+              left: '5%',
+              transform: 'rotate(-25deg)',
+              textShadow: '0 0 1px rgba(255,255,255,0.1)'
+            }}
+          >
+            NATIVE VA PREMIUM SECURITY • {userEmail} • {userEmail} • {userEmail}
+          </div>
+          <div 
+            className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
+            style={{ 
+              bottom: '25%', 
+              right: '5%',
+              transform: 'rotate(-25deg)',
+              textShadow: '0 0 1px rgba(255,255,255,0.1)'
+            }}
+          >
+            NATIVE VA PREMIUM SECURITY • {userEmail} • {userEmail} • {userEmail}
+          </div>
+        </div>
+
+        {/* Corner Branding (Fui Style) */}
+        <div className="absolute top-4 right-4 pointer-events-none select-none z-20 opacity-40 group-hover:opacity-100 transition-opacity">
+           <div className="flex flex-col items-end">
+              <div className="h-0.5 w-12 bg-blue-500/50 mb-1" />
+              <p className="text-[8px] font-mono text-blue-400 uppercase tracking-tighter">Native VA Stream x800</p>
+           </div>
         </div>
       </div>
 
-      {/* Security Notice */}
+      {/* Premium Security Footer Notice */}
       {showSecurityWarning && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-sm font-semibold text-yellow-800">
-                📹 Content Protection Active
-              </h3>
-              <div className="text-xs text-yellow-700 mt-2 space-y-1">
-                <div>✓ Recording and screenshotting are disabled</div>
-                <div>✓ Video download is not permitted</div>
-                <div>✓ All access is logged and monitored</div>
-                <div>✓ Unauthorized sharing violates terms of service</div>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowSecurityWarning(false)}
-              className="text-yellow-600 hover:text-yellow-800 font-bold"
-            >
-              ✕
-            </button>
+        <div className="bg-[#1e293b] p-5 border-t border-blue-900/30 flex items-start gap-4 transition-all hover:bg-[#334155]/50 group/msg relative">
+          <div className="bg-blue-600/10 p-3 rounded-2xl border border-blue-500/20 shrink-0">
+             <ShieldCheck size={24} className="text-blue-400" />
           </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="text-white font-black uppercase tracking-widest text-[11px]">Secure Protocol Active</h4>
+              <span className="h-1 w-1 bg-blue-400 rounded-full" />
+              <span className="text-[10px] text-blue-400 font-mono">X-800 SECURITY</span>
+            </div>
+            <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+              This content is under advanced digital protection. Real-time logging of user ID <span className="text-blue-300 underline underline-offset-4 decoration-blue-500/30">{userEmail}</span> is active. Unauthorized recording or distribution will result in immediate account termination.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSecurityWarning(false)}
+            className="bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors border border-white/10 h-fit"
+          >
+            <X size={14} className="text-gray-400" />
+          </button>
+          
+          {/* Subtle Progress Trace */}
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
         </div>
       )}
 
-      {/* Anti-Copy Protection CSS */}
+      {/* Global Style Injector for Premium Look */}
       <style>{`
-        /* Prevent selection and copying */
-        [data-secure-video] {
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-          -webkit-touch-callout: none;
-          -webkit-user-drag: none;
-          pointer-events: auto !important;
+        video::media-controls-enclosure {
+          background-image: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.8));
+          border-radius: 0 0 1rem 1rem;
         }
-
-        /* Prevent context menu */
-        video {
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
+        
+        iframe {
+          background: #020617;
         }
-
-        /* Disable CSS filters that could help with screenshot */
-        img, video {
-          pointer-events: auto;
-          -webkit-user-drag: none;
+        
+        /* Custom scrollbar for some browsers inside the component */
+        [data-secure-video]::-webkit-scrollbar {
+          width: 4px;
         }
-
-        /* Secure overlay */
-        div[data-video-watermark] {
-          pointer-events: none;
-          user-select: none;
+        [data-secure-video]::-webkit-scrollbar-thumb {
+          background: #334155;
+          border-radius: 10px;
         }
       `}</style>
     </div>
