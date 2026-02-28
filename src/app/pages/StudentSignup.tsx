@@ -41,6 +41,35 @@ export const StudentSignup = () => {
     setLoading(true);
 
     try {
+      // Step 1: Capture device details
+      let ipAddress = 'Unknown';
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        ipAddress = ipData.ip;
+      } catch (e) {
+        console.error('Error fetching IP:', e);
+      }
+
+      const getBrowser = () => {
+        const ua = navigator.userAgent;
+        if (ua.includes('Firefox')) return 'Firefox';
+        if (ua.includes('Chrome')) return 'Chrome';
+        if (ua.includes('Safari')) return 'Safari';
+        if (ua.includes('Edge')) return 'Edge';
+        return 'Other';
+      };
+
+      const getOS = () => {
+        const ua = navigator.userAgent;
+        if (ua.includes('Windows')) return 'Windows';
+        if (ua.includes('Mac')) return 'MacOS';
+        if (ua.includes('Android')) return 'Android';
+        if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+        if (ua.includes('Linux')) return 'Linux';
+        return 'Unknown';
+      };
+
       // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -63,10 +92,38 @@ export const StudentSignup = () => {
 
       await setDoc(doc(db, 'students', user.uid), studentData);
 
-      // Show success message and redirect to login
+      // Step 2: Create a login request to capture detailed info for the admin panel
+      const token = await user.getIdToken();
+      const requestRef = doc(db, 'loginRequests', user.uid);
+      await setDoc(requestRef, {
+        studentId: user.uid,
+        studentName: formData.name,
+        studentEmail: formData.email,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        approved: false,
+        rejected: false,
+        token: token,
+        ipAddress,
+        deviceName: `${navigator.platform} - ${navigator.userAgent.split(')')[0].split('(')[1]}`,
+        browser: getBrowser(),
+        os: getOS(),
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        lastLoginTime: new Date(),
+        status: 'pending'
+      }, { merge: true });
+
+      // Store ID and redirect to waiting screen
+      localStorage.setItem('loginRequestId', user.uid);
+      localStorage.setItem('studentId', user.uid);
+      localStorage.setItem('studentName', formData.name);
+
+      // Show success message and redirect
       setError('');
-      alert('Account created successfully! Your account is pending admin approval. You will be able to login once approved.');
-      navigate('/student/login');
+      alert('Account created successfully! Your account is pending admin approval.');
+      navigate('/student/waiting-approval');
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('Email already registered');

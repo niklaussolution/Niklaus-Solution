@@ -68,6 +68,26 @@ export const StudentLogin = () => {
         }
 
         const deviceName = `${navigator.platform} - ${navigator.userAgent.split(')')[0].split('(')[1]}`;
+        
+        // Extensive device details
+        const getBrowser = () => {
+          const ua = navigator.userAgent;
+          if (ua.includes('Firefox')) return 'Firefox';
+          if (ua.includes('Chrome')) return 'Chrome';
+          if (ua.includes('Safari')) return 'Safari';
+          if (ua.includes('Edge')) return 'Edge';
+          return 'Other';
+        };
+
+        const getOS = () => {
+          const ua = navigator.userAgent;
+          if (ua.includes('Windows')) return 'Windows';
+          if (ua.includes('Mac')) return 'MacOS';
+          if (ua.includes('Android')) return 'Android';
+          if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+          if (ua.includes('Linux')) return 'Linux';
+          return 'Unknown';
+        };
 
         // Create or update existing login request (Unique per student)
         // Using studentId as the document ID ensures only one document per student
@@ -83,6 +103,11 @@ export const StudentLogin = () => {
           token: token,
           ipAddress,
           deviceName,
+          browser: getBrowser(),
+          os: getOS(),
+          screenResolution: `${window.screen.width}x${window.screen.height}`,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           lastLoginTime: new Date(),
           status: 'pending'
         }, { merge: true });
