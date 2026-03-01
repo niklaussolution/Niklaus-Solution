@@ -21,6 +21,7 @@ import { ContentManagement } from "./admin/pages/ContentManagement";
 import { VideoManagement } from "./admin/pages/VideoManagement";
 import { CourseVideosManagement } from "./admin/pages/CourseVideosManagement";
 import { CertificatesManagement } from "./admin/pages/CertificatesManagement";
+import { QAManagement } from "./admin/pages/QAManagement";
 
 import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
@@ -196,6 +197,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <VideoManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/qa"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <QAManagement />
             </ProtectedRoute>
           }
         />

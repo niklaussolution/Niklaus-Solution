@@ -105,10 +105,10 @@ export const QAManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="h-[calc(100vh-64px)] bg-gray-50 flex overflow-hidden">
+      <div className="w-full h-full bg-gray-50 flex overflow-hidden">
         {/* Sidebar: Student List */}
-        <div className={`w-full md:w-80 bg-white border-r flex flex-col transition-all ${selectedStudent ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-4 border-b">
+        <div className={`w-full md:w-80 bg-white border-r flex flex-col h-full overflow-hidden ${selectedStudent ? 'hidden md:flex' : 'flex'}`}>
+          <div className="p-4 border-b flex-shrink-0">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <MessageCircle className="text-blue-600" />
               Student Chats
@@ -125,7 +125,7 @@ export const QAManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {loading ? (
               <div className="p-8 text-center text-gray-500">Loading chats...</div>
             ) : filteredStudents.length === 0 ? (
@@ -139,7 +139,7 @@ export const QAManagement: React.FC = () => {
                     selectedStudent?.id === student.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
                   }`}
                 >
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
                     {student.name.charAt(0)}
                   </div>
                   <div className="flex-1 text-left min-w-0">
@@ -153,25 +153,25 @@ export const QAManagement: React.FC = () => {
         </div>
 
         {/* Chat Area */}
-        <div className={`flex-1 flex flex-col bg-white ${!selectedStudent ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col bg-white h-full overflow-hidden ${!selectedStudent ? 'hidden md:flex' : 'flex'}`}>
           {selectedStudent ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className="p-4 border-b flex items-center justify-between bg-white flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => setSelectedStudent(null)}
-                    className="md:hidden p-2 hover:bg-gray-100 rounded-full"
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-full flex-shrink-0"
                   >
                     <ArrowLeft size={20} />
                   </button>
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                     {selectedStudent.name.charAt(0)}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">{selectedStudent.name}</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-gray-900 truncate">{selectedStudent.name}</h3>
                     <p className="text-xs text-green-500 flex items-center gap-1">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
                       Active Student
                     </p>
                   </div>
@@ -179,7 +179,7 @@ export const QAManagement: React.FC = () => {
               </div>
 
               {/* Message List */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 min-h-0 max-h-full">
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-gray-500">
                     <MessageCircle size={48} className="mb-4 opacity-20" />
@@ -198,7 +198,7 @@ export const QAManagement: React.FC = () => {
                             : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
                         }`}
                       >
-                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                        <p className="text-sm leading-relaxed break-words">{msg.text}</p>
                         <p
                           className={`text-[10px] mt-1 ${
                             msg.sender === 'admin' ? 'text-blue-100 font-medium' : 'text-gray-400 font-medium'
@@ -214,7 +214,7 @@ export const QAManagement: React.FC = () => {
               </div>
 
               {/* Message Input */}
-              <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
+              <form onSubmit={handleSendMessage} className="p-4 bg-white border-t flex-shrink-0">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -226,7 +226,7 @@ export const QAManagement: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!newMessage.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-xl transition shadow-lg shadow-blue-200"
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-xl transition shadow-lg shadow-blue-200 flex-shrink-0"
                   >
                     <Send size={20} />
                   </button>
