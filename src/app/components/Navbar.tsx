@@ -20,7 +20,7 @@ export function Navbar() {
   const [loading, setLoading] = useState(true);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, studentName, logout } = useStudent();
+  const { isAuthenticated, studentName } = useStudent();
 
   useEffect(() => {
     const fetchHeaderContent = async () => {
@@ -113,17 +113,14 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <>
+                <span className="text-gray-700 font-medium">
+                  Hello, {studentName}!
+                </span>
                 <button
                   onClick={() => navigate('/student/dashboard')}
-                  className="text-gray-700 hover:text-orange-500 transition-colors"
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
                 >
-                  Hello, {studentName}!
-                </button>
-                <button
-                  onClick={logout}
-                  className="bg-red-500 text-white px-6 py-2.5 rounded-lg hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
-                >
-                  Logout
+                  Dashboard
                 </button>
               </>
             ) : (
@@ -134,14 +131,14 @@ export function Navbar() {
                 >
                   Login / Signup
                 </button>
+                <button
+                  onClick={() => setIsContactFormOpen(true)}
+                  className="bg-orange-500 text-white px-6 py-2.5 rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
+                >
+                  Get in Touch
+                </button>
               </>
             )}
-            <button
-              onClick={() => setIsContactFormOpen(true)}
-              className="bg-orange-500 text-white px-6 py-2.5 rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
-            >
-              Get in Touch
-            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -175,23 +172,17 @@ export function Navbar() {
               ))}
               {isAuthenticated ? (
                 <>
+                  <div className="px-4 py-2 text-gray-700 font-medium">
+                    Hello, {studentName}!
+                  </div>
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       navigate('/student/dashboard');
                     }}
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
+                    className="block w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Hello, {studentName}!
-                  </button>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="block w-full bg-red-500 text-white px-4 py-2.5 rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    Logout
+                    Dashboard
                   </button>
                 </>
               ) : (
@@ -205,17 +196,17 @@ export function Navbar() {
                   >
                     Login / Signup
                   </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsContactFormOpen(true);
+                    }}
+                    className="block w-full bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Get in Touch
+                  </button>
                 </>
               )}
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsContactFormOpen(true);
-                }}
-                className="block w-full bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                Get in Touch
-              </button>
             </div>
           </motion.div>
         )}
