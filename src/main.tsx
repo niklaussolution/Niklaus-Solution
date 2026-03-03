@@ -7,8 +7,10 @@ import { AuthProvider } from "./admin/context/AuthContext";
 import { ProtectedRoute } from "./admin/components/ProtectedRoute";
 import { LoginPage } from "./admin/pages/LoginPage";
 import { WorkshopsManagement } from "./admin/pages/WorkshopManagement";
+import { CoursesManagement } from "./admin/pages/CoursesManagement";
 import { PricingManagement } from "./admin/pages/PricingManagement";
 import { RegistrationsManagement } from "./admin/pages/RegistrationsManagement";
+import { CourseEnrollmentsManagement } from "./admin/pages/CourseEnrollmentsManagement";
 import { TrainersManagement } from "./admin/pages/TrainersManagement";
 import { TestimonialsManagement } from "./admin/pages/TestimonialsManagement";
 import { StudentProjectsManagement } from "./admin/pages/StudentProjectsManagement";
@@ -20,6 +22,7 @@ import { FAQManagement } from "./admin/pages/FAQManagement";
 import { ContentManagement } from "./admin/pages/ContentManagement";
 import { VideoManagement } from "./admin/pages/VideoManagement";
 import { CourseVideosManagement } from "./admin/pages/CourseVideosManagement";
+import { CoursesVideosManagement } from "./admin/pages/CoursesVideosManagement";
 import { CertificatesManagement } from "./admin/pages/CertificatesManagement";
 import { QAManagement } from "./admin/pages/QAManagement";
 
@@ -35,6 +38,7 @@ import { Contact } from "./app/pages/Contact";
 import { StudentLogin } from "./app/pages/StudentLogin";
 import { StudentSignup } from "./app/pages/StudentSignup";
 import { StudentDashboard } from "./app/pages/StudentDashboard";
+import { StudentCoursesPage } from "./app/pages/StudentCoursesPage";
 import { WaitingForApproval } from "./app/pages/WaitingForApproval";
 import { StudentProvider } from "./app/context/StudentContext";
 import { StudentProtectedRoute } from "./app/components/StudentProtectedRoute";
@@ -72,6 +76,14 @@ createRoot(document.getElementById("root")!).render(
               </StudentProtectedRoute>
             }
           />
+          <Route
+            path="/student/courses"
+            element={
+              <StudentProtectedRoute>
+                <StudentCoursesPage />
+              </StudentProtectedRoute>
+            }
+          />
         {/* Redirect legacy /my-certificates route to the Certificates section on Home */}
         <Route path="/my-certificates" element={<Navigate to="/#certificates" replace />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -89,10 +101,26 @@ createRoot(document.getElementById("root")!).render(
           }
         />
         <Route
+          path="/admin/courses"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <CoursesManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/course-videos"
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <CourseVideosManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses-videos"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <CoursesVideosManagement />
             </ProtectedRoute>
           }
         />
@@ -109,6 +137,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <RegistrationsManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/course-enrollments"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <CourseEnrollmentsManagement />
             </ProtectedRoute>
           }
         />

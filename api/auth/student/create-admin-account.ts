@@ -2,18 +2,33 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    } as any),
-  });
-}
+let auth: any;
+let db: any;
 
-const auth = admin.auth();
-const db = admin.firestore();
+function initializeFirebase() {
+  if (!admin.apps.length) {
+    try {
+      // Validate environment variables
+      if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+        throw new Error('Missing required Firebase environment variables: FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, or FIREBASE_CLIENT_EMAIL');
+      }
+
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        } as any),
+      });
+    } catch (initError: any) {
+      console.error('Firebase initialization error:', initError);
+      throw initError;
+    }
+  }
+
+  auth = admin.auth();
+  db = admin.firestore();
+}
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   // Enable CORS
@@ -35,6 +50,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
+    // Initialize Firebase within try-catch
+    initializeFirebase();
+
     const { email, name, phone, organization, workshopTitle } = req.body;
 
     if (!email || !name) {
@@ -109,9 +127,31 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     });
   } catch (error: any) {
     console.error('Error creating admin account:', error);
-    return res.status(500).json({
-      message: 'Internal server error',
-      error: error.message,
+    
+    // Determine error message
+    let errorMessage = 'Internal server error';
+    let statusCode = 500;
+    
+    if (error.message?.includes('Missing required Firebase')) {
+      errorMessage = error.message;
+      statusCode = 503; // Service Unavailable
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Invalid email address';
+      statusCode = 400;
+    } else if (error.code === 'auth/email-already-exists') {
+      errorMessage = 'Email already exists';
+      statusCode = 409;
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = 'Password is too weak';
+      statusCode = 400;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return res.status(statusCode).json({
+      message: errorMessage,
+      error: error.message || 'Unknown error',
+      code: error.code || 'UNKNOWN_ERROR',
     });
   }
 };

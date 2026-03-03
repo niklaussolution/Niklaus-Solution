@@ -205,8 +205,21 @@ export const RegistrationsManagement: React.FC = () => {
           });
 
           if (!createAccountResponse.ok) {
-            const errorData = await createAccountResponse.json();
-            throw new Error(errorData.message || 'Failed to create account');
+            let errorMessage = 'Failed to create account';
+            let errorDetails = '';
+            
+            try {
+              const errorData = await createAccountResponse.json();
+              errorMessage = errorData.message || errorMessage;
+              errorDetails = errorData.error || '';
+            } catch (parseError) {
+              // Response was not JSON, try to get text
+              const errorText = await createAccountResponse.text();
+              errorMessage = errorText || `Server error (${createAccountResponse.status})`;
+            }
+            
+            const fullError = errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage;
+            throw new Error(fullError);
           }
 
           const accountData = await createAccountResponse.json();

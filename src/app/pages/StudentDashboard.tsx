@@ -554,16 +554,24 @@ export const StudentDashboard = () => {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: BookOpen },
             { id: 'profile', label: 'My Profile', icon: User },
-            { id: 'courses', label: 'Enrolled Courses', icon: BookOpen },
+            { id: 'workshops', label: 'My Workshops', icon: BookOpen },
+            { id: 'courses', label: 'My Courses', action: 'navigate', href: '/student/courses', icon: BookOpen },
             { id: 'wishlist', label: 'Wishlist', icon: Heart },
             { id: 'quiz', label: 'Quiz Attempts', icon: HelpCircle },
             { id: 'orders', label: 'Order History', icon: ShoppingCart },
             { id: 'qa', label: 'Support Chat', icon: MessageSquare },
             { id: 'settings', label: 'Settings', icon: Settings },
-          ].map(({ id, label, icon: Icon }) => (
+          ].map(({ id, label, icon: Icon, action, href }: any) => (
             <button
               key={id}
-              onClick={() => { setActivePage(id); setSidebarOpen(false); }}
+              onClick={() => { 
+                if (action === 'navigate' && href) {
+                  navigate(href);
+                } else {
+                  setActivePage(id); 
+                  setSidebarOpen(false);
+                }
+              }}
               className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition ${
                 activePage === id ? 'bg-blue-50 text-blue-600 font-semibold' : 'hover:bg-gray-50 text-gray-700'
               }`}
@@ -658,7 +666,7 @@ export const StudentDashboard = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">Enrolled Courses</h3>
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">My Workshops</h3>
                   {student?.enrolledWorkshops && student.enrolledWorkshops.length > 0 ? (
                     <ul className="space-y-2">
                       {student.enrolledWorkshops.map((workshop, index) => (
@@ -666,7 +674,7 @@ export const StudentDashboard = () => {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-gray-500">No courses enrolled yet</p>
+                    <p className="text-gray-500">No workshops enrolled yet</p>
                   )}
                 </div>
 
@@ -839,10 +847,10 @@ export const StudentDashboard = () => {
             </div>
           )}
 
-          {activePage === 'courses' && (
+          {activePage === 'workshops' && (
             <div className="space-y-6">
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800">Enrolled Courses</h2>
+                <h2 className="text-2xl font-bold text-gray-800">My Workshops</h2>
               </div>
 
               {student?.enrolledWorkshops && student.enrolledWorkshops.length > 0 ? (

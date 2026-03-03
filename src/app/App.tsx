@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { HeroSection } from "./components/HeroSection";
 import { WorkshopsSection } from "./components/WorkshopsSection";
+import { CoursesSection } from "./components/CoursesSection";
 import { WhyChooseSection } from "./components/WhyChooseSection";
 import { TrainersSection } from "./components/TrainersSection";
 import { TestimonialsSection } from "./components/TestimonialsSection";
@@ -50,6 +51,7 @@ export default function App() {
       <Navbar />
       <HeroSection />
       <WorkshopsSection />
+      <CoursesSection />
       <WhyChooseSection onOpenContactForm={() => setIsContactFormOpen(true)} />
       <PricingSection onOpenContactForm={() => setIsContactFormOpen(true)} />
       <StudentProjectsSection onOpenContactForm={() => setIsContactFormOpen(true)} />
