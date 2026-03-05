@@ -6,28 +6,33 @@ let auth: any;
 let db: any;
 
 function initializeFirebase() {
-  if (!admin.apps.length) {
-    try {
-      // Validate environment variables
-      if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
-        throw new Error('Missing required Firebase environment variables: FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, or FIREBASE_CLIENT_EMAIL');
-      }
-
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        } as any),
-      });
-    } catch (initError: any) {
-      console.error('Firebase initialization error:', initError);
-      throw initError;
+  try {
+    // Check if Firebase is already initialized
+    if (admin.apps && admin.apps.length > 0) {
+      auth = admin.auth();
+      db = admin.firestore();
+      return;
     }
-  }
 
-  auth = admin.auth();
-  db = admin.firestore();
+    // Validate environment variables
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+      throw new Error('Missing required Firebase environment variables: FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, or FIREBASE_CLIENT_EMAIL');
+    }
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      } as any),
+    });
+
+    auth = admin.auth();
+    db = admin.firestore();
+  } catch (initError: any) {
+    console.error('Firebase initialization error:', initError);
+    throw initError;
+  }
 }
 
 export default async (req: VercelRequest, res: VercelResponse) => {
