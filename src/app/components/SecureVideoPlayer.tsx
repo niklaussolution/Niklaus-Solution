@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { AlertCircle, Lock, ShieldCheck, Play, Info, CheckCircle2, X } from 'lucide-react';
 
 interface SecureVideoPlayerProps {
@@ -19,193 +19,537 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   totalLessons = 1,
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [screenRecordingDetected, setScreenRecordingDetected] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [securityStatus, setSecurityStatus] = useState('active');
+  const sessionIdRef = useRef(Math.random().toString(36).substring(2, 15));
 
   useEffect(() => {
     if (!videoRef.current) return;
 
-    // 1. Disable right-click context menu
+    // ==========================================
+    // LAYER 1: RIGHT-CLICK CONTEXT MENU BLOCKING
+    // ==========================================
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
       return false;
     };
 
-    // 2. Disable keyboard shortcuts for screenshots and screen recording
+    // ==========================================
+    // LAYER 2: COMPREHENSIVE KEYBOARD SHORTCUT BLOCKING
+    // ==========================================
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent PrintScreen
+      // PrintScreen
       if (e.key === 'PrintScreen') {
         e.preventDefault();
+        e.stopPropagation();
         setScreenRecordingDetected(true);
         setTimeout(() => setScreenRecordingDetected(false), 3000);
         return false;
       }
 
-      // Prevent F12 (Developer Tools)
+      // F12 (Developer Tools)
       if (e.key === 'F12') {
         e.preventDefault();
+        e.stopPropagation();
         return false;
       }
 
-      // Prevent Ctrl+Shift+I (Developer Tools)
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      // Ctrl/Cmd + Shift + I (Developer Tools Inspector)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
         e.preventDefault();
+        e.stopPropagation();
         return false;
       }
 
-      // Prevent Ctrl/Cmd + Shift + S/L (Screenshots)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's' || e.key === 'L' || e.key === 'l')) {
+      // Ctrl/Cmd + Shift + J (Developer Tools Console)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
         e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + Shift + K (Browser Console - Firefox)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'K') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + Shift + C (Element Inspector)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + Shift + S (Screenshot)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        e.stopPropagation();
         setScreenRecordingDetected(true);
         setTimeout(() => setScreenRecordingDetected(false), 3000);
         return false;
       }
 
-      // Prevent Ctrl+Shift+C (Element Inspector)
-      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      // Ctrl/Cmd + Shift + L (Zoom Recording)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
         e.preventDefault();
+        e.stopPropagation();
         return false;
       }
 
-      // Prevent Ctrl+Shift+K (Browser Console)
-      if (e.ctrlKey && e.shiftKey && e.key === 'K') {
+      // Ctrl/Cmd + S (Save)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
+        e.stopPropagation();
         return false;
       }
 
-      // Prevent Ctrl+S (Save)
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        return false;
-      }
-
-      // Prevent Alt+F4 (Close Window)
+      // Alt + F4 (Close Window)
       if (e.altKey && e.key === 'F4') {
         e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl + Alt + Delete
+      if (e.ctrlKey && e.altKey && e.key === 'Delete') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + A (Select All)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + C (Copy)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + X (Cut)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + V (Paste)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + N (New Window)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // F11 (Fullscreen)
+      if (e.key === 'F11') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+
+      // Ctrl/Cmd + U (View Source)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        e.stopPropagation();
         return false;
       }
     };
 
-    // 3. Prevent mouse drag (for screenshot tools)
+    // ==========================================
+    // LAYER 3: MOUSE EVENT PROTECTION
+    // ==========================================
     const handleMouseDown = (e: MouseEvent) => {
+      // Block right-click
       if (e.button === 2) {
         e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Block middle-click
+      if (e.button === 1) {
+        e.preventDefault();
+        e.stopPropagation();
         return false;
       }
     };
 
-    // 4. Prevent copy/paste of video content
+    const handleMouseUp = (e: MouseEvent) => {
+      if (e.button === 2 || e.button === 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+
+    // ==========================================
+    // LAYER 4: CLIPBOARD PROTECTION
+    // ==========================================
     const handleCopy = (e: ClipboardEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
+
+    const handleCut = (e: ClipboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
       return false;
     };
 
     const handlePaste = (e: ClipboardEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       return false;
     };
 
-    // 5. Disable inspect element on video
-    const handleInspect = (e: MouseEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        return false;
-      }
+    // ==========================================
+    // LAYER 5: DRAG & DROP PROTECTION
+    // ==========================================
+    const handleDragStart = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
     };
 
-    // Screen recording detection using canvas
-    const detectScreenRecording = async () => {
-      try {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const context = canvas.getContext('2d');
-        if (!context) return;
-
-        // Create a unique pattern that changes over time
-        const timestamp = Date.now();
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = `rgb(${timestamp % 256}, ${(timestamp / 256) % 256}, 0)`;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Check if the canvas content has been copied/stolen (very efficient check)
-        const imageData = context.getImageData(0, 0, 1, 1);
-        const data = imageData.data;
-
-        // If someone is screen recording, they might try to access this
-        // This is a passive check that doesn't block but alerts
-        return true;
-      } catch (error) {
-        // CORS restrictions might indicate screen recording software
-        console.warn('Screen recording protection active');
-        return false;
-      }
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
     };
 
-    // 6. Monitor for screen sharing/recording APIs
-    const checkScreenRecordingAPIs = () => {
-      // Check if user tries to access screen capture APIs
-      const originalGetDisplayMedia = navigator.mediaDevices?.getDisplayMedia;
-      
-      if (originalGetDisplayMedia) {
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
+
+    // ==========================================
+    // LAYER 6: DEVTOOLS DETECTION & BLOCKING
+    // ==========================================
+    const disableDevTools = () => {
+      // Detect if devtools is open
+      const checkDevTools = setInterval(() => {
+        const devToolsOpen = 
+          window.outerHeight - window.innerHeight > 200 ||
+          window.outerWidth - window.innerWidth > 200;
+        
+        if (devToolsOpen) {
+          // Pause video and show warning
+          if (videoElementRef.current) {
+            videoElementRef.current.pause();
+          }
+          setSecurityStatus('devtools-detected');
+          setScreenRecordingDetected(true);
+          // Don't clear this timeout, keep it showing
+        }
+      }, 500);
+
+      return () => clearInterval(checkDevTools);
+    };
+
+    // ==========================================
+    // LAYER 7: SCREEN RECORDING API BLOCKING
+    // ==========================================
+    const blockScreenRecordingAPIs = () => {
+      // Block getDisplayMedia
+      if (navigator.mediaDevices?.getDisplayMedia) {
+        const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
         navigator.mediaDevices.getDisplayMedia = async function (...args: any[]) {
           setScreenRecordingDetected(true);
-          setTimeout(() => setScreenRecordingDetected(false), 3000);
           throw new Error('Screen recording is disabled for security reasons');
+        };
+      }
+
+      // Block getUserMedia
+      if (navigator.mediaDevices?.getUserMedia) {
+        const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+        navigator.mediaDevices.getUserMedia = async function (...args: any[]) {
+          const constraints = args[0] as any;
+          if (constraints?.video?.displaySurface) {
+            setScreenRecordingDetected(true);
+            throw new Error('Screen capture is disabled');
+          }
+          return originalGetUserMedia.apply(this, args);
         };
       }
     };
 
-    // 7. Disable inspector/devtools
-    const disableInspect = () => {
-      // Prevent opening dev tools via F12, Ctrl+Shift+I, etc.
-      document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('contextmenu', handleContextMenu);
-      document.addEventListener('mousedown', handleMouseDown);
-      document.addEventListener('copy', handleCopy);
-      document.addEventListener('paste', handlePaste);
-      videoRef.current?.addEventListener('contextmenu', handleContextMenu);
-      videoRef.current?.addEventListener('mousedown', handleInspect);
+    // ==========================================
+    // LAYER 8: BLOB URL & MEDIA SOURCE EXTENSION BLOCKING
+    // ==========================================
+    const blockMediaAPIs = () => {
+      // Block MediaSource API
+      if (typeof MediaSource !== 'undefined') {
+        const originalCreateObjectURL = URL.createObjectURL;
+        (URL.createObjectURL as any) = function (obj: any) {
+          if (obj instanceof MediaSource) {
+            console.warn('MediaSource API is blocked');
+            throw new Error('MediaSource API is blocked for security');
+          }
+          return originalCreateObjectURL.call(URL, obj);
+        };
+      }
+
+      // Block access to video source elements
+      const videoElement = videoElementRef.current;
+      if (videoElement) {
+        Object.defineProperty(videoElement, 'src', {
+          get() {
+            return videoUrl;
+          },
+          set(value: string) {
+            console.warn('Direct src modification blocked');
+            return false;
+          },
+        });
+
+        // Block access to srcset
+        Object.defineProperty(videoElement, 'srcset', {
+          get() {
+            return '';
+          },
+          set(value: string) {
+            return false;
+          },
+        });
+      }
     };
 
-    // 8. Add security attributes to prevent saving/downloading
-    const video = videoRef.current?.querySelector('video') as HTMLVideoElement;
-    if (video) {
-      // Try to add controlsList attribute if available
+    // ==========================================
+    // LAYER 9: CANVAS FINGERPRINTING & WATERMARKING
+    // ==========================================
+    const applyCanvasProtection = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Generate unique watermark based on user and time
+      const timestamp = Date.now();
+      const watermark = `${userEmail}_${sessionIdRef.current}_${timestamp}`;
+      
+      // Create dynamic canvas watermark
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      ctx.fillStyle = `rgba(255, 255, 255, 0.02)`;
+      ctx.font = '12px monospace';
+      
+      for (let i = 0; i < 10; i++) {
+        ctx.fillText(watermark, i * 150, window.innerHeight / 2);
+        ctx.fillText(watermark, i * 150, window.innerHeight / 2 + 30);
+      }
+
+      // Protect canvas from toDataURL
+      const originalToDataURL = canvas.toDataURL;
+      canvas.toDataURL = function() {
+        console.warn('Canvas export blocked');
+        return '';
+      };
+    };
+
+    // ==========================================
+    // LAYER 10: NETWORK REQUEST MONITORING
+    // ==========================================
+    const monitorNetworkRequests = () => {
+      // Block fetch requests for video URLs
+      const originalFetch = window.fetch;
+      (window.fetch as any) = function (...args: any[]) {
+        const url = args[0]?.toString() || '';
+        
+        // Block downloading video files
+        if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
+          console.warn('Video download attempt blocked:', url);
+          setScreenRecordingDetected(true);
+          return Promise.reject(new Error('Video download blocked'));
+        }
+        
+        return originalFetch.apply(window, args);
+      };
+
+      // Block XMLHttpRequest for video downloads
+      const originalXHROpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(...args: any[]) {
+        const url = args[1]?.toString() || '';
+        
+        if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
+          console.warn('XHR video download blocked:', url);
+          setScreenRecordingDetected(true);
+          throw new Error('Video download blocked');
+        }
+        
+        return originalXHROpen.apply(this, args);
+      };
+    };
+
+    // ==========================================
+    // LAYER 11: VIDEO ELEMENT PROTECTION
+    // ==========================================
+    const protectVideoElement = () => {
+      const video = videoElementRef.current;
+      if (!video) return;
+
+      // Disable all download methods
       if ('controlsList' in video) {
         (video as any).controlsList?.add?.('nodownload');
       }
+
+      // Add context menu blocking directly on video
       video.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         return false;
       });
-      
-      // Update play state
+
+      // Block right-click on video
+      video.addEventListener('mousedown', (e) => {
+        if (e.button === 2 || e.button === 1) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      });
+
+      // Protect video properties
+      Object.defineProperty(video, 'controls', {
+        get() {
+          return true;
+        },
+        set(value: boolean) {
+          return true;
+        },
+      });
+
+      // Monitor play/pause
       video.onplay = () => setIsPlaying(true);
       video.onpause = () => setIsPlaying(false);
       video.ontimeupdate = () => setCurrentTime(video.currentTime);
       video.onloadedmetadata = () => setDuration(video.duration);
-    }
 
-    disableInspect();
-    checkScreenRecordingAPIs();
-    detectScreenRecording();
-
-    // Cleanup
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('copy', handleCopy);
-      document.removeEventListener('paste', handlePaste);
-      videoRef.current?.removeEventListener('contextmenu', handleContextMenu);
-      videoRef.current?.removeEventListener('mousedown', handleInspect);
+      // Log video playback for audit trail
+      video.addEventListener('play', () => {
+        console.log(`[Security] Video playing - User: ${userEmail}, Session: ${sessionIdRef.current}`);
+      });
     };
-  }, []);
+
+    // ==========================================
+    // LAYER 12: GLOBAL DOCUMENT PROTECTION
+    // ==========================================
+    const protectDocument = () => {
+      // Lock document selection
+      document.body.style.userSelect = 'none';
+      (document.body.style as any).webkitUserSelect = 'none';
+      (document.body.style as any).MozUserSelect = 'none';
+      (document.body.style as any).msUserSelect = 'none';
+
+      // Disable inspector
+      document.addEventListener('keydown', handleKeyDown, true);
+      document.addEventListener('contextmenu', handleContextMenu, true);
+    };
+
+    // ==========================================
+    // LAYER 13: WINDOW & FRAME PROTECTION
+    // ==========================================
+    const protectWindow = () => {
+      // Block opening new windows
+      const originalOpen = window.open;
+      (window as any).open = function(...args: any[]) {
+        console.warn('Window.open blocked');
+        return null;
+      };
+
+      // Block postMessage for cross-origin attacks
+      const originalPostMessage = window.postMessage;
+      (window as any).postMessage = function(...args: any[]) {
+        const message = args[0];
+        if (typeof message === 'string' && message.includes('video')) {
+          console.warn('PostMessage video extraction blocked');
+          return;
+        }
+        return originalPostMessage.apply(window, args);
+      };
+    };
+
+    // ==========================================
+    // EXECUTE ALL PROTECTION LAYERS
+    // ==========================================
+    const setupAllProtections = () => {
+      // Add event listeners
+      document.addEventListener('contextmenu', handleContextMenu, true);
+      document.addEventListener('keydown', handleKeyDown, true);
+      document.addEventListener('mousedown', handleMouseDown, true);
+      document.addEventListener('mouseup', handleMouseUp, true);
+      document.addEventListener('copy', handleCopy, true);
+      document.addEventListener('cut', handleCut, true);
+      document.addEventListener('paste', handlePaste, true);
+      document.addEventListener('dragstart', handleDragStart, true);
+      document.addEventListener('dragover', handleDragOver, true);
+      document.addEventListener('drop', handleDrop, true);
+
+      // Container-specific protection
+      if (videoRef.current) {
+        videoRef.current.addEventListener('contextmenu', handleContextMenu, true);
+        videoRef.current.addEventListener('mousedown', handleMouseDown, true);
+        videoRef.current.addEventListener('dragstart', handleDragStart, true);
+      }
+
+      // Activate all protection systems
+      blockScreenRecordingAPIs();
+      blockMediaAPIs();
+      applyCanvasProtection();
+      monitorNetworkRequests();
+      protectVideoElement();
+      protectDocument();
+      protectWindow();
+      disableDevTools();
+    };
+
+    setupAllProtections();
+
+    // ==========================================
+    // CLEANUP FUNCTION
+    // ==========================================
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu, true);
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('mousedown', handleMouseDown, true);
+      document.removeEventListener('mouseup', handleMouseUp, true);
+      document.removeEventListener('copy', handleCopy, true);
+      document.removeEventListener('cut', handleCut, true);
+      document.removeEventListener('paste', handlePaste, true);
+      document.removeEventListener('dragstart', handleDragStart, true);
+      document.removeEventListener('dragover', handleDragOver, true);
+      document.removeEventListener('drop', handleDrop, true);
+
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('contextmenu', handleContextMenu, true);
+        videoRef.current.removeEventListener('mousedown', handleMouseDown, true);
+        videoRef.current.removeEventListener('dragstart', handleDragStart, true);
+      }
+    };
+  }, [userEmail]);
 
   // Get YouTube video ID from URL
   const getYouTubeEmbedUrl = (url: string) => {
@@ -314,12 +658,14 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
               border: 'none',
               pointerEvents: 'auto',
             }}
+            sandbox="allow-autoplay allow-encrypted-media"
             allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen"
             className="select-none"
           />
         ) : (
           <video
+            ref={videoElementRef}
             src={videoUrl}
             style={{
               position: 'absolute',

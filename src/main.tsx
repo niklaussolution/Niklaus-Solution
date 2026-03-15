@@ -13,6 +13,7 @@ import { RegistrationsManagement } from "./admin/pages/RegistrationsManagement";
 import { CourseEnrollmentsManagement } from "./admin/pages/CourseEnrollmentsManagement";
 import { TrainersManagement } from "./admin/pages/TrainersManagement";
 import { TestimonialsManagement } from "./admin/pages/TestimonialsManagement";
+import { HackathonWinnersManagement } from "./admin/pages/HackathonWinnersManagement";
 import { StudentProjectsManagement } from "./admin/pages/StudentProjectsManagement";
 import { LoginRequestsManagement } from "./admin/pages/LoginRequestsManagement";
 import { FeaturesManagement } from "./admin/pages/FeaturesManagement";
@@ -161,6 +162,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute requiredRole={["super_admin", "editor"]}>
               <TestimonialsManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/hackathon-winners"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <HackathonWinnersManagement />
             </ProtectedRoute>
           }
         />

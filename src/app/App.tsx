@@ -6,6 +6,7 @@ import { CoursesSection } from "./components/CoursesSection";
 import { WhyChooseSection } from "./components/WhyChooseSection";
 import { TrainersSection } from "./components/TrainersSection";
 import { TestimonialsSection } from "./components/TestimonialsSection";
+import { HackathonWinnersSection } from "./components/HackathonWinnersSection";
 import { PricingSection } from "./components/PricingSection";
 import { StudentProjectsSection } from "./components/StudentProjectsSection";
 import { FreeTrialSection } from "./components/FreeTrialSection";
@@ -63,15 +64,13 @@ export default function App() {
       <CompaniesSection onOpenContactForm={() => setIsContactFormOpen(true)} />
       <TrainersSection onOpenContactForm={() => setIsContactFormOpen(true)} />
       <TestimonialsSection onOpenContactForm={() => setIsContactFormOpen(true)} />
+      <HackathonWinnersSection onOpenContactForm={() => setIsContactFormOpen(true)} />
       <VideoCarouselSection onOpenContactForm={() => setIsContactFormOpen(true)} />
-
       {/* Certificates Section */}
       <CertificateDownload />
-
       <Footer />
       <WhatsAppButton />
       <ScrollToTop />
-
       {/* Global Contact Form Popup */}
       <ContactFormPopup 
         isOpen={isContactFormOpen} 
