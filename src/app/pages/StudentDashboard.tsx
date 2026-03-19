@@ -6,7 +6,8 @@ import { auth, db, storage } from '../../config/firebase';
 import { useStudent } from '../context/StudentContext';
 import { SecureVideoPlayer } from '../components/SecureVideoPlayer';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Menu, X, LogOut, User, BookOpen, Award, Heart, HelpCircle, ShoppingCart, MessageSquare, Settings, ChevronDown, Upload, Eye, EyeOff, Lock, Globe, Linkedin, Twitter, Github, Play, ShieldCheck, Send } from 'lucide-react';
+import { Menu, X, LogOut, User, BookOpen, Award, Heart, HelpCircle, ShoppingCart, MessageSquare, Settings, ChevronDown, Upload, Eye, EyeOff, Lock, Globe, Linkedin, Twitter, Github, Play, ShieldCheck, Send, Trophy } from 'lucide-react';
+import { StudentCertificates } from './StudentCertificates';
 
 interface StudentProfile {
   id: string;
@@ -556,6 +557,7 @@ export const StudentDashboard = () => {
             { id: 'profile', label: 'My Profile', icon: User },
             { id: 'workshops', label: 'My Workshops', icon: BookOpen },
             { id: 'courses', label: 'My Courses', action: 'navigate', href: '/student/courses', icon: BookOpen },
+            { id: 'certificates', label: 'My Certificates', icon: Trophy },
             { id: 'wishlist', label: 'Wishlist', icon: Heart },
             { id: 'quiz', label: 'Quiz Attempts', icon: HelpCircle },
             { id: 'orders', label: 'Order History', icon: ShoppingCart },
@@ -1186,6 +1188,10 @@ export const StudentDashboard = () => {
                 </div>
               </form>
             </div>
+          )}
+
+          {activePage === 'certificates' && student && (
+            <StudentCertificates studentEmail={student.email} />
           )}
 
           {activePage === 'settings' && (
