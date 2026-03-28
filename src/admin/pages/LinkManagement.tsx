@@ -477,7 +477,7 @@ export const LinkManagement: React.FC = () => {
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Title</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Masked URL</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden lg:table-cell">Original URL</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden lg:table-cell">Destination</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Access</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden md:table-cell">Clicks</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden md:table-cell">Created</th>
@@ -501,11 +501,10 @@ export const LinkManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <a href={link.originalUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-gray-500 hover:text-blue-600 text-xs font-mono flex items-center gap-1 max-w-[220px]">
-                          <span className="truncate">{truncateUrl(link.originalUrl)}</span>
-                          <ExternalLink size={11} className="shrink-0" />
-                        </a>
+                        <span className="inline-flex items-center gap-2 text-gray-500 text-xs font-medium px-2 py-1 rounded bg-gray-50">
+                          <Lock size={12} /> Hidden
+                        </span>
+                        <p className="text-xs text-gray-400 mt-1">View in Edit →</p>
                       </td>
                       <td className="px-4 py-3">
                         {link.isPublic ? (
