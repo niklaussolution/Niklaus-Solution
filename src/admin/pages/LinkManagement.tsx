@@ -129,11 +129,27 @@ export const LinkManagement: React.FC = () => {
       setLinks(linksSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<MaskedLink, 'id'>) })));
       setStudents(studentsSnap.docs.map((d) => ({ id: d.id, name: d.data().name || 'Unknown', email: d.data().email || '' })));
       
-      // Fetch masked domain from settings
+      // Fetch masked domain from settings — structure is { key, value }
       if (!settingsSnap.empty) {
-        const settingsDoc = settingsSnap.docs[0];
-        const domain = settingsDoc.data().masked_domain_url || window.location.origin;
-        setMaskedDomain(domain);
+        const settingsDocs = settingsSnap.docs;
+        console.log('📋 Settings docs found:', settingsDocs.length);
+        settingsDocs.forEach((doc) => {
+          console.log(`  - ${doc.data().key}: ${doc.data().value}`);
+        });
+        
+        // Find the document with key === 'masked_domain_url'
+        const maskedDomainDoc = settingsDocs.find((d) => d.data().key === 'masked_domain_url');
+        if (maskedDomainDoc) {
+          const domain = maskedDomainDoc.data().value;
+          console.log('✓ Masked domain loaded from settings:', domain);
+          if (domain && domain.trim() !== '') {
+            setMaskedDomain(domain);
+          }
+        } else {
+          console.warn('⚠ No masked_domain_url setting found in Firestore. Using default:', window.location.origin);
+        }
+      } else {
+        console.warn('⚠ No settings found in Firestore');
       }
     } catch (err) {
       console.error(err);
@@ -313,47 +329,84 @@ export const LinkManagement: React.FC = () => {
   );
 
   const formBody = (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Left */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
-          <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
-            placeholder="e.g., Course Resources Drive, YouTube Demo Video"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+    <div className="space-y-6">
+      {/* Masked Domain Status Banner */}
+      <div className={`p-4 rounded-lg border-2 flex items-start gap-3 ${maskedDomain && maskedDomain !== window.location.origin ? 'bg-green-50 border-green-300' : 'bg-yellow-50 border-yellow-300'}`}>
+        <div className={`mt-0.5 ${maskedDomain && maskedDomain !== window.location.origin ? 'text-green-600' : 'text-yellow-600'}`}>
+          {maskedDomain && maskedDomain !== window.location.origin ? '✓' : '⚠'}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Original URL <span className="text-red-500">*</span></label>
-          <input type="url" value={formUrl} onChange={(e) => setFormUrl(e.target.value)}
-            placeholder="https://drive.google.com/... or any URL"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono" />
-          <p className="text-xs text-gray-400 mt-1">The real destination URL — students will only see the masked link.</p>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-gray-800">
+            {maskedDomain && maskedDomain !== window.location.origin ? '✓ Custom Masked Domain Active' : 'Default Domain (Not Configured)'}
+          </p>
+          <p className="text-xs text-gray-600 mt-1 font-mono">
+            {maskedDomain}
+          </p>
+          {!maskedDomain || maskedDomain === window.location.origin ? (
+            <p className="text-xs text-yellow-700 mt-2">
+              💡 Tip: Go to <strong>Settings</strong> and configure a custom "Masked Domain URL" to completely hide your main domain.
+            </p>
+          ) : null}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
+            <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
+              placeholder="e.g., Course Resources Drive, YouTube Demo Video"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Original URL <span className="text-red-500">*</span></label>
+            <input type="url" value={formUrl} onChange={(e) => setFormUrl(e.target.value)}
+              placeholder="https://drive.google.com/... or any URL"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono" />
+            <p className="text-xs text-gray-400 mt-1">The real destination URL — students will only see the masked link.</p>
+          </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
             rows={2} placeholder="Optional note for students..."
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
         </div>
-      </div>
-
-      {/* Right */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Access Type</label>
-          <div className="flex gap-3">
-            <button type="button" onClick={() => setFormIsPublic(true)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition ${formIsPublic ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-              <Globe size={15} /> Global
-            </button>
-            <button type="button" onClick={() => setFormIsPublic(false)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition ${!formIsPublic ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-              <Lock size={15} /> Private
-            </button>
-          </div>
-          {formIsPublic && <p className="text-xs text-gray-500 mt-1.5">✅ Anyone with the masked link can access the destination.</p>}
         </div>
-        {!formIsPublic && studentPickerUI}
+
+        {/* Right */}
+        <div className="space-y-4">
+          {/* Masked URL Preview */}
+          <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <p className="text-xs font-semibold text-blue-700 mb-2">📋 MASKED URL PREVIEW</p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-600 mb-1">What students will see:</p>
+              <code className="block text-xs bg-white border border-blue-300 text-blue-700 font-mono p-2 rounded break-all">
+                {getMaskedUrl('example-code-1234')}
+              </code>
+              <p className="text-xs text-gray-500 mt-2">
+                ✓ Original URL completely hidden<br/>
+                ✓ Points to: <code className="bg-gray-100 px-1 rounded text-xs">{maskedDomain}</code>
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Access Type</label>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setFormIsPublic(true)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition ${formIsPublic ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                <Globe size={15} /> Global
+              </button>
+              <button type="button" onClick={() => setFormIsPublic(false)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition ${!formIsPublic ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                <Lock size={15} /> Private
+              </button>
+            </div>
+            {formIsPublic && <p className="text-xs text-gray-500 mt-1.5">✅ Anyone with the masked link can access the destination.</p>}
+          </div>
+          {!formIsPublic && studentPickerUI}
+        </div>
       </div>
     </div>
   );
