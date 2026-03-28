@@ -31,6 +31,9 @@ import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
 import { JourneyManagement } from "./admin/pages/JourneyManagement";
 import { ContactSubmissionsManagement } from "./admin/pages/ContactSubmissionsManagement";
+import { FileManagement } from "./admin/pages/FileManagement";
+import { LinkManagement } from "./admin/pages/LinkManagement";
+import { LinkRedirect } from "./app/pages/LinkRedirect";
 import { ShippingPolicy } from "./app/pages/ShippingPolicy";
 import { TermsAndConditions } from "./app/pages/TermsAndConditions";
 import { CancellationsAndRefunds } from "./app/pages/CancellationsAndRefunds";
@@ -261,6 +264,23 @@ createRoot(document.getElementById("root")!).render(
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/files"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <FileManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/links"
+          element={
+            <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <LinkManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/r/:code" element={<LinkRedirect />} />
 
         <Route
           path="/admin/admins"

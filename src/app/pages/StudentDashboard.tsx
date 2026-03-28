@@ -6,7 +6,7 @@ import { auth, db, storage } from '../../config/firebase';
 import { useStudent } from '../context/StudentContext';
 import { SecureVideoPlayer } from '../components/SecureVideoPlayer';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Menu, X, LogOut, User, BookOpen, Award, Heart, HelpCircle, ShoppingCart, MessageSquare, Settings, ChevronDown, Upload, Eye, EyeOff, Lock, Globe, Linkedin, Twitter, Github, Play, ShieldCheck, Send, Trophy } from 'lucide-react';
+import { Menu, X, LogOut, User, BookOpen, Award, Heart, HelpCircle, ShoppingCart, MessageSquare, Settings, ChevronDown, Upload, Eye, EyeOff, Lock, Globe, Linkedin, Twitter, Github, Play, ShieldCheck, Send, Trophy, Download } from 'lucide-react';
 import { StudentCertificates } from './StudentCertificates';
 
 interface StudentProfile {
@@ -104,6 +104,8 @@ export const StudentDashboard = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState<any>({});
   const [successMsg, setSuccessMsg] = useState('');
+  const [sharedFiles, setSharedFiles] = useState<any[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -298,6 +300,39 @@ export const StudentDashboard = () => {
 
     return () => unsubscribe();
   }, [activePage]);
+
+  // Fetch shared files when Downloads tab is active
+  useEffect(() => {
+    if (activePage !== 'downloads') return;
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId || !student) return;
+
+    const loadFiles = async () => {
+      setFilesLoading(true);
+      try {
+        const { collection: col, getDocs: gd, query: q, where, or, orderBy: ob } = await import('firebase/firestore');
+        // Fetch public files
+        const publicSnap = await gd(q(col(db, 'sharedFiles'), where('isPublic', '==', true), ob('uploadedAt', 'desc')));
+        // Fetch files assigned to this student
+        const privateSnap = await gd(q(col(db, 'sharedFiles'), where('isPublic', '==', false), where('assignedStudents', 'array-contains', studentId), ob('uploadedAt', 'desc')));
+        const allFiles = [
+          ...publicSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+          ...privateSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+        ];
+        // Deduplicate by id
+        const seen = new Set<string>();
+        const unique = allFiles.filter((f: any) => { if (seen.has(f.id)) return false; seen.add(f.id); return true; });
+        unique.sort((a: any, b: any) => b.uploadedAt - a.uploadedAt);
+        setSharedFiles(unique);
+      } catch (err) {
+        console.error('Error fetching shared files:', err);
+      } finally {
+        setFilesLoading(false);
+      }
+    };
+
+    loadFiles();
+  }, [activePage, student]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -558,6 +593,7 @@ export const StudentDashboard = () => {
             { id: 'workshops', label: 'My Workshops', icon: BookOpen },
             { id: 'courses', label: 'My Courses', action: 'navigate', href: '/student/courses', icon: BookOpen },
             { id: 'certificates', label: 'My Certificates', icon: Trophy },
+            { id: 'downloads', label: 'Downloads', icon: Download },
             { id: 'wishlist', label: 'Wishlist', icon: Heart },
             { id: 'quiz', label: 'Quiz Attempts', icon: HelpCircle },
             { id: 'orders', label: 'Order History', icon: ShoppingCart },
@@ -1192,6 +1228,82 @@ export const StudentDashboard = () => {
 
           {activePage === 'certificates' && student && (
             <StudentCertificates studentEmail={student.email} />
+          )}
+
+          {activePage === 'downloads' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <Download size={24} className="text-blue-600" /> Downloads
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">Files shared by your instructors — click to download</p>
+              </div>
+
+              {filesLoading ? (
+                <div className="flex items-center justify-center py-16 bg-white rounded-lg shadow-md">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                  <span className="ml-3 text-gray-500">Loading files...</span>
+                </div>
+              ) : sharedFiles.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-16 text-center">
+                  <Download size={48} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">No files shared with you yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Check back later for course materials, software, and resources</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sharedFiles.map((file: any) => {
+                    const getIcon = (type: string) => {
+                      if (type?.includes('pdf')) return '📄';
+                      if (type?.includes('zip') || type?.includes('rar') || type?.includes('7z')) return '🗜️';
+                      if (type?.includes('image')) return '🖼️';
+                      if (type?.includes('video')) return '🎬';
+                      if (type?.includes('audio')) return '🎵';
+                      return '📁';
+                    };
+                    const formatSize = (bytes: number) => {
+                      if (!bytes) return '';
+                      if (bytes < 1024) return `${bytes} B`;
+                      if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+                      return `${(bytes / 1048576).toFixed(1)} MB`;
+                    };
+                    return (
+                      <div key={file.id} className="bg-white rounded-lg shadow-md p-5 flex items-start gap-4 hover:shadow-lg transition">
+                        <span className="text-4xl shrink-0">{getIcon(file.fileType)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-800 truncate">{file.title}</p>
+                          {file.description && (
+                            <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{file.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2 flex-wrap">
+                            <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">
+                              {file.category}
+                            </span>
+                            {file.fileSize > 0 && (
+                              <span className="text-xs text-gray-400">{formatSize(file.fileSize)}</span>
+                            )}
+                            {file.isPublic && (
+                              <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Globe size={10} /> Public
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <a
+                          href={file.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={file.fileName}
+                          className="shrink-0 flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-3 rounded-lg transition"
+                        >
+                          <Download size={16} />
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
 
           {activePage === 'settings' && (
