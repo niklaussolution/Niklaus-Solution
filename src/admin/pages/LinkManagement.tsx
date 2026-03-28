@@ -61,9 +61,6 @@ const generateShortCode = (): string => {
 
 let maskedDomainUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-masked-domain.com';
 
-const getMaskedUrl = (shortCode: string): string =>
-  `${maskedDomainUrl}/r/${shortCode}`;
-
 const truncateUrl = (url: string, max = 55): string =>
   url.length > max ? url.slice(0, max) + '…' : url;
 
@@ -79,6 +76,13 @@ export const LinkManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAccess, setFilterAccess] = useState<'all' | 'public' | 'private'>('all');
   const [maskedDomain, setMaskedDomain] = useState<string>(window.location.origin);
+
+  // Function to get masked URL using the current state
+  const getMaskedUrl = (shortCode: string): string =>
+    `${maskedDomain}/r/${shortCode}`;
+
+  const truncateUrl = (url: string, max = 55): string =>
+    url.length > max ? url.slice(0, max) + '…' : url;
 
   // Panel / modal state
   const [showCreatePanel, setShowCreatePanel] = useState(false);
@@ -130,7 +134,6 @@ export const LinkManagement: React.FC = () => {
         const settingsDoc = settingsSnap.docs[0];
         const domain = settingsDoc.data().masked_domain_url || window.location.origin;
         setMaskedDomain(domain);
-        maskedDomainUrl = domain;
       }
     } catch (err) {
       console.error(err);
