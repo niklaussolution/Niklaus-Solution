@@ -50,16 +50,19 @@ interface Student {
 }
 
 const generateShortCode = (): string => {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  const array = new Uint8Array(8);
+  // Generate 16 random bytes and convert to hex — completely random, no recognizable patterns
+  const array = new Uint8Array(16);
   crypto.getRandomValues(array);
-  array.forEach((b) => { code += chars[b % chars.length]; });
-  return code;
+  let hex = '';
+  array.forEach((b) => { hex += b.toString(16).padStart(2, '0'); });
+  // Format as UUID-like: 8-4-4-4-12 for better readability
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 };
 
+let maskedDomainUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-masked-domain.com';
+
 const getMaskedUrl = (shortCode: string): string =>
-  `${window.location.origin}/r/${shortCode}`;
+  `${maskedDomainUrl}/r/${shortCode}`;
 
 const truncateUrl = (url: string, max = 55): string =>
   url.length > max ? url.slice(0, max) + '…' : url;
@@ -75,6 +78,7 @@ export const LinkManagement: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAccess, setFilterAccess] = useState<'all' | 'public' | 'private'>('all');
+  const [maskedDomain, setMaskedDomain] = useState<string>(window.location.origin);
 
   // Panel / modal state
   const [showCreatePanel, setShowCreatePanel] = useState(false);
@@ -113,12 +117,21 @@ export const LinkManagement: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [linksSnap, studentsSnap] = await Promise.all([
+      const [linksSnap, studentsSnap, settingsSnap] = await Promise.all([
         getDocs(query(collection(db, 'maskedLinks'), orderBy('createdAt', 'desc'))),
         getDocs(collection(db, 'students')),
+        getDocs(collection(db, 'settings')),
       ]);
       setLinks(linksSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<MaskedLink, 'id'>) })));
       setStudents(studentsSnap.docs.map((d) => ({ id: d.id, name: d.data().name || 'Unknown', email: d.data().email || '' })));
+      
+      // Fetch masked domain from settings
+      if (!settingsSnap.empty) {
+        const settingsDoc = settingsSnap.docs[0];
+        const domain = settingsDoc.data().masked_domain_url || window.location.origin;
+        setMaskedDomain(domain);
+        maskedDomainUrl = domain;
+      }
     } catch (err) {
       console.error(err);
       setError('Failed to load links. Check Firestore permissions.');
@@ -482,8 +495,8 @@ export const LinkManagement: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <code className="bg-blue-50 text-blue-700 text-xs font-mono px-2 py-1 rounded truncate max-w-[200px] block">
-                            /r/{link.shortCode}
+                          <code className="bg-blue-50 text-blue-700 text-xs font-mono px-2 py-1 rounded truncate max-w-[250px] block" title={getMaskedUrl(link.shortCode)}>
+                            {getMaskedUrl(link.shortCode)}
                           </code>
                         </div>
                       </td>

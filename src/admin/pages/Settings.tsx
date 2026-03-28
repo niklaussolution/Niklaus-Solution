@@ -41,7 +41,8 @@ export const Settings: React.FC = () => {
       // Set default values if settings are empty
       const settingsData = data && Object.keys(data).length > 0 ? data : {
         whatsapp_phone: '',
-        whatsapp_message: 'Hi! I\'m interested in learning more about your workshops.'
+        whatsapp_message: 'Hi! I\'m interested in learning more about your workshops.',
+        masked_domain_url: ''
       };
       setSettings(settingsData);
     } catch (error) {
@@ -164,6 +165,28 @@ export const Settings: React.FC = () => {
                 />
                 <p className="text-sm text-gray-500 mt-1">This message will be pre-filled when users click the WhatsApp button</p>
               </div>
+
+              {/* URL Masking / Link Redirect Settings */}
+              <div className="border-t pt-6 mt-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-6">URL Masking Settings</h3>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-bold mb-2">Masked Domain URL <span className="text-red-500">*</span></label>
+                <input
+                  type="url"
+                  value={settings.masked_domain_url || ''}
+                  onChange={(e) => handleChange('masked_domain_url', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 font-mono"
+                  placeholder="https://go.niklaus.com"
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  The domain to use for masked links (e.g., https://go.niklaus.com or https://short.yoursite.com).
+                  <br />
+                  <strong>Important:</strong> Make sure this domain is set up to route /r/* paths to your application.
+                </p>
+              </div>
             </div>
 
             <button
@@ -186,3 +209,4 @@ export const Settings: React.FC = () => {
     </AdminLayout>
   );
 };
+
