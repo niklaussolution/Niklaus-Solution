@@ -13,7 +13,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = tru
   const { admin } = useAuth();
 
   const isSuperAdmin = admin?.role === 'super_admin';
-  const canAccessSettings = admin?.role === 'super_admin' || admin?.role === 'editor';
 
   const menuItems = [
     { path: '/admin/login-requests', label: 'Login Requests', icon: '🔓' },
@@ -36,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, isOpen = tru
     { path: '/admin/videos', label: 'Video Management', icon: '🎥' },
     { path: '/admin/qa', label: 'Support Chat', icon: '💬' },
     { path: '/admin/contact-submissions', label: 'Contact Submissions', icon: '📩' },
-    { path: '/admin/settings', label: 'Settings', icon: '⚙️', visible: canAccessSettings },
+    { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
     { path: '/admin/admins', label: 'Admin Users', icon: '🔐', visible: isSuperAdmin },
   ];
 
