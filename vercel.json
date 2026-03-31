@@ -3,6 +3,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/r/:code",
+      "destination": "/api/redirect?code=:code"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
