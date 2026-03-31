@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../../config/firebase';
 import { collection, query, where, getDocs, updateDoc, doc, increment } from 'firebase/firestore';
@@ -8,6 +8,7 @@ export const LinkRedirect: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'notfound' | 'error' | 'ready'>('loading');
   const [originalUrl, setOriginalUrl] = useState('');
   const [iframeBlocked, setIframeBlocked] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (!code) { setStatus('notfound'); return; }
@@ -37,6 +38,28 @@ export const LinkRedirect: React.FC = () => {
     resolve();
   }, [code]);
 
+  // Detect X-Frame-Options / CSP iframe blocks after load
+  // onError fires for network errors; postMessage listener catches CSP/X-Frame-Options blocks
+  useEffect(() => {
+    if (status !== 'ready' || !originalUrl) return;
+
+    // Fallback: if iframe hasn't signalled success within 8 seconds, assume blocked
+    // (X-Frame-Options silently cancels load — no event fires in the parent)
+    const timer = setTimeout(() => {
+      try {
+        // Accessing contentDocument throws if cross-origin blocked
+        const cd = iframeRef.current?.contentDocument;
+        if (!cd || cd.body?.innerHTML === '') {
+          setIframeBlocked(true);
+        }
+      } catch {
+        setIframeBlocked(true);
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [status, originalUrl]);
+
   // Full-screen iframe — address bar stays as /r/:code, original URL stays hidden
   if (status === 'ready' && originalUrl) {
     return (
@@ -46,7 +69,7 @@ export const LinkRedirect: React.FC = () => {
             <p className="text-5xl mb-4">🚫</p>
             <h1 className="text-xl font-bold text-gray-800 mb-2">This site cannot be displayed here</h1>
             <p className="text-gray-500 text-sm mb-6">
-              The destination blocks embedding. Open it directly while keeping your link private:
+              The destination URL blocks embedding. It will open in a new tab:
             </p>
             <a
               href={originalUrl}
@@ -54,15 +77,15 @@ export const LinkRedirect: React.FC = () => {
               rel="noopener noreferrer"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition text-sm"
             >
-              Open in new tab →
+              Open destination →
             </a>
           </div>
         )}
         <iframe
+          ref={iframeRef}
           src={originalUrl}
           title="Masked Link Content"
           style={{ width: '100%', height: '100%', border: 'none', display: iframeBlocked ? 'none' : 'block' }}
-          // Detect X-Frame-Options / CSP block via error event
           onError={() => setIframeBlocked(true)}
           sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
         />

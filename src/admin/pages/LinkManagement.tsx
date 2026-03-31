@@ -233,9 +233,10 @@ export const LinkManagement: React.FC = () => {
         setMaskedDomain(maskedDomainSettings.url);
         setMaskedDomainInput(maskedDomainSettings.url);
       } else {
-        console.warn('⚠ No masked domain URL found in urlMaskingSettings collection. Using default:', window.location.origin);
+        console.warn('⚠ No masked domain URL found in urlMaskingSettings collection. Using app origin:', window.location.origin);
+        // Use the current app's origin as default — /r/:code routes ARE handled by this app
         setMaskedDomain(window.location.origin);
-        setMaskedDomainInput('');
+        setMaskedDomainInput(window.location.origin);
       }
     } catch (err) {
       console.error(err);
@@ -275,8 +276,8 @@ export const LinkManagement: React.FC = () => {
       setError('Select at least one student for private access.');
       return;
     }
-    if (!maskedDomain || maskedDomain === window.location.origin || !maskedDomain.includes('.')) {
-      setError('⚙️ Please configure a complete masked domain URL first (e.g., https://go.niklaus.com). Click "Configure" above.');
+    if (!maskedDomain || !maskedDomain.includes('.')) {
+      setError('⚙️ Please configure a masked domain URL first. Click "Configure" above.');
       return;
     }
     setSaving(true);
