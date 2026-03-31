@@ -17,8 +17,6 @@ import {
   ExternalLink,
   Eye,
   BarChart2,
-  Save,
-  Settings,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import {
@@ -30,12 +28,8 @@ import {
   updateDoc,
   query,
   orderBy,
-  setDoc,
 } from 'firebase/firestore';
-import {
-  getMaskedDomainSettings,
-  validateAndSaveMaskedDomain,
-} from '../services/maskedDomainService';
+
 
 interface MaskedLink {
   id: string;
@@ -103,8 +97,6 @@ const validateAndNormalizeUrl = (url: string): { isValid: boolean; error?: strin
   }
 };
 
-let maskedDomainUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-masked-domain.com';
-
 const truncateUrl = (url: string, max = 75): string =>
   url.length > max ? url.slice(0, max) + '…' : url;
 
@@ -119,21 +111,10 @@ export const LinkManagement: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAccess, setFilterAccess] = useState<'all' | 'public' | 'private'>('all');
-  const [maskedDomain, setMaskedDomain] = useState<string>(window.location.origin);
-  
-  // Masked domain configuration state
-  const [editingMaskedDomain, setEditingMaskedDomain] = useState(false);
-  const [maskedDomainInput, setMaskedDomainInput] = useState('');
-  const [savingMaskedDomain, setSavingMaskedDomain] = useState(false);
-  const [maskedDomainError, setMaskedDomainError] = useState('');
-  const [maskedDomainSuccess, setMaskedDomainSuccess] = useState('');
 
-  // Function to get masked URL using the current state
-  const getMaskedUrl = (shortCode: string): string => {
-    // Remove trailing slash if present to avoid double slashes
-    const cleanDomain = maskedDomain.endsWith('/') ? maskedDomain.slice(0, -1) : maskedDomain;
-    return `${cleanDomain}/r/${shortCode}`;
-  };
+  // Always use the app's own origin — guaranteed to work
+  const getMaskedUrl = (shortCode: string): string =>
+    `${window.location.origin}/r/${shortCode}`;
 
   const truncateUrl = (url: string, max = 55): string =>
     url.length > max ? url.slice(0, max) + '…' : url;
@@ -155,50 +136,6 @@ export const LinkManagement: React.FC = () => {
   const studentDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchData(); }, []);
-
-  // Handler to save masked domain URL
-  const handleSaveMaskedDomain = async () => {
-    setMaskedDomainError('');
-    setMaskedDomainSuccess('');
-
-    if (!maskedDomainInput.trim()) {
-      setMaskedDomainError('Masked domain URL is required');
-      return;
-    }
-
-    setSavingMaskedDomain(true);
-    try {
-      // Use the new service to save and validate
-      const result = await validateAndSaveMaskedDomain(maskedDomainInput, admin?.email);
-      
-      if (!result.isValid) {
-        setMaskedDomainError(result.error || 'Invalid URL');
-        return;
-      }
-
-      const normalizedUrl = result.data?.url!;
-      setMaskedDomain(normalizedUrl);
-      setMaskedDomainInput(normalizedUrl);
-      setMaskedDomainSuccess('✓ Masked domain URL saved successfully to urlMaskingSettings collection! Links will now use this domain.');
-      setEditingMaskedDomain(false);
-
-      // Clear success message after 4 seconds
-      setTimeout(() => {
-        setMaskedDomainSuccess('');
-      }, 4000);
-    } catch (err: any) {
-      console.error('Error saving masked domain:', err);
-      setMaskedDomainError(`Error: ${err.message}`);
-    } finally {
-      setSavingMaskedDomain(false);
-    }
-  };
-
-  const handleCancelMaskedDomain = () => {
-    setEditingMaskedDomain(false);
-    setMaskedDomainInput(maskedDomain);
-    setMaskedDomainError('');
-  };
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -225,19 +162,6 @@ export const LinkManagement: React.FC = () => {
       ]);
       setLinks(linksSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<MaskedLink, 'id'>) })));
       setStudents(studentsSnap.docs.map((d) => ({ id: d.id, name: d.data().name || 'Unknown', email: d.data().email || '' })));
-      
-      // Fetch masked domain from new dedicated collection
-      const maskedDomainSettings = await getMaskedDomainSettings();
-      if (maskedDomainSettings?.url) {
-        console.log('✓ Masked domain loaded from urlMaskingSettings collection:', maskedDomainSettings.url);
-        setMaskedDomain(maskedDomainSettings.url);
-        setMaskedDomainInput(maskedDomainSettings.url);
-      } else {
-        console.warn('⚠ No masked domain URL found in urlMaskingSettings collection. Using app origin:', window.location.origin);
-        // Use the current app's origin as default — /r/:code routes ARE handled by this app
-        setMaskedDomain(window.location.origin);
-        setMaskedDomainInput(window.location.origin);
-      }
     } catch (err) {
       console.error(err);
       setError('Failed to load links. Check Firestore permissions.');
@@ -274,10 +198,6 @@ export const LinkManagement: React.FC = () => {
     if (!validateUrl(formUrl.trim())) { setError('Please enter a valid URL with complete domain (e.g., https://example.com). Include https://)'); return; }
     if (!formIsPublic && formAssignedStudents.length === 0) {
       setError('Select at least one student for private access.');
-      return;
-    }
-    if (!maskedDomain || !maskedDomain.includes('.')) {
-      setError('⚙️ Please configure a masked domain URL first. Click "Configure" above.');
       return;
     }
     setSaving(true);
@@ -429,21 +349,6 @@ export const LinkManagement: React.FC = () => {
 
   const formBody = (
     <div className="space-y-6">
-      {/* Masked Domain Status Banner */}
-      <div className={`p-4 rounded-lg border-2 flex items-start gap-3 ${maskedDomain && maskedDomain !== window.location.origin ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-300'}`}>
-        <div className={`mt-0.5 ${maskedDomain && maskedDomain !== window.location.origin ? 'text-green-600' : 'text-blue-600'}`}>
-          {maskedDomain && maskedDomain !== window.location.origin ? '✓' : 'ℹ'}
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-gray-800">
-            {maskedDomain && maskedDomain !== window.location.origin ? '✓ Custom Masked Domain Active' : 'ℹ Using Default Domain'}
-          </p>
-          <p className="text-xs text-gray-600 mt-1 font-mono">
-            {maskedDomain && maskedDomain !== window.location.origin ? maskedDomain : window.location.origin}
-          </p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left */}
         <div className="space-y-4">
@@ -480,7 +385,7 @@ export const LinkManagement: React.FC = () => {
               </code>
               <p className="text-xs text-gray-500 mt-2">
                 ✓ Original URL completely hidden<br/>
-                ✓ Points to: <code className="bg-gray-100 px-1 rounded text-xs">{maskedDomain}</code>
+                ✓ Short link hosted on this site
               </p>
             </div>
           </div>
@@ -522,119 +427,6 @@ export const LinkManagement: React.FC = () => {
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
             <Plus size={18} /> New Masked Link
           </button>
-        </div>
-
-        {/* Masked Domain Configuration Card */}
-        <div className={`bg-white rounded-xl shadow-md border mb-6 overflow-hidden ${!maskedDomain || maskedDomain === window.location.origin || !maskedDomain.includes('.') ? 'border-red-300 bg-red-50' : 'border-green-300'}`}>
-          <div className={`px-6 py-4 border-b ${!maskedDomain || maskedDomain === window.location.origin || !maskedDomain.includes('.') ? 'bg-red-100' : 'bg-green-50'}`}>
-            <div className="flex items-center justify-between">
-              <h2 className={`text-lg font-bold flex items-center gap-2 ${!maskedDomain || maskedDomain === window.location.origin || !maskedDomain.includes('.') ? 'text-red-800' : 'text-green-800'}`}>
-                <Settings size={20} />
-                URL Masking Configuration
-              </h2>
-              {!editingMaskedDomain && (
-                <button
-                  onClick={() => {
-                    setEditingMaskedDomain(true);
-                    setMaskedDomainInput(maskedDomain && maskedDomain !== window.location.origin ? maskedDomain : '');
-                  }}
-                  className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1"
-                >
-                  <Edit size={16} /> {maskedDomain && maskedDomain !== window.location.origin && maskedDomain.includes('.') ? 'Edit' : 'Configure'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="px-6 py-4">
-            {editingMaskedDomain ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Masked Domain URL <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={maskedDomainInput}
-                    onChange={(e) => setMaskedDomainInput(e.target.value)}
-                    placeholder="https://go.niklaus.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    📝 Enter the complete domain where masked links will be hosted. Examples:
-                  </p>
-                  <ul className="text-xs text-gray-400 mt-1 ml-4 space-y-1">
-                    <li>✓ https://go.niklaus.com</li>
-                    <li>✓ https://short.niklaus.com</li>
-                    <li>✓ https://links.yoursite.com</li>
-                    <li>✗ https://haihowareyu (incomplete - missing TLD)</li>
-                    <li>✗ go.niklaus.com (missing https://)</li>
-                  </ul>
-                </div>
-
-                {maskedDomainError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertCircle size={16} className="text-red-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-red-700">{maskedDomainError}</p>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={handleCancelMaskedDomain}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveMaskedDomain}
-                    disabled={savingMaskedDomain}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition text-sm font-medium"
-                  >
-                    {savingMaskedDomain ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={16} />
-                        Save Configuration
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-start gap-3">
-                  <div className={`mt-1 text-lg ${maskedDomain && maskedDomain !== window.location.origin && maskedDomain.includes('.') ? 'text-green-600' : 'text-red-600'}`}>
-                    {maskedDomain && maskedDomain !== window.location.origin && maskedDomain.includes('.') ? '✓' : '⚠'}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {maskedDomain && maskedDomain !== window.location.origin && maskedDomain.includes('.') ? '✓ Custom Masked Domain Active' : '⚠ Masked Domain Not Configured'}
-                    </p>
-                    <p className="text-xs text-gray-600 font-mono break-all border border-gray-200 bg-gray-50 p-2 rounded mt-2">
-                      {maskedDomain && maskedDomain !== window.location.origin && maskedDomain.includes('.') ? maskedDomain : 'Not configured - using default'}
-                    </p>
-                    {!maskedDomain || maskedDomain === window.location.origin || !maskedDomain.includes('.') ? (
-                      <p className="text-xs text-red-700 mt-2 font-medium">
-                        🔴 Configure a masked domain to create working masked links. Click "Configure" above.
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {maskedDomainSuccess && (
-              <div className="mt-4 flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <Check size={16} className="text-green-600 mt-0.5 shrink-0" />
-                <p className="text-sm text-green-700">{maskedDomainSuccess}</p>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Alerts */}
