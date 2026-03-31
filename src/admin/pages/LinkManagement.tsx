@@ -37,6 +37,7 @@ interface MaskedLink {
   description: string;
   originalUrl: string;
   shortCode: string;
+  shortUrl?: string;        // is.gd short URL (hides domain)
   isPublic: boolean;
   assignedStudents: string[];
   createdBy: string;
@@ -111,10 +112,17 @@ export const LinkManagement: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAccess, setFilterAccess] = useState<'all' | 'public' | 'private'>('all');
-
-  // Always use the app's own origin — guaranteed to work
-  const getMaskedUrl = (shortCode: string): string =>
+  // Internal fallback URL (same domain, always works)
+  const getInternalUrl = (shortCode: string): string =>
     `${window.location.origin}/r/${shortCode}`;
+
+  // Returns the best shareable URL for a link — is.gd short URL if available
+  const getLinkUrl = (link: MaskedLink): string =>
+    link.shortUrl || getInternalUrl(link.shortCode);
+
+  // Kept for backwards compat in the form preview
+  const getMaskedUrl = (shortCode: string): string =>
+    getInternalUrl(shortCode);
 
   const truncateUrl = (url: string, max = 55): string =>
     url.length > max ? url.slice(0, max) + '…' : url;
@@ -192,6 +200,18 @@ export const LinkManagement: React.FC = () => {
     }
   };
 
+  // Call the Vercel API proxy to shorten a URL via is.gd
+  const shortenUrl = async (internalUrl: string): Promise<string | null> => {
+    try {
+      const response = await fetch(`/api/shorten?url=${encodeURIComponent(internalUrl)}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.shortUrl || null;
+    } catch {
+      return null;
+    }
+  };
+
   const handleCreate = async () => {
     if (!formTitle.trim()) { setError('Title is required.'); return; }
     if (!formUrl.trim()) { setError('URL is required.'); return; }
@@ -202,11 +222,12 @@ export const LinkManagement: React.FC = () => {
     }
     setSaving(true);
     try {
-      // Generate unique short code
       const existingCodes = links.map((l) => l.shortCode);
       const shortCode = await generateUniqueShortCode(existingCodes);
+      const internalUrl = getInternalUrl(shortCode);
 
-      await addDoc(collection(db, 'maskedLinks'), {
+      // Save to Firestore first
+      const docRef = await addDoc(collection(db, 'maskedLinks'), {
         title: formTitle.trim(),
         description: formDescription.trim(),
         originalUrl: formUrl.trim(),
@@ -217,7 +238,17 @@ export const LinkManagement: React.FC = () => {
         createdAt: Date.now(),
         clickCount: 0,
       });
-      setSuccess(`✓ Masked link created: ${getMaskedUrl(shortCode)}`);
+
+      // Shorten via is.gd (domain-free link)
+      const shortUrl = await shortenUrl(internalUrl);
+      if (shortUrl) {
+        await updateDoc(doc(db, 'maskedLinks', docRef.id), { shortUrl });
+        setSuccess(`✓ Masked link created: ${shortUrl}`);
+      } else {
+        // is.gd failed — internal URL still works fine
+        setSuccess(`✓ Masked link created: ${internalUrl}`);
+      }
+
       resetForm();
       setShowCreatePanel(false);
       fetchData();
@@ -280,7 +311,7 @@ export const LinkManagement: React.FC = () => {
   };
 
   const handleCopy = (link: MaskedLink) => {
-    navigator.clipboard.writeText(getMaskedUrl(link.shortCode)).then(() => {
+    navigator.clipboard.writeText(getLinkUrl(link)).then(() => {
       setCopiedId(link.id);
       setTimeout(() => setCopiedId(null), 2000);
     });
@@ -551,12 +582,12 @@ export const LinkManagement: React.FC = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 group relative">
                           <code className="bg-blue-50 text-blue-700 text-xs font-mono px-2 py-1 rounded truncate max-w-[250px] block cursor-pointer hover:bg-blue-100" 
-                            title={`Click to copy: ${getMaskedUrl(link.shortCode)}`}>
-                            {getMaskedUrl(link.shortCode)}
+                            title={`Click to copy: ${getLinkUrl(link)}`}>
+                            {getLinkUrl(link)}
                           </code>
                           {/* Full URL tooltip on hover */}
                           <div className="hidden group-hover:block absolute bottom-full left-0 mb-2 bg-gray-800 text-white text-xs rounded px-3 py-1 whitespace-nowrap z-40">
-                            {getMaskedUrl(link.shortCode)}
+                            {getLinkUrl(link)}
                           </div>
                         </div>
                       </td>
@@ -590,7 +621,7 @@ export const LinkManagement: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <a href={getMaskedUrl(link.shortCode)} target="_blank" rel="noopener noreferrer"
+                          <a href={getLinkUrl(link)} target="_blank" rel="noopener noreferrer"
                             title="Test masked link"
                             className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
                             <Eye size={16} />
@@ -638,7 +669,7 @@ export const LinkManagement: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 mb-0.5">Masked link (fixed — cannot change)</p>
                     <code className="text-sm text-blue-700 font-mono break-all">
-                      {getMaskedUrl(editingLink.shortCode)}
+                      {getLinkUrl(editingLink)}
                     </code>
                   </div>
                   <button onClick={() => handleCopy(editingLink)}
