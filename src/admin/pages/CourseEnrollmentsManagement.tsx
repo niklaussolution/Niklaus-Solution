@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
-import { Trash2, Search, Plus, AlertCircle, Download, X } from 'lucide-react';
+import { Trash2, Search, Plus, AlertCircle, Download, X, Check, Loader } from 'lucide-react';
 import { db } from '../config/firebase';
 import { collection, getDocs, deleteDoc, doc, addDoc, query, where, updateDoc, getDoc, increment } from 'firebase/firestore';
+import { api } from '../services/api';
 
 interface Course {
   id: string;
@@ -152,7 +153,17 @@ export const CourseEnrollmentsManagement: React.FC = () => {
         enrolled: increment(1),
       });
 
-      setSuccess('Enrollment added successfully!');
+      // Auto-issue certificate if enrollment is created as Completed
+      if (formData.status === 'Completed') {
+        await issueCourseCompletionCertificate({
+          id: '',
+          studentId: '',
+          ...enrollmentData,
+        } as Enrollment);
+        // cert function already sets the success message; just reset form and close
+      } else {
+        setSuccess('Enrollment added successfully!');
+      }
       setFormData({
         studentName: '',
         email: '',
@@ -196,6 +207,72 @@ export const CourseEnrollmentsManagement: React.FC = () => {
       courseId,
       courseTitle: course?.title || '',
     }));
+  };
+
+  // Auto-issue a certificate when an enrollment is marked Completed
+  const issueCourseCompletionCertificate = async (enrollment: Enrollment) => {
+    try {
+      // Idempotency – skip if already issued for this course + student
+      // Use 2-field query + in-memory status filter to avoid needing a 3-field composite index
+      const certsQ = query(
+        collection(db, 'certificates'),
+        where('studentEmail', '==', enrollment.email.toLowerCase()),
+        where('courseName', '==', enrollment.courseTitle)
+      );
+      const certsSnap = await getDocs(certsQ);
+      const alreadyIssued = certsSnap.docs.some((d) => d.data().status === 'issued');
+      if (alreadyIssued) return;
+
+      const certificateId = `CERT-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 10)
+        .toUpperCase()}`;
+      const now = new Date().toISOString();
+
+      await addDoc(collection(db, 'certificates'), {
+        studentName: enrollment.studentName,
+        studentEmail: enrollment.email.toLowerCase(),
+        courseName: enrollment.courseTitle,
+        courseType: 'course',
+        certificateId,
+        completionDate: now,
+        issueDate: now,
+        status: 'issued',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      setSuccess(`Certificate automatically issued to ${enrollment.studentName} for "${enrollment.courseTitle}"`);
+    } catch (err) {
+      console.error('Error auto-issuing course certificate:', err);
+    }
+  };
+
+  const handleStatusChange = async (enrollmentId: string, newStatus: 'Active' | 'Completed' | 'Dropped') => {
+    try {
+      const enrollment = enrollments.find((e) => e.id === enrollmentId);
+      if (!enrollment || enrollment.status === newStatus) return;
+
+      const enrollmentRef = doc(db, 'courseEnrollments', enrollmentId);
+      await updateDoc(enrollmentRef, {
+        status: newStatus,
+        updatedAt: Date.now(),
+      });
+
+      // Issue certificate only when transitioning TO Completed
+      if (newStatus === 'Completed') {
+        await issueCourseCompletionCertificate(enrollment);
+      } else {
+        setSuccess(`Status updated to ${newStatus}`);
+      }
+
+      setEnrollments((prev) =>
+        prev.map((e) => (e.id === enrollmentId ? { ...e, status: newStatus } : e))
+      );
+    } catch (err) {
+      setError('Failed to update enrollment status');
+      console.error(err);
+    }
   };
 
   const filteredEnrollments = enrollments.filter((enrollment) => {
@@ -421,17 +498,26 @@ export const CourseEnrollmentsManagement: React.FC = () => {
                         {new Date(enrollment.enrollmentDate).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span
-                          className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                        <select
+                          value={enrollment.status}
+                          onChange={(e) =>
+                            handleStatusChange(
+                              enrollment.id,
+                              e.target.value as 'Active' | 'Completed' | 'Dropped'
+                            )
+                          }
+                          className={`border rounded px-2 py-1 text-xs font-medium cursor-pointer ${
                             enrollment.status === 'Active'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-blue-100 text-blue-800 border-blue-300'
                               : enrollment.status === 'Completed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-green-100 text-green-800 border-green-300'
+                              : 'bg-red-100 text-red-800 border-red-300'
                           }`}
                         >
-                          {enrollment.status}
-                        </span>
+                          <option value="Active">Active</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Dropped">Dropped</option>
+                        </select>
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <button

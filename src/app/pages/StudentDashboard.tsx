@@ -509,24 +509,88 @@ export const StudentDashboard = () => {
     }
   };
 
+  // Auto-issue a workshop certificate if one hasn't been issued yet
+  const issueCertificateIfNotExists = async (
+    studentData: StudentProfile,
+    courseName: string,
+    courseType: 'course' | 'workshop'
+  ) => {
+    try {
+      // Idempotency check – skip if already issued
+      // Use 2-field query + in-memory status filter to avoid needing a 3-field composite index
+      const certsQ = query(
+        collection(db, 'certificates'),
+        where('studentEmail', '==', studentData.email.toLowerCase()),
+        where('courseName', '==', courseName)
+      );
+      const certsSnap = await getDocs(certsQ);
+      const alreadyIssued = certsSnap.docs.some((d) => d.data().status === 'issued');
+      if (alreadyIssued) return;
+
+      const certificateId = `CERT-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 10)
+        .toUpperCase()}`;
+      const now = new Date().toISOString();
+
+      await addDoc(collection(db, 'certificates'), {
+        studentName: studentData.name,
+        studentEmail: studentData.email.toLowerCase(),
+        courseName,
+        courseType,
+        certificateId,
+        completionDate: now,
+        issueDate: now,
+        status: 'issued',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // Keep the student doc's certificates array in sync
+      const updatedCerts = [...(studentData.certificates || []), certificateId];
+      await updateDoc(doc(db, 'students', studentData.id), {
+        certificates: updatedCerts,
+        updatedAt: Date.now(),
+      });
+      setStudent((prev) => (prev ? { ...prev, certificates: updatedCerts } : prev));
+
+      setSuccessMsg(`🎉 Congratulations! Your certificate for "${courseName}" has been issued! Check "My Certificates".`);
+      setTimeout(() => setSuccessMsg(''), 6000);
+    } catch (err) {
+      console.error('Error auto-issuing certificate:', err);
+    }
+  };
+
   const recordVideoCompletion = async (videoId: string, courseName: string) => {
     if (!student) return;
     try {
       const workshopsRef = collection(db, 'workshops');
       const wQ = query(workshopsRef, where('title', '==', courseName));
       const wSnap = await getDocs(wQ);
-      
+
       if (!wSnap.empty) {
         const workshopId = wSnap.docs[0].id;
-        const progressQ = query(collection(db, 'studentProgress'), where('studentId', '==', student.id), where('workshopId', '==', workshopId));
+        const totalVideos = coursesWithVideos.get(courseName) || [];
+        const progressQ = query(
+          collection(db, 'studentProgress'),
+          where('studentId', '==', student.id),
+          where('workshopId', '==', workshopId)
+        );
         const progressSnap = await getDocs(progressQ);
 
+        let newCompletedVideos: string[] = [];
+
         if (progressSnap.empty) {
+          newCompletedVideos = [videoId];
+          const completionPct =
+            totalVideos.length > 0
+              ? Math.round((newCompletedVideos.length / totalVideos.length) * 100)
+              : 0;
           await addDoc(collection(db, 'studentProgress'), {
             studentId: student.id,
             workshopId: workshopId,
-            completedVideos: [videoId],
-            completionPercentage: 0,
+            completedVideos: newCompletedVideos,
+            completionPercentage: completionPct,
             createdAt: Date.now(),
             updatedAt: Date.now(),
           });
@@ -534,12 +598,39 @@ export const StudentDashboard = () => {
           const progressRef = progressSnap.docs[0].ref;
           const progressData = progressSnap.docs[0].data() as any;
           if (!progressData.completedVideos.includes(videoId)) {
+            newCompletedVideos = [...progressData.completedVideos, videoId];
+            const completionPct =
+              totalVideos.length > 0
+                ? Math.round((newCompletedVideos.length / totalVideos.length) * 100)
+                : 0;
             await updateDoc(progressRef, {
-              completedVideos: [...progressData.completedVideos, videoId],
+              completedVideos: newCompletedVideos,
+              completionPercentage: completionPct,
               updatedAt: Date.now(),
             });
+          } else {
+            newCompletedVideos = progressData.completedVideos;
           }
         }
+
+        // Auto-issue certificate when ALL videos in the workshop are completed
+        if (totalVideos.length > 0 && newCompletedVideos.length >= totalVideos.length) {
+          await issueCertificateIfNotExists(student, courseName, 'workshop');
+        }
+
+        // Update local progress state so the UI reflects the change immediately
+        const completionPctLocal =
+          totalVideos.length > 0
+            ? Math.round((newCompletedVideos.length / totalVideos.length) * 100)
+            : 0;
+        setStudentProgress((prev) => {
+          const next = new Map(prev);
+          next.set(courseName, {
+            completedVideos: newCompletedVideos,
+            completionPercentage: completionPctLocal,
+          });
+          return next;
+        });
       }
     } catch (err) {
       console.error('Error recording video completion:', err);
