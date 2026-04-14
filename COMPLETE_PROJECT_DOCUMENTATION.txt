@@ -1,0 +1,2354 @@
+================================================================================
+NIKLAUS SOLUTION - COMPLETE PROJECT DOCUMENTATION
+================================================================================
+Generated on: April 14, 2026
+Project Type: Full-Stack Web Application (React + TypeScript + Firebase + Vite)
+================================================================================
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+The Niklaus Solution is a comprehensive educational technology platform that 
+serves as both a public landing page and a complete admin/student management 
+system. It enables educational organizations to:
+
+- Manage and market workshops and courses
+- Handle student registrations and enrollments
+- Process online payments via Razorpay
+- Track student progress and course completion
+- Generate and manage digital certificates
+- Maintain admin roles and permissions
+- Create and manage pricing plans
+- Handle student testimonials and feedback
+- Manage company partnerships and trainers
+- Provide FAQ and knowledge base
+- Handle contact form submissions
+- Support student Q&A and quiz features
+- Generate detailed analytics and reports
+
+================================================================================
+2. TECHNOLOGY STACK
+================================================================================
+
+FRONTEND:
+- React 18.3.1 (React DOM included)
+- TypeScript
+- Vite 6.3.5 (Build tool and dev server)
+- Tailwind CSS 4.1.12 (UI Styling)
+- React Router DOM 6.30.2 (Client-side routing)
+
+UI LIBRARIES & COMPONENTS:
+- Material-UI (MUI) 7.3.5 (@emotion/react, @emotion/styled for styling)
+- Radix UI (Comprehensive headless UI components):
+  * Accordion, Alert Dialog, Avatar, Checkbox, Collapsible, Context Menu
+  * Dialog, Dropdown Menu, Hover Card, Label, Menubar, Navigation Menu
+  * Popover, Progress, Radio Group, Scroll Area, Select, Separator
+  * Slider, Switch, Tabs, Toggle, Toggle Group, Tooltip
+- Lucide React 0.487.0 (Icon library)
+
+FORM & DATA HANDLING:
+- React Hook Form 7.55.0 (Form state management)
+- Axios 1.13.2 (HTTP client for API requests)
+- Input OTP 1.4.2 (OTP input components)
+- Date-fns 3.6.0 (Date manipulation)
+
+BACKEND & AUTHENTICATION:
+- Firebase 12.7.0 (Client-side library)
+- Firebase Admin 13.6.0 (Server-side administration SDK)
+- Nodemailer 7.0.12 (Email sending)
+
+PAYMENT PROCESSING:
+- Razorpay 2.9.6 (Payment gateway integration)
+
+DOCUMENT GENERATION:
+- html2pdf.js 0.12.1 (HTML to PDF conversion)
+
+DRAG & DROP:
+- React DnD 16.0.1 (Drag and drop library)
+- React DnD HTML5 Backend 16.0.1 (HTML5 backend for DnD)
+
+CAROUSELS & LAYOUTS:
+- Embla Carousel React 8.6.0 (Touch-friendly carousel)
+- React Slick 0.31.0 (Carousel component)
+- React Resizable Panels 2.1.7 (Resizable panel layouts)
+- React Responsive Masonry 2.7.1 (Masonry layout)
+
+UTILITIES:
+- Motion 12.23.24 (Animation library)
+- Next Themes 0.4.6 (Theme management)
+- Class Variance Authority 0.7.1 (CSS utility generation)
+- CLSX 2.1.1 (Conditional classnames)
+- CMDK 1.1.1 (Command menu)
+
+DEPLOYMENT:
+- Vercel Node 5.5.16 (For serverless backend)
+
+BUILD TOOLS:
+- Vite 6.3.5 (@vitejs/plugin-react, vite core)
+- Node.js types support
+
+================================================================================
+3. PROJECT STRUCTURE
+================================================================================
+
+ROOT DIRECTORY:
+├── api/                                  # Backend API endpoints (Vercel)
+│   ├── auth/
+│   │   └── student/
+│   │       ├── create-admin-account.ts  # Create student account via admin
+│   │       ├── login.ts                 # Student login endpoint
+│   │       ├── profile.ts               # Fetch student profile
+│   │       └── signup.ts                # Student self-signup endpoint
+│   ├── payments/
+│   │   ├── create-order.ts              # Create Razorpay order
+│   │   └── verify.ts                    # Verify Razorpay payment
+│   ├── redirect/
+│   │   └── redirect.ts                  # URL redirect endpoint (masked URLs)
+│   ├── registrations/
+│   │   └── notification.ts              # Webhook for registration notifications
+│   └── shorten.ts                       # URL shortening endpoint
+├── src/
+│   ├── admin/                           # Admin dashboard module
+│   │   ├── components/
+│   │   │   ├── AdminLayout.tsx          # Main admin layout wrapper
+│   │   │   ├── ContentSetup.tsx         # Content setup component
+│   │   │   ├── Navbar.tsx               # Admin navbar
+│   │   │   ├── ProtectedRoute.tsx       # Role-based route protection
+│   │   │   └── Sidebar.tsx              # Admin sidebar navigation
+│   │   ├── config/
+│   │   │   └── firebase.ts              # Firebase configuration
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx          # Admin authentication context
+│   │   ├── pages/
+│   │   │   ├── AdminManagement.tsx      # Manage admin users (super_admin only)
+│   │   │   ├── CertificatesManagement.tsx # Manage issued certificates
+│   │   │   ├── CompaniesManagement.tsx  # Manage partner companies
+│   │   │   ├── ContactSubmissionsManagement.tsx # View contact form submissions
+│   │   │   ├── ContentManagement.tsx    # Manage website content (hero, footer, etc)
+│   │   │   ├── CourseEnrollmentsManagement.tsx # Track course enrollments
+│   │   │   ├── CoursesManagement.tsx    # Manage course catalog
+│   │   │   ├── CoursesVideosManagement.tsx # Manage course videos
+│   │   │   ├── CourseVideosManagement.tsx # Alternative course videos management
+│   │   │   ├── FAQManagement.tsx        # Manage FAQ items
+│   │   │   ├── FeaturesManagement.tsx   # Manage key features
+│   │   │   ├── FileManagement.tsx       # Manage uploaded files
+│   │   │   ├── HackathonWinnersManagement.tsx # Manage hackathon winners
+│   │   │   ├── JourneyManagement.tsx    # Manage student journey/timeline
+│   │   │   ├── LinkManagement.tsx       # Manage URL shortcuts/redirects
+│   │   │   ├── LoginPage.tsx            # Admin login page
+│   │   │   ├── LoginRequestsManagement.tsx # Approve/reject student login requests
+│   │   │   ├── OrderManagement.tsx      # Track payment orders and revenue
+│   │   │   ├── PricingManagement.tsx    # Manage pricing plans
+│   │   │   ├── QAManagement.tsx         # Manage student Q&A
+│   │   │   ├── QuizManagement.tsx       # Create and manage quizzes
+│   │   │   ├── RegistrationsManagement.tsx # Manually register students
+│   │   │   ├── ScholarshipsManagement.tsx # Manage scholarship programs
+│   │   │   ├── Settings.tsx             # Admin settings
+│   │   │   ├── StudentManagement.tsx    # Manage student accounts
+│   │   │   ├── StudentProgressManagement.tsx # Track student progress
+│   │   │   ├── StudentProjectsManagement.tsx # Manage student projects
+│   │   │   ├── TestimonialsManagement.tsx # Manage student testimonials
+│   │   │   ├── TrainersManagement.tsx   # Manage trainer profiles
+│   │   │   ├── VideoManagement.tsx      # Manage video library
+│   │   │   └── WorkshopManagement.tsx   # Manage workshops/courses
+│   │   ├── services/
+│   │   │   ├── api.ts                   # API service methods
+│   │   │   └── maskedDomainService.ts   # URL masking service
+│   │   └── utils/
+│   │       ├── contentInitializer.ts    # Initialize default content
+│   │       └── firebaseDebugger.ts      # Firebase debugging utilities
+│   ├── app/                             # Public-facing student module
+│   │   ├── components/
+│   │   │   ├── CompaniesSection.tsx     # Companies showcase section
+│   │   │   ├── ComparisonSection.tsx    # Course comparison
+│   │   │   ├── ContactFormPopup.tsx     # Floating contact form
+│   │   │   ├── CoursesSection.tsx       # Courses listing section
+│   │   │   ├── Footer.tsx               # Website footer
+│   │   │   ├── FreeTrialSection.tsx     # Free trial/demo section
+│   │   │   ├── HackathonWinnersSection.tsx # Showcase hackathon winners
+│   │   │   ├── HeroSection.tsx          # Landing page hero
+│   │   │   ├── JourneySection.tsx       # Student journey timeline
+│   │   │   ├── KeyFeaturesSection.tsx   # Key features showcase
+│   │   │   ├── Navbar.tsx               # Public navigation bar
+│   │   │   ├── PaymentForm.tsx          # Payment processing form
+│   │   │   ├── PricingSection.tsx       # Pricing plans display
+│   │   │   ├── RegistrationForm.tsx     # Student registration form
+│   │   │   ├── ScholarshipSection.tsx   # Scholarship information
+│   │   │   ├── ScrollToTop.tsx          # Scroll to top on route change
+│   │   │   ├── SecureVideoPlayer.tsx    # Protected video player
+│   │   │   ├── StudentProtectedRoute.tsx # Student auth protection
+│   │   │   ├── TestimonialsSection.tsx  # Student testimonials
+│   │   │   ├── TrainersSection.tsx      # Trainers/instructors section
+│   │   │   ├── VideoCarouselSection.tsx # Video carousel
+│   │   │   ├── WhatsAppButton.tsx       # WhatsApp contact button
+│   │   │   ├── WhyChooseSection.tsx     # Why choose us section
+│   │   │   ├── WorkshopsSection.tsx     # Workshops listing
+│   │   │   ├── figma/                   # Figma-related components
+│   │   │   └── ui/                      # Reusable UI components
+│   │   ├── context/
+│   │   │   ├── ContactFormContext.tsx   # Contact form state
+│   │   │   └── StudentContext.tsx       # Student authentication context
+│   │   ├── pages/
+│   │   │   ├── CancellationsAndRefunds.tsx # Policy page
+│   │   │   ├── CertificateDownload.tsx  # Download certificates
+│   │   │   ├── Contact.tsx              # Contact page (deprecated)
+│   │   │   ├── LinkRedirect.tsx         # Redirect from shortened URLs
+│   │   │   ├── MyCertificates.tsx       # Student certificates
+│   │   │   ├── PrivacyPolicy.tsx        # Privacy policy page
+│   │   │   ├── ShippingPolicy.tsx       # Shipping policy page
+│   │   │   ├── StudentCertificates.tsx  # Certificates management in dashboard
+│   │   │   ├── StudentCoursesPage.tsx   # Student course listing/progress
+│   │   │   ├── StudentDashboard.tsx     # Main student dashboard
+│   │   │   ├── StudentLogin.tsx         # Student login page
+│   │   │   ├── StudentSignup.tsx        # Student self-signup page
+│   │   │   ├── TermsAndConditions.tsx   # Terms page
+│   │   │   ├── WaitingForApproval.tsx   # Approval status page
+│   │   ├── App.tsx                      # Main app component
+│   ├── config/
+│   │   └── firebase.ts                  # Firebase client configuration
+│   ├── styles/
+│   │   ├── fonts.css                    # Font definitions
+│   │   ├── index.css                    # Global styles
+│   │   ├── tailwind.css                 # Tailwind configuration
+│   │   └── theme.css                    # Theme variables
+│   ├── utils/
+│   │   ├── billGenerator.ts             # Invoice generation
+│   │   ├── certificateGenerator.ts      # PDF certificate generation
+│   │   ├── emailForwarder.ts            # Email forwarding utility
+│   │   ├── index.ts                     # Utils exports
+│   │   └── seoHelper.ts                 # SEO utilities
+│   ├── main.tsx                         # Application entry point & routing
+│   └── vite-env.d.ts                    # Vite type definitions
+├── public/
+│   ├── manifest.json                    # PWA manifest
+│   ├── robots.txt                       # SEO robots file
+│   ├── sitemap.xml                      # XML sitemap
+│   └── icons/
+│       ├── browserconfig.xml            # Browser configuration
+│       └── manifest.json                # Icon manifest
+├── scripts/
+│   └── verify-razorpay-fix.js          # Razorpay verification script
+├── package.json                         # Project dependencies
+├── vite.config.ts                       # Vite configuration
+├── tsconfig.json                        # TypeScript configuration
+├── tailwindcss.config.mjs               # Tailwind CSS configuration
+├── postcss.config.mjs                   # PostCSS configuration
+├── vercel.json                          # Vercel deployment configuration
+├── run-app.bat                          # Windows batch script to run app
+├── run-app.ps1                          # PowerShell script to run app
+├── setup.ps1                            # PowerShell setup script
+└── setup.sh                             # Shell setup script
+
+================================================================================
+4. CORE FEATURES & FUNCTIONALITY
+================================================================================
+
+4.1 PUBLIC LANDING PAGE (App Module)
+================================================================================
+The public-facing website showcases courses and enables visitor engagement.
+
+HERO SECTION:
+- Eye-catching banner with main value proposition
+- Call-to-action buttons for signup and contact
+- Responsive design for all devices
+
+NAVBAR:
+- Navigation to all major sections
+- Sticky header with branding
+- Login links for students and admins
+- WhatsApp contact button
+
+WORKSHOPS SECTION:
+- Display of available workshops/courses
+- Filter and search capabilities
+- Course cards with key information
+- Quick enrollment options
+- Responsive grid layout
+
+COURSES SECTION:
+- Detailed course catalog
+- Course levels (Beginner, Intermediate, Advanced)
+- Pricing information per course
+- Duration and capacity indicators
+- Featured courses highlighting
+
+WHY CHOOSE US SECTION:
+- Key benefits and value propositions
+- Competitive advantages
+- Trust indicators
+
+TRAINERS SECTION:
+- Display of instructors and trainers
+- Trainer profiles with credentials
+- Company affiliations
+- Social media links
+
+TESTIMONIALS SECTION:
+- Student reviews and feedback
+- Star ratings
+- Student names and companies
+- Avatar images
+- Carousel display format
+
+KEY FEATURES SECTION:
+- Highlight unique platform features
+- Feature icons and descriptions
+- Benefits explanation
+
+HACKATHON WINNERS SECTION:
+- Showcase student achievements
+- Winner profiles
+- Project descriptions
+- Award information
+
+PRICING SECTION:
+- Display available pricing plans
+- Plan comparisons
+- Feature lists per plan
+- Discount information
+- Popular plan highlighting
+
+STUDENT PROJECTS SECTION:
+- Gallery of student work
+- Project descriptions
+- Project categories
+- Success stories
+
+FREE TRIAL SECTION:
+- Information about trial access
+- Sample courses or modules
+- Call-to-action for signup
+
+JOURNEY SECTION:
+- Timeline of student progression
+- Learning stages
+- Milestone information
+- Career development path
+
+SCHOLARSHIP SECTION:
+- Available scholarship programs
+- Eligibility criteria
+- Application information
+- Scholarship types and amounts
+
+COMPANIES SECTION:
+- Partner companies showcase
+- Company logos
+- Industry information
+- Hiring opportunities
+
+VIDEO CAROUSEL SECTION:
+- Featured video content
+- Auto-play functionality
+- Navigation controls
+
+CONTACT FORM POPUP:
+- Floating form triggered on scroll
+- Minimal data collection
+- Quick response handling
+- Auto-dismiss after interaction
+
+FOOTER:
+- Company information
+- Links to legal pages
+- Contact information
+- Social media links
+- Sitemap links
+
+LEGAL PAGES:
+- Privacy Policy
+- Terms and Conditions
+- Shipping Policy
+- Cancellations and Refunds Policy
+
+4.2 STUDENT AUTHENTICATION & DASHBOARD
+================================================================================
+
+STUDENT SIGNUP (Self-Registration):
+- Email and password registration
+- Phone number collection
+- Name and organization info
+- Creates Firebase Auth user
+- Creates student record in Firestore
+- Requires admin approval before login
+- Sends confirmation email
+
+STUDENT LOGIN:
+- Email/password authentication
+- Firebase Auth integration
+- Check approval status
+- Redirect to waiting page if not approved
+- Redirect to dashboard if approved
+- Session token generation
+- Local storage persistence
+
+STUDENT DASHBOARD:
+- Personalized student home page
+- Profile management section
+- Enrollment information
+- Certificate display
+- Progress tracking
+- Video access and playback
+- Quiz attempts and scores
+- Profile picture upload
+- Cover image customization
+- Bio and professional info
+
+STUDENT PROFILE:
+- Edit name, email, phone
+- Update profile picture/avatar
+- Cover image management
+- Bio and professional summary
+- Social media links (LinkedIn, Twitter, GitHub, Website)
+- Public profile visibility settings
+- Profile completion indicator
+
+STUDENT COURSES PAGE:
+- Listed enrolled workshops/courses
+- Progress percentage per course
+- Video viewing status
+- Quiz completion status
+- Certificate availability
+- Course duration and instructor info
+- Collapsible course details
+- Video player with secure streaming
+
+COURSE VIDEOS:
+- Secure video player (protected access)
+- Video queuing and playlist
+- Watch progress tracking
+- Video duration and current time
+- Play/pause controls
+- Full-screen support
+- Video descriptions
+- Related videos
+
+CERTIFICATES:
+- View earned certificates
+- Download as PDF
+- Certificate details (course, date, ID)
+- Share certificates
+- Certificate history
+
+QUIZ SYSTEM:
+- Take quizzes for courses
+- Multiple-choice questions
+- Instant feedback
+- Score calculation
+- Passing score requirements
+- Attempt history
+- Retake options
+- Performance analytics
+
+STUDENT Q&A:
+- Ask questions about courses
+- Browse answered questions
+- Mark helpful answers
+- Admin responses to questions
+- Question categories
+- Search functionality
+
+WAITING FOR APPROVAL PAGE:
+- Status message for new signups
+- Real-time approval check
+- Auto-redirect on approval
+- Display next steps
+- Contact admin option
+
+4.3 ADMIN DASHBOARD & MANAGEMENT SYSTEM
+================================================================================
+
+ADMIN AUTHENTICATION:
+- Email/password login
+- Firebase Admin Auth
+- Role-based access control
+- Token-based session management
+- Auto-logout on token expiry
+- Protected routes with role checking
+
+ADMIN ROLES:
+1. SUPER_ADMIN (Full access):
+   - Create/edit/delete admins
+   - Manage all content
+   - View all settings
+   - All editor permissions
+
+2. EDITOR (Content management):
+   - Manage workshops/courses
+   - Manage pricing
+   - Manage students
+   - Manage registrations
+   - View analytics
+   - Cannot manage admin accounts
+
+3. VIEWER (Read-only):
+   - View analytics and reports
+   - View student information
+   - Cannot edit or delete content
+
+ADMIN SIDEBAR NAVIGATION:
+- Dashboard link
+- Workshops
+- Courses
+- Course Videos
+- Courses Videos
+- Pricing Plans
+- Registrations
+- Course Enrollments
+- Trainers
+- Testimonials
+- Hackathon Winners
+- Student Projects
+- Login Requests
+- Features
+- Scholarships
+- Companies
+- FAQs
+- Content Management
+- Journeys
+- Videos
+- Q&A
+- Certificates
+- Files
+- Links
+- Contact Submissions
+- Admins (super_admin only)
+- Settings
+
+4.3.1 WORKSHOPS MANAGEMENT
+================================================================================
+Create, read, update, and delete workshop entries.
+
+WORKSHOP FIELDS:
+- Title (workshop name)
+- Description (detailed information)
+- Duration (e.g., "4 weeks")
+- Mode (Online, Offline, Hybrid)
+- Start Date
+- Price
+- Instructor Name
+- Capacity (max participants)
+- Enrolled (current enrollments)
+- Color (for UI theming)
+- Featured (promote on homepage)
+- Active status
+- Banner image upload
+
+FEATURES:
+- Create new workshops
+- Edit existing workshops
+- Delete workshops
+- Bulk status updates
+- Search by title
+- Filter by mode (Online/Offline/Hybrid)
+- Filter by status (Active/Inactive)
+- Pagination
+- Video management for each workshop
+  * Add videos to workshops
+  * Reorder videos
+  * Edit video details
+  * Delete videos
+  * YouTube URL support
+  * Thumbnail management
+  * Video descriptions and durations
+
+4.3.2 COURSES MANAGEMENT
+================================================================================
+Manage course catalog separate from workshops.
+
+COURSE FIELDS:
+- Title
+- Description
+- Instructor
+- Level (Beginner, Intermediate, Advanced)
+- Duration
+- Price
+- Capacity
+- Enrolled count
+- Color
+- Featured status
+- Active status
+- Learning outcomes (array)
+- Requirements (array)
+- Created/Updated timestamps
+
+FEATURES:
+- Full CRUD operations
+- Search functionality
+- Filter by level
+- Filter by status
+- Add/remove learning outcomes
+- Add/remove requirements
+- Batch operations
+
+4.3.3 PRICING MANAGEMENT
+================================================================================
+Manage subscription and pricing plans.
+
+PRICING FIELDS:
+- Plan Name
+- Price (amount)
+- Duration (e.g., "per workshop", "per month")
+- Description
+- Features list (array)
+- Is Popular (for highlighting)
+- Discount Code
+- Discount Percentage
+- Valid From/To dates
+- Sorting order
+- Active status
+
+FEATURES:
+- Create pricing plans
+- Edit plan details
+- Delete plans
+- Add/remove features
+- Manage discounts
+- Set discount validity dates
+- Drag-to-reorder plans
+- Toggle visibility
+
+4.3.4 REGISTRATIONS MANAGEMENT (Manual Student Registration)
+================================================================================
+Admin can manually register students without requiring self-signup.
+
+REGISTRATION PROCESS:
+- Admin fills in student details:
+  * Full name
+  * Email
+  * Phone
+  * Organization/Company
+  * Workshop/Course selection
+- System creates:
+  * Firebase Auth user (auto-generated password)
+  * Student profile in Firestore
+  * Registration record
+  * Sets manuallyRegistered flag
+- Temp password provided to admin
+- Student can log in immediately (no approval needed)
+
+REGISTRATION FIELDS:
+- Student Name
+- Email
+- Phone
+- Organization
+- Workshop Title
+- Workshop ID
+- Amount (pricing)
+- Registration Date
+- Status (Pending, Confirmed, Cancelled)
+- Payment Status (Pending, Completed, Failed)
+
+FEATURES:
+- Bulk registration support
+- Status updates
+- Payment tracking
+- Email notifications
+- Export registrations
+
+4.3.5 COURSE ENROLLMENTS MANAGEMENT
+================================================================================
+Track which students are enrolled in which courses.
+
+ENROLLMENT INFORMATION:
+- Student ID and name
+- Enrolled courses list
+- Enrollment date
+- Progress percentage
+- Completion status
+- Certificate issued status
+
+FEATURES:
+- View all enrollments
+- Filter by student
+- Filter by course
+- Search functionality
+- Bulk enrollment updates
+- Unenroll students
+- Track progress
+
+4.3.6 TRAINERS MANAGEMENT
+================================================================================
+Manage instructor and trainer profiles.
+
+TRAINER FIELDS:
+- Name
+- Email
+- Phone
+- Bio/Description
+- Expertise/Specializations
+- Teaching Credentials
+- Social Media Links
+- Profile Photo
+- Assigned workshops/courses
+- Active status
+
+FEATURES:
+- Create trainer profiles
+- Edit trainer information
+- Delete trainers
+- Assign to workshops
+- Upload profile pictures
+- Add expertise tags
+
+4.3.7 TESTIMONIALS MANAGEMENT
+================================================================================
+Manage student reviews and testimonials displayed on the website.
+
+TESTIMONIAL FIELDS:
+- Student Name
+- Company/Organization
+- Job Title/Role
+- Workshop taken
+- Testimonial text
+- Star rating (1-5)
+- Avatar/Profile image
+- Featured status
+- Active status
+- Display order (sortable)
+- Created timestamp
+
+FEATURES:
+- Add new testimonials
+- Edit existing testimonials
+- Delete testimonials
+- Upload avatar images
+- Sort testimonials by drag-and-drop
+- Filter by status
+- Filter by rating
+- Mark as featured
+- Rich text editing
+
+4.3.8 HACKATHON WINNERS MANAGEMENT
+================================================================================
+Showcase student achievements and hackathon winners.
+
+WINNER FIELDS:
+- Student name
+- Project/Achievement title
+- Description
+- Project category
+- Award/Prize
+- Achievement date
+- Portfolio link
+- Image/screenshot
+- Active status
+- Display order
+
+FEATURES:
+- Add winners
+- Edit winner information
+- Delete entries
+- Upload project images
+- Organize by category
+- Set display order
+- Mark as featured
+
+4.3.9 STUDENT PROJECTS MANAGEMENT
+================================================================================
+Manage student project submissions and portfolio.
+
+PROJECT FIELDS:
+- Project title
+- Description
+- Student name
+- Technology stack
+- GitHub/Portfolio link
+- Project images
+- Project category
+- Completion date
+- Active status
+- Featured status
+- Display order
+
+FEATURES:
+- Submit projects
+- Admin review and approval
+- Upload project screenshots
+- Link to GitHub
+- Categorize projects
+- Reorder projects
+- Feature showcase projects
+
+4.3.10 LOGIN REQUESTS MANAGEMENT
+================================================================================
+Approve or reject pending student login requests.
+
+LOGIN REQUEST FIELDS:
+- Request ID
+- Student name
+- Email
+- Request date
+- Status (Pending, Approved, Rejected)
+- Rejection reason (if applicable)
+
+FEATURES:
+- View pending requests
+- Approve requests (student can then login)
+- Reject requests (with optional reason)
+- Bulk approve/reject
+- Search by email
+- Sort by date
+- Track approval history
+
+4.3.11 FEATURES MANAGEMENT
+================================================================================
+Manage key features displayed on the landing page.
+
+FEATURE FIELDS:
+- Title
+- Description
+- Icon (image or emoji)
+- Category
+- Active status
+- Display order
+- Feature color/styling
+
+FEATURES:
+- Add key features
+- Edit feature details
+- Delete features
+- Upload feature icons
+- Reorder features
+- Toggle visibility
+- Bulk status updates
+
+4.3.12 SCHOLARSHIPS MANAGEMENT
+================================================================================
+Manage scholarship programs and awards.
+
+SCHOLARSHIP FIELDS:
+- Scholarship name
+- Description
+- Award amount
+- Percentage off (alternative to fixed amount)
+- Category (Merit, Financial, Diversity, Need-based)
+- Active status
+- Total available slots
+- Currently available slots
+- Eligibility criteria (array)
+- Requirements (array)
+- Start and end dates
+- Badge/Icon image
+- Assigned to workshops
+- Students awarded (tracking)
+- Tags
+
+FEATURES:
+- Create scholarship programs
+- Edit details
+- Delete programs
+- Track application count
+- Track awards granted
+- Set eligibility criteria
+- Manage application deadlines
+- View default scholarship defaults
+
+4.3.13 COMPANIES MANAGEMENT
+================================================================================
+Manage partner companies and hiring partners.
+
+COMPANY FIELDS:
+- Company name
+- Logo (image upload)
+- Website URL
+- Industry
+- Number of employees
+- Location
+- Contact person
+- Contact email and phone
+- Social media links (LinkedIn, Twitter, Facebook, Instagram)
+- Associated workshops/trainers
+- Trainers count
+- Testimonials count
+- Active status
+- Description
+
+FEATURES:
+- Add company partners
+- Edit company information
+- Delete companies
+- Upload logos
+- Associate with trainers
+- Track testimonials
+- Filter by industry
+- Search by name
+- Mark as active/inactive
+
+4.3.14 FAQ MANAGEMENT
+================================================================================
+Manage frequently asked questions by category.
+
+FAQ FIELDS:
+- Question text
+- Answer text
+- Category (General, Technical, Pricing, Registration, Certification)
+- Active status
+- Display order
+- Tags (array)
+- View count
+- Helpful votes (upvotes)
+- Unhelpful votes (downvotes)
+- Associated workshop
+- Created timestamp
+
+FEATURES:
+- Add FAQs
+- Edit Q&A content
+- Delete FAQs
+- Organize by category
+- Rich text answers
+- Track helpfulness metrics
+- Search functionality
+- Add multiple tags
+- Reorder by drag-and-drop
+- Filter by category
+
+4.3.15 CONTENT MANAGEMENT
+================================================================================
+Manage all website content sections programmatically.
+
+MANAGEABLE SECTIONS:
+1. Hero Section:
+   - Badge text
+   - Main heading
+   - Heading highlight
+   - Description/subheading
+   - Primary button text
+   - Secondary button text
+   - Background images
+
+2. Header/Navbar Content:
+   - Logo text
+   - Navigation items
+   - Login button text
+   - CTA button text
+
+3. Footer:
+   - Company info
+   - Address
+   - Phone/Email
+   - Social media links
+   - Copyright text
+   - Footer links
+
+4. Why Choose Us Section:
+   - Section title
+   - Section description
+   - Benefits list
+   - Icons/images
+
+5. Free Trial Section:
+   - Title
+   - Description
+   - CTA button text
+   - Trial duration info
+
+6. Key Features Section:
+   - Features list
+   - Feature icons
+   - Feature descriptions
+
+7. Scholarship Section:
+   - Section title
+   - Description
+   - Available scholarships preview
+   - Application link
+
+8. Comparison Section:
+   - Comparison criteria
+   - Comparison data
+
+9. Companies Section:
+   - Companies list display
+   - Title and description
+
+FEATURES:
+- Edit content via admin panel
+- Upload images for each section
+- Real-time preview
+- Multi-language support (infrastructure ready)
+- SEO-optimized content
+- Markdown support
+
+4.3.16 JOURNEY MANAGEMENT (Student Timeline)
+================================================================================
+Manage the student learning journey/progression timeline.
+
+JOURNEY STAGES:
+- Learning stage definitions
+- Timeline representation
+- Milestone information
+- Skill development tracking
+- Project showcase
+- Certificate milestones
+- Career progression
+
+FEATURES:
+- Create journey stages
+- Edit stage information
+- Delete stages
+- Reorder stages
+- Assign courses to stages
+- Track student progress through journey
+- Visualize timeline
+
+4.3.17 VIDEO MANAGEMENT
+================================================================================
+Central repository for all teaching videos.
+
+VIDEO FIELDS:
+- Title
+- Description
+- YouTube URL or video URL
+- Thumbnail image
+- Duration
+- Category/Workshop
+- Instructor
+- Active status
+- Featured status
+- View count
+- Rating
+- Transcription (optional)
+
+FEATURES:
+- Upload/link videos
+- Edit video metadata
+- Delete videos
+- Search by title
+- Filter by category
+- Bulk operations
+- View analytics
+- Manage thumbnails
+
+4.3.18 COURSE VIDEOS MANAGEMENT
+================================================================================
+Manage videos specifically assigned to courses.
+
+FEATURES:
+- Link videos to specific courses
+- Order videos in course
+- Set video prerequisites
+- Mark as optional/required
+- Track completion per student
+- Manage video access permissions
+
+4.3.19 Q&A MANAGEMENT
+================================================================================
+Manage student questions and instructor answers.
+
+Q&A FIELDS:
+- Question ID
+- Student ID and name
+- Question text
+- Course/Workshop context
+- Status (Unanswered, Answered, Resolved)
+- Answers (array)
+- Answer author (instructor)
+- Created timestamp
+- Resolved timestamp
+- Helpful votes
+
+FEATURES:
+- View all questions
+- Filter by status
+- Search by keyword
+- Answer questions
+- Edit answers
+- Delete questions/answers
+- Mark as resolved
+- Track response time metrics
+- Sort by date or unanswered first
+
+4.3.20 QUIZ MANAGEMENT
+================================================================================
+Create and manage quizzes for courses.
+
+QUIZ FIELDS:
+- Quiz title
+- Associated workshop/course
+- Description
+- Questions (array)
+- Passing score (percentage)
+- Sort order
+- Active status
+- Created timestamp
+
+QUESTION STRUCTURE:
+- Question text
+- Question type (multiple choice)
+- Answer options (array)
+- Correct option index
+- Explanation
+- Points assigned
+
+FEATURES:
+- Create quizzes
+- Add questions
+- Edit questions
+- Delete questions
+- Set passing scores
+- Reorder questions
+- Set time limits (infrastructure ready)
+- Review student attempts
+- View correct/incorrect analytics
+
+4.3.21 CERTIFICATES MANAGEMENT
+================================================================================
+Manage issued certificates and certificate generation.
+
+CERTIFICATE FIELDS:
+- Student name
+- Course/Workshop name
+- Completion date
+- Certificate ID (unique)
+- Date of birth
+- Issue date
+- Instructor name
+- Course code
+- Status (Issued, Pending, Revoked)
+- Notes
+- Created timestamp
+
+CERTIFICATE GENERATION:
+- PDF generation with custom design
+- Student name on certificate
+- Course completion verified
+- Unique certificate ID
+- Completion date
+- Professional template
+- High-resolution output
+- Printable format
+
+FEATURES:
+- View issued certificates
+- Generate missing certificates
+- Revoke certificates
+- Reissue certificates
+- Download as PDF
+- Email certificates to students
+- Track certificate issuance
+- Bulk certificate operations
+- Certificate verification link
+
+4.3.22 FILE MANAGEMENT
+================================================================================
+Manage uploaded files and resources.
+
+FILE OPERATIONS:
+- Upload files (documents, images, videos)
+- View file listings
+- Delete files
+- File metadata (size, type, upload date)
+- Organize files in folders
+- Search files
+- Generate download links
+
+SUPPORTED FILE TYPES:
+- PDF documents
+- Images (JPG, PNG, GIF, WebP)
+- Videos (MP4, WebM)
+- Documents (DOCX, XLSX, etc.)
+
+STORAGE:
+- Firebase Storage integration
+- Automatic cleanup of deleted files
+- Access control per file
+
+4.3.23 LINK MANAGEMENT (URL Shortening & Masking)
+================================================================================
+Create masked short URLs for marketing and tracking.
+
+LINK FIELDS:
+- Link title
+- Description
+- Original URL (long URL to redirect to)
+- Short code (unique identifier)
+- Short URL (masked, hides domain)
+- Public/Private status
+- Assigned students (for tracking)
+- Created by (admin who created it)
+- Created timestamp
+- Click count (analytics)
+
+FEATURES:
+- Create shortened/masked links
+- Auto-generate short codes
+- Edit link details
+- Delete links
+- Copy short link to clipboard
+- View click statistics
+- Assign to students (access control)
+- Make public/private
+- Track link performance
+
+LINK MASKING:
+- Uses is.gd or similar service for masking
+- Hides original URL
+- Provides analytics
+- Professional appearance for marketing
+
+4.3.24 ADMIN MANAGEMENT (Super Admin Only)
+================================================================================
+Manage admin user accounts and roles.
+
+ADMIN FIELDS:
+- Username
+- Email
+- Role (super_admin, editor, viewer)
+- Created timestamp
+- Last login
+- Active status
+
+FEATURES:
+- Create new admin accounts
+- Edit admin roles
+- Delete admin accounts
+- Disable/enable admins
+- View admin activity logs
+- Manage admin permissions
+- Only super_admin can manage admins
+
+Role Permissions Matrix:
+                      super_admin  editor  viewer
+                      -----------  ------  ------
+Create content              ✓         ✓       ✗
+Edit content                ✓         ✓       ✗
+Delete content              ✓         ✓       ✗
+View analytics              ✓         ✓       ✓
+View reports                ✓         ✓       ✓
+Manage students             ✓         ✓       ✗
+Manage pricing              ✓         ✓       ✗
+Manage admins               ✓         ✗       ✗
+Access settings             ✓         ✓       ✗
+
+4.3.25 SETTINGS (Admin)
+================================================================================
+Global application settings and configuration.
+
+SETTINGS CATEGORIES:
+- General settings (app name, timezone)
+- Email settings (SMTP configuration)
+- Payment settings (Razorpay keys)
+- Notification settings
+- Security settings
+- Feature toggles
+- Default values
+- API configuration
+
+4.3.26 CONTACT SUBMISSIONS MANAGEMENT
+================================================================================
+View and manage contact form submissions.
+
+SUBMISSION FIELDS:
+- Full name
+- Email
+- Phone number
+- Subject
+- Message
+- Submitted timestamp
+- Status (New, Read, Resolved)
+
+FEATURES:
+- View all submissions
+- Filter by status
+- Mark as read
+- Mark as resolved
+- Delete submissions
+- Reply to submissions (email functionality)
+- Search by name/email
+- Sort by date
+- Bulk operations
+
+4.3.27 STUDENT MANAGEMENT
+================================================================================
+Comprehensive student account management.
+
+STUDENT INFORMATION:
+- Student ID
+- Name
+- Email
+- Phone
+- Created date
+- Approval status
+- Payment status
+- Enrolled workshops/courses
+- Certificates earned
+- Last login
+- Profile completion
+
+FEATURES:
+- View all students
+- Approve new students
+- Reject students
+- Delete student accounts
+- Search students
+- Filter by approval status
+- Filter by payment status
+- Manage enrollments
+- View student activity
+- Export student data
+- Bulk actions
+
+4.3.28 STUDENT PROGRESS MANAGEMENT
+================================================================================
+Track and analyze student learning progress.
+
+METRICS TRACKED:
+- Enrolled course count
+- Completed course count
+- Average completion percentage
+- Quiz attempts and scores
+- Video watch time
+- Time spent on platform
+- Certificate count
+- Last activity date
+
+FEATURES:
+- View all students' progress
+- Sort by completion percentage
+- Filter by progress level
+- Search by student name
+- Generate progress reports
+- Identify at-risk students
+- Track engagement metrics
+- Performance analytics
+
+4.3.29 TESTIMONIALS (Admin view)
+- Manage student testimonials
+- Approve/publish testimonials
+- Edit or remove testimonials
+- Featured testimonial selection
+
+================================================================================
+5. PAYMENT & RAZORPAY INTEGRATION
+================================================================================
+
+PAYMENT SYSTEM:
+- Razorpay payment gateway integration
+- Secure payment processing
+- Multiple payment options (cards, wallets, UPI, netbanking)
+- Real-time payment verification
+- Order creation and tracking
+- Payment status management
+
+PAYMENT FLOW:
+1. Student clicks "Enroll" or "Purchase"
+2. PaymentForm component displays
+3. Order is created via /api/payments/create-order endpoint:
+   - Student details
+   - Workshop/course details
+   - Amount to charge
+   - Creates Razorpay order
+   - Returns order ID
+
+4. Razorpay payment page opens in modal
+5. Student completes payment
+6. Payment verified via /api/payments/verify endpoint:
+   - Signature verification
+   - Order status update
+   - Registration record update
+   - Firestore updates
+
+7. Success/failure handling
+8. Student enrollment confirmed
+9. Confirmation email sent
+
+RAZORPAY INTEGRATION POINTS:
+- Frontend: PaymentForm.tsx (Razorpay embed)
+- Backend APIs:
+  * /api/payments/create-order
+  * /api/payments/verify
+- Environment variables:
+  * RAZORPAY_KEY_ID
+  * RAZORPAY_SECRET_KEY
+- Webhook handling for notifications
+
+PAYMENT STATUSES:
+- Pending (awaiting payment)
+- Completed (successful payment)
+- Failed (payment declined)
+- Refunded (refund processed)
+
+================================================================================
+6. FIREBASE INTEGRATION
+================================================================================
+
+FIREBASE SERVICES USED:
+
+6.1 FIREBASE AUTHENTICATION
+- Student signup and login
+- Admin authentication
+- Password reset
+- Email verification
+- Multi-factor authentication support
+- Firebase Admin SDK for backend
+
+6.2 FIRESTORE DATABASE
+Collections and structure:
+
+STUDENTS Collection:
+- firebaseUid (primary key)
+- name
+- email
+- phone
+- enrolledWorkshops[] (array of workshop IDs)
+- certificates[] (array of certificate IDs)
+- bio
+- profileImage (storage URL)
+- coverImage (storage URL)
+- socialLinks {linkedin, twitter, github, website}
+- manuallyRegistered (boolean)
+- createdAt (timestamp)
+- updatedAt (timestamp)
+
+ADMINS Collection:
+- firebaseUid (primary key)
+- username
+- email
+- role (super_admin, editor, viewer)
+- createdAt (timestamp)
+
+WORKSHOPS Collection:
+- title
+- description
+- duration
+- mode (Online/Offline/Hybrid)
+- startDate
+- price
+- instructorName
+- capacity
+- enrolled
+- color
+- isFeatured
+- isActive
+- createdAt
+- updatedAt
+
+COURSES Collection:
+- title
+- description
+- instructor
+- level
+- duration
+- price
+- capacity
+- enrolled
+- color
+- isFeatured
+- isActive
+- learningOutcomes[]
+- requirements[]
+
+PRICING Collection:
+- name
+- price
+- duration
+- description
+- features[]
+- isPopular
+- discountCode
+- discountPercentage
+- validFrom
+- validTo
+- order
+- isActive
+
+REGISTRATIONS Collection:
+- studentId
+- userName
+- email
+- phone
+- workshopId
+- workshopTitle
+- amount
+- status (Pending, Confirmed, Cancelled)
+- paymentStatus (Pending, Completed, Failed)
+- registrationDate
+- notes
+- paymentId
+- orderId
+
+CERTIFICATES Collection:
+- studentName
+- studentEmail
+- courseName
+- certificateId
+- completionDate
+- dateOfBirth
+- issueDate
+- instructorName
+- courseCode
+- status (issued, pending, revoked)
+- notes
+- createdAt
+
+TESTIMONIALS Collection:
+- name
+- company
+- role
+- workshop
+- testimonial
+- rating
+- avatar (image URL)
+- isActive
+- order
+
+FAQS Collection:
+- question
+- answer
+- category
+- order
+- isActive
+- views
+- helpful
+- unhelpful
+- tags[]
+- workshopId
+
+QUIZZES Collection:
+- title
+- workshopId
+- description
+- questions[] (array of question objects)
+- passingScore
+- order
+- isActive
+- createdAt
+
+WorkshopVideos Collection:
+- workshopId
+- title
+- youtubeUrl
+- description
+- thumbnailUrl
+- duration
+- order
+- isActive
+- createdAt
+
+Features Collection:
+- title
+- description
+- icon
+- category
+- order
+- isActive
+
+Companies Collection:
+- name
+- logo (storage URL)
+- website
+- industry
+- employees
+- description
+- location
+- contact {email, phone, contactPerson}
+- socialLinks {linkedin, twitter, facebook, instagram}
+- workshopIds[]
+- trainersCount
+- testimonials
+
+Trainers Collection:
+- name
+- email
+- phone
+- bio
+- expertise[]
+- credentials
+- socialLinks
+- profilePhoto (storage URL)
+- workshopIds[]
+- isActive
+
+Scholarships Collection:
+- name
+- description
+- amount
+- percentage
+- category
+- isActive
+- totalSlots
+- availableSlots
+- criteria[]
+- requirements[]
+- startDate
+- endDate
+- workshopIds[]
+
+LoginRequests Collection:
+- studentId
+- studentName
+- email
+- requestDate
+- status (Pending, Approved, Rejected)
+- rejectionReason
+
+StudentProgress Collection:
+- studentId
+- workshopId
+- completedVideos[]
+- completionPercentage
+- lastAccessDate
+- totalWatchTime
+
+QuizAttempts Collection:
+- studentId
+- quizId
+- score
+- totalQuestions
+- attemptedAt
+
+Questions Collection:
+- studentId
+- workshopId
+- question
+- status (Unanswered, Answered, Resolved)
+- replies[] (array of reply objects)
+- createdAt
+- resolvedAt
+
+6.3 FIREBASE STORAGE
+- Profile images (student avatars)
+- Cover images
+- Workshop banners
+- Testimonial avatars
+- Company logos
+- Trainer photos
+- Scholarship badges
+- File uploads
+- PDF certificates
+
+6.4 FIREBASE HOSTING (Optional)
+- Can be used for static asset hosting
+
+================================================================================
+7. API ENDPOINTS
+================================================================================
+
+7.1 STUDENT AUTHENTICATION ENDPOINTS
+
+POST /api/auth/student/signup
+- Student self-registration
+- Creates Firebase Auth user
+- Creates student Firestore document
+- Returns: token, student info
+
+POST /api/auth/student/login
+- Student login
+- Check manuallyRegistered flag
+- Create LoginRequest if not manually registered
+- Returns: token, student info, approval status
+
+POST /api/auth/student/create-admin-account
+- Admin creates student account
+- Creates Firebase Auth user with temp password
+- Auto-assigns to workshop
+- Sets manuallyRegistered flag
+- Returns: temp password, student info
+
+GET /api/auth/student/profile
+- Fetch student profile
+- [Authenticated]
+- Returns: student profile data
+
+7.2 PAYMENT ENDPOINTS
+
+POST /api/payments/create-order
+- Create Razorpay order
+- Input: student data, workshop/course, amount
+- Returns: Razorpay order ID, amount, currency
+
+POST /api/payments/verify
+- Verify Razorpay payment
+- Verify signature
+- Update registration status
+- Update student enrollments
+- Returns: verification result, enrollment status
+
+7.3 REDIRECT ENDPOINTS
+
+GET /api/redirect/redirect.ts
+- Redirect from masked URL to original URL
+- Increment click count
+- Track analytics
+- [No auth required, public]
+
+POST /api/shorten.ts
+- Create shortened URL
+- Generate short code
+- Store mapping
+- Returns: short code, short URL
+
+7.4 REGISTRATION ENDPOINTS
+
+POST /api/registrations/notification
+- Webhook for registration notifications
+- Called by payment system
+- Updates registration status
+
+================================================================================
+8. ROUTING STRUCTURE
+================================================================================
+
+PUBLIC ROUTES (No Auth Required):
+- / (Home/Landing page with all sections)
+- /contact (Contact form page)
+- /student/login (Student login)
+- /student/signup (Student registration)
+- /privacy-policy (Privacy policy)
+- /terms-and-conditions (Terms)
+- /cancellations-and-refunds (Refund policy)
+- /shipping-policy (Shipping policy)
+- /my-certificates (Redirect to home#certificates)
+- /r/:code (Redirect from shortened URL)
+
+PROTECTED STUDENT ROUTES (Requires StudentProtectedRoute):
+- /student/dashboard (Student dashboard)
+- /student/courses (Student course progress)
+- /student/waiting-approval (Waiting for admin approval)
+
+ADMIN ROUTES (Requires ProtectedRoute with role):
+
+Super Admin + Editor Routes:
+- /admin/workshops (Workshop management)
+- /admin/courses (Courses management)
+- /admin/course-videos (Course videos)
+- /admin/courses-videos (Alternative course videos)
+- /admin/pricing (Pricing plans)
+- /admin/registrations (Manual registrations)
+- /admin/course-enrollments (Track enrollments)
+- /admin/trainers (Trainer management)
+- /admin/testimonials (Testimonial management)
+- /admin/hackathon-winners (Winners showcase)
+- /admin/student-projects (Student projects)
+- /admin/login-requests (Approve login requests)
+- /admin/features (Features management)
+- /admin/scholarships (Scholarship programs)
+- /admin/companies (Company management)
+- /admin/faqs (FAQ management)
+- /admin/content (Content management)
+- /admin/journeys (Journey/timeline management)
+- /admin/videos (Video library)
+- /admin/qa (Q&A management)
+- /admin/certificates (Certificate management)
+- /admin/files (File management)
+- /admin/links (Link management)
+- /admin/settings (Settings)
+- /admin/contact-submissions (Contact form submissions)
+- /admin/student-progress (Student progress tracking)
+
+Super Admin Only Routes:
+- /admin/admins (Admin account management)
+
+Admin Login Route:
+- /admin/login (Admin login page)
+- /admin (Redirect to /admin/workshops)
+
+================================================================================
+9. AUTHENTICATION & AUTHORIZATION
+================================================================================
+
+STUDENT AUTHENTICATION FLOW:
+1. Student signs up → Firebase Auth user created
+2. Student Firestore doc created with manuallyRegistered=false
+3. LoginRequest doc created (pending approval)
+4. Student sees WaitingForApproval page
+5. Admin approves in LoginRequestsManagement
+6. Student can now login to dashboard
+
+ADMIN AUTHENTICATION FLOW:
+1. Admin logs in with email/password
+2. Firebase Auth validation
+3. Token retrieved and stored in localStorage
+4. AuthContext updated with admin info
+5. Protected routes check token and role
+6. ProtectedRoute component verifies role permissions
+7. Access granted/denied based on role
+
+AUTHORIZATION:
+- Role-based access control (RBAC)
+- Routes protected with ProtectedRoute component
+- Component checks required roles
+- Passes through or redirects to login
+- Three roles: super_admin, editor, viewer
+
+TOKEN MANAGEMENT:
+- Firebase ID tokens used
+- Stored in localStorage
+- Passed in API requests (Authorization header)
+- Re-validated on each request
+- Auto-logout on token expiry
+
+================================================================================
+10. DATABASE SECURITY
+================================================================================
+
+FIRESTORE SECURITY RULES:
+- Students can only read their own profile
+- Admins can read/write based on role
+- Public collections have read-only access for certain fields
+- Write operations require admin authentication
+- Delete operations require super_admin role
+
+FILE STORAGE SECURITY:
+- Authenticated users can upload files
+- Each user folder is isolated
+- Admin can view all files
+- Public files have shareable URLs
+
+================================================================================
+11. FRONTEND COMPONENTS & DESIGN
+================================================================================
+
+UI FRAMEWORK:
+- Radix UI for headless components
+- Tailwind CSS for styling
+- Material-UI for advanced components
+- Lucide React for icons
+- Custom components in /components/ui
+
+RESPONSIVE DESIGN:
+- Mobile-first approach
+- Breakpoints: sm, md, lg, xl, 2xl
+- Flexbox and Grid layouts
+- Responsive images
+
+COLOR SCHEME:
+- Theme colors defined in tailwind.css and theme.css
+- Light and dark mode support (infrastructure ready)
+- Primary, secondary, accent colors
+- Semantic colors (success, warning, error, info)
+
+ANIMATIONS:
+- Motion library for smooth transitions
+- Framer Motion compatible (planned)
+- Lucide icons with hover effects
+- Smooth page transitions
+- Carousel animations
+
+ACCESSIBILITY:
+- WCAG 2.1 AA compliance
+- Semantic HTML
+- ARIA labels and roles
+- Keyboard navigation support
+- Color contrast ratios met
+- Form validation and error messages
+
+================================================================================
+12. PERFORMANCE OPTIMIZATION
+================================================================================
+
+CODE SPLITTING:
+- Route-based code splitting with React Router
+- Lazy loading components
+- Dynamic imports for heavy components
+
+IMAGE OPTIMIZATION:
+- Responsive images with srcset
+- WebP format support
+- Image compression
+- Lazy loading images
+
+CACHING:
+- Service Worker ready
+- Browser caching headers
+- Firebase caching
+- LocalStorage for session data
+
+BUNDLE SIZE:
+- Tree-shaking for unused code
+- Minification and compression
+- CSS-in-JS optimization
+- Font optimization
+
+DATABASE QUERIES:
+- Firestore indexes for optimal queries
+- Pagination for large datasets
+- Query filtering and ordering
+- Real-time updates with onSnapshot (infrastructure ready)
+
+================================================================================
+13. UTILITIES & HELPERS
+================================================================================
+
+CERTIFICATE GENERATION (certificateGenerator.ts):
+- PDF generation with jsPDF
+- Custom certificate design
+- Student name insertion
+- Course title and completion date
+- Professional template with:
+  * Hexagon pattern design
+  * Gradient colors
+  * Certificate ID
+  * QR code placeholder
+  * Instructor signature space
+- Landscape orientation
+- High-resolution output
+
+BILL GENERATOR (billGenerator.ts):
+- Invoice/bill generation
+- Student and course details
+- Payment information
+- Itemized costs
+- PDF export
+
+EMAIL FORWARDER (emailForwarder.ts):
+- Email sending functionality
+- Integration with Nodemailer
+- Template support
+- Registration confirmations
+- Approval notifications
+- Certificate delivery
+
+SEO HELPER (seoHelper.ts):
+- Meta tag management
+- Open Graph tags
+- Twitter Card support
+- Structured data (Schema.org)
+- Sitemap generation
+- og:image optimization
+
+CONTENT INITIALIZER (contentInitializer.ts):
+- Initialize default Firestore documents
+- Setup default content sections
+- Create default FAQs
+- Initialize pricing plans
+- Setup empty collections
+
+FIREBASE DEBUGGER (firebaseDebugger.ts):
+- Firebase configuration validation
+- Collection verification
+- Document inspection
+- Query testing
+- Connection diagnostics
+
+================================================================================
+14. ENVIRONMENT CONFIGURATION
+================================================================================
+
+REQUIRED ENVIRONMENT VARIABLES:
+
+Firebase Configuration:
+- FIREBASE_API_KEY
+- FIREBASE_PROJECT_ID
+- FIREBASE_AUTH_DOMAIN
+- FIREBASE_DATABASE_URL
+- FIREBASE_STORAGE_BUCKET
+- FIREBASE_MESSAGING_SENDER_ID
+- FIREBASE_APP_ID
+- FIREBASE_PRIVATE_KEY (Firebase Admin)
+- FIREBASE_CLIENT_EMAIL (Firebase Admin)
+
+Razorpay Configuration:
+- RAZORPAY_KEY_ID
+- RAZORPAY_SECRET_KEY
+- RAZORPAY_WEBHOOK_SECRET
+
+Email Configuration:
+- SMTP_HOST
+- SMTP_PORT
+- SMTP_USER
+- SMTP_PASSWORD
+- SENDER_EMAIL
+
+Backend Configuration:
+- BACKEND_URL (for API calls)
+- API_BASE_URL
+
+Deployment:
+- VERCEL_PROJECT_ID
+- VERCEL_ORG_ID
+
+================================================================================
+15. DEPLOYMENT & BUILD
+================================================================================
+
+BUILD COMMAND:
+npm run build
+- Builds with Vite
+- Output to dist/ directory
+- Optimized production bundle
+
+DEV SERVER:
+npm run dev
+- Starts Vite dev server
+- Hot module replacement (HMR)
+- Proxy configured for /api routes
+
+DEPLOYMENT TARGET:
+- Vercel (primary)
+- Frontend hosted on Vercel
+- Serverless functions in /api directory
+- Automatic CI/CD with git push
+
+VERCEL CONFIGURATION (vercel.json):
+- Runtime settings
+- Build settings
+- Routes configuration
+- Rewrites for API
+- Headers for security
+- Environment variables
+
+DEPLOYMENT STEPS:
+1. Push to Git repository
+2. Vercel automatically detects changes
+3. Runs build command
+4. Deploys frontend and serverless functions
+5. Firebase auth and Firestore accessible via APIs
+
+================================================================================
+16. SECURITY FEATURES
+================================================================================
+
+AUTHENTICATION:
+- Firebase Auth with email/password
+- Token-based sessions
+- Secure password requirements
+- Password reset functionality
+
+AUTHORIZATION:
+- Role-based access control
+- Protected routes
+- API endpoint security
+- Firestore security rules
+
+DATA PROTECTION:
+- HTTPS only
+- Firebase encryption at rest
+- CORS configured
+- CSRF protection ready
+- XSS prevention with React escaping
+- SQL injection not applicable (NoSQL)
+
+PAYMENT SECURITY:
+- Razorpay PCI compliance
+- Signature verification on webhook
+- No card data stored
+- Secure order processing
+
+FILE UPLOAD SECURITY:
+- Firebase Storage security rules
+- File type validation
+- File size limits
+- Authenticated upload only
+
+SECURE VIDEO PLAYER:
+- Protected video access
+- Authentication required
+- No direct video URL exposure
+- Embedded player with controls
+
+================================================================================
+17. MONITORING & ANALYTICS
+================================================================================
+
+ANALYTICS TRACKING:
+- Page views
+- User interactions
+- Form submissions
+- Payment tracking
+- Student progress
+- Click counts on shortened URLs
+
+FIRESTORE ANALYTICS:
+- Built-in Firestore analytics
+- Database usage tracking
+- Real-time listeners
+
+ERROR TRACKING:
+- Console error logging
+- API error handling
+- User feedback for errors
+- Admin error notifications ready
+
+================================================================================
+18. RELATED DOCUMENTATION
+================================================================================
+
+Additional documentation files in the project:
+
+SYSTEM_FLOW_DOCUMENTATION.md:
+- Student registration & login flow
+- Admin registration flow
+- Data flow architecture
+- Firestore structure
+- API endpoints
+
+CERTIFICATE_MANAGEMENT_GUIDE.md:
+- Certificate generation process
+- Certificate templates
+- Issuing certificates
+- Revoking certificates
+- Certificate verification
+
+CERTIFICATE_QUICK_REFERENCE.md:
+- Quick reference for certificate features
+- Key points for implementation
+
+MASKED_DOMAIN_SETUP_GUIDE.md:
+- URL masking setup
+- Domain configuration
+- Masking service setup
+
+MASKED_DOMAIN_URL_SETTINGS_COLLECTION.md:
+- URL settings in Firestore
+- Configuration details
+
+URL_MASKING_COMPLETE_GUIDE.md:
+- Comprehensive URL masking documentation
+- Implementation details
+- Features and capabilities
+
+URL_MASKING_FIX_SUMMARY.md:
+- Fixes applied to URL masking
+- Known issues and resolutions
+
+URL_MASKING_QUICK_REF.md:
+- Quick reference for URL masking
+
+URL_MASKING_UI_IMPROVEMENTS.md:
+- UI improvements made to masking features
+
+VERIFICATION_AND_TESTING_GUIDE.md:
+- Testing procedures
+- Verification steps
+- QA checklist
+
+================================================================================
+19. KEY FEATURES SUMMARY
+================================================================================
+
+PUBLIC WEBSITE:
+✓ Beautiful landing page with multiple sections
+✓ Course and workshop showcase
+✓ Pricing plans display
+✓ Student testimonials
+✓ Company partnerships showcase
+✓ Trainer profiles
+✓ FAQ section
+✓ Contact form with popup
+✓ Newsletter signup
+✓ Legal pages (Privacy, Terms, etc.)
+
+STUDENT AUTHENTICATION:
+✓ Self-signup with email verification
+✓ Admin approval workflow
+✓ Admin manual registration
+✓ Student login/logout
+✓ Profile management
+✓ Password recovery
+
+STUDENT DASHBOARD:
+✓ View enrolled courses
+✓ Watch course videos
+✓ Take quizzes
+✓ Track progress
+✓ View certificates
+✓ Ask questions
+✓ Update profile
+✓ Manage account
+
+ADMIN DASHBOARD:
+✓ Comprehensive management system
+✓ Role-based access control
+✓ Create/edit/delete content
+✓ Student management
+✓ Payment tracking
+✓ Report generation
+✓ Content customization
+✓ Analytics and metrics
+
+PAYMENT INTEGRATION:
+✓ Razorpay integration
+✓ Multiple payment methods
+✓ Order tracking
+✓ Payment verification
+✓ Refund handling
+✓ Receipt/invoice generation
+
+CERTIFICATES:
+✓ Automatic generation on course completion
+✓ Professional PDF format
+✓ Unique certificate ID
+✓ Student download
+✓ Email delivery
+✓ Verification link
+
+CONTENT MANAGEMENT:
+✓ Homepage sections editable
+✓ FAQ management
+✓ Testimonial management
+✓ Company/trainer management
+✓ Rich text editing
+✓ Image uploads
+✓ SEO optimization
+
+ADVANCED FEATURES:
+✓ URL shortening and masking
+✓ Student progress tracking
+✓ Quiz and assessment system
+✓ Q&A forum
+✓ Scholarship management
+✓ Student project showcase
+✓ Journey/timeline visualization
+✓ Multi-language support (ready)
+
+================================================================================
+20. FUTURE ENHANCEMENTS & SCALABILITY
+================================================================================
+
+PLANNED FEATURES:
+- Live class integration (Zoom/Google Meet)
+- Mobile app (React Native)
+- Video streaming optimization (CDN)
+- Advanced analytics dashboard
+- AI-powered recommendations
+- Gamification (badges, points, leaderboards)
+- Mentor/mentee system
+- Job board integration
+- Social learning features
+- Advanced reporting
+
+SCALABILITY:
+- Firestore automatically scales
+- Vercel serverless functions auto-scale
+- Firebase Storage unlimited
+- CDN for static assets
+- Database indexing for optimization
+- Caching strategies in place
+- Load balancing ready
+
+================================================================================
+21. TROUBLESHOOTING & SUPPORT
+================================================================================
+
+COMMON ISSUES:
+
+Firebase Connection Issues:
+- Verify environment variables are set
+- Check Firebase project configuration
+- Firestore rules may be blocking access
+- Check CORS settings
+
+Payment Integration Issues:
+- Verify Razorpay credentials
+- Check sandbox vs production mode
+- Verify webhook URLs
+- Check order creation response
+
+Authentication Issues:
+- Clear localStorage and cookies
+- Verify token expiry
+- Check Firestore security rules
+- Verify admin role assignment
+
+Video Playback Issues:
+- Check video URL validity
+- Verify Firebase Storage permissions
+- Check browser video codec support
+- Verify HTTPS (required)
+
+Certificate Generation Issues:
+- Verify student completion status
+- Check PDF library dependencies
+- Verify image URLs are accessible
+- Check Firestore document structure
+
+================================================================================
+22. PROJECT STATISTICS
+================================================================================
+
+COMPONENT COUNT:
+- 30+ Admin management pages
+- 15+ Public website sections
+- 10+ Reusable UI components
+- 4+ Context providers
+- 7+ API endpoints
+- 10+ Firestore collections
+
+CODEBASE SIZE:
+- Frontend: ~50+ TypeScript files
+- Backend: ~7 API endpoints
+- Styles: Tailwind + custom CSS
+- Total package size: ~80MB (with node_modules)
+- Production bundle: ~500KB-1MB (gzipped)
+
+FILES MANAGEMENT:
+- 31+ admin management pages
+- 15+ public pages and components
+- Multiple configuration files
+- Documentation files
+- Setup scripts
+
+================================================================================
+23. DEVELOPMENT GUIDELINES
+================================================================================
+
+CODE STYLE:
+- TypeScript for type safety
+- React functional components with hooks
+- Context API for state management
+- Firebase best practices
+- Tailwind CSS utilities
+
+NAMING CONVENTIONS:
+- Components: PascalCase (e.g., StudentDashboard)
+- Files: match component name
+- Functions: camelCase
+- Constants: UPPER_SNAKE_CASE
+- Collections: lowercase (Firestore)
+
+GIT WORKFLOW:
+- Main branch for production
+- Feature branches for development
+- Commit messages: clear and descriptive
+- Pull requests for code review
+
+TESTING:
+- Unit tests with Jest (ready to implement)
+- Integration tests for API
+- Manual testing checklist
+- QA verification steps
+
+DOCUMENTATION:
+- Code comments for complex logic
+- README files in each module
+- Inline documentation
+- External documentation for features
+
+================================================================================
+24. CONTACT & SUPPORT
+================================================================================
+
+For issues and questions:
+- Check documentation files
+- Review Firestore structure
+- Verify environment variables
+- Check Firebase console
+- Review browser console for errors
+- Test with Vercel logs
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
+
+This comprehensive documentation covers every aspect of the Niklaus Solution
+project including:
+- Complete feature set
+- Technology stack
+- Project structure
+- Module descriptions
+- API endpoints
+- Authentication and authorization
+- Database structure
+- Deployment information
+- Security measures
+- Performance considerations
+- And much more
+
+For detailed implementation specifics, refer to the individual component files
+and the related documentation files in the project root.
+
+Last Updated: April 14, 2026
