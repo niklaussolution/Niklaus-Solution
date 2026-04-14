@@ -1,5 +1,13 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { AlertCircle, Lock, ShieldCheck, Play, Info, CheckCircle2, X } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import {
+  AlertCircle,
+  Lock,
+  ShieldCheck,
+  Play,
+  Info,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 
 interface SecureVideoPlayerProps {
   videoUrl: string;
@@ -14,7 +22,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   videoUrl,
   videoTitle,
   courseName,
-  userEmail = 'student@niklaussolutions.com',
+  userEmail = "student@niklaussolutions.com",
   lessonNumber = 1,
   totalLessons = 1,
 }) => {
@@ -26,7 +34,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [securityStatus, setSecurityStatus] = useState('active');
+  const [securityStatus, setSecurityStatus] = useState("active");
   const sessionIdRef = useRef(Math.random().toString(36).substring(2, 15));
 
   useEffect(() => {
@@ -47,7 +55,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // ==========================================
     const handleKeyDown = (e: KeyboardEvent) => {
       // PrintScreen
-      if (e.key === 'PrintScreen') {
+      if (e.key === "PrintScreen") {
         e.preventDefault();
         e.stopPropagation();
         setScreenRecordingDetected(true);
@@ -56,42 +64,46 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       }
 
       // F12 (Developer Tools)
-      if (e.key === 'F12') {
+      if (e.key === "F12") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + Shift + I (Developer Tools Inspector)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "I") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + Shift + J (Developer Tools Console)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "J") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + Shift + K (Browser Console - Firefox)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'K') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "K") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + Shift + C (Element Inspector)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "C") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + Shift + S (Screenshot)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (e.key === "S" || e.key === "s")
+      ) {
         e.preventDefault();
         e.stopPropagation();
         setScreenRecordingDetected(true);
@@ -100,77 +112,81 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       }
 
       // Ctrl/Cmd + Shift + L (Zoom Recording)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (e.key === "L" || e.key === "l")
+      ) {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + S (Save)
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Alt + F4 (Close Window)
-      if (e.altKey && e.key === 'F4') {
+      if (e.altKey && e.key === "F4") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl + Alt + Delete
-      if (e.ctrlKey && e.altKey && e.key === 'Delete') {
+      if (e.ctrlKey && e.altKey && e.key === "Delete") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + A (Select All)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + C (Copy)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "c" || e.key === "C")) {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + X (Cut)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "x" || e.key === "X")) {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + V (Paste)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V")) {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + N (New Window)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "n" || e.key === "N")) {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // F11 (Fullscreen)
-      if (e.key === 'F11') {
+      if (e.key === "F11") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
 
       // Ctrl/Cmd + U (View Source)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "u" || e.key === "U")) {
         e.preventDefault();
         e.stopPropagation();
         return false;
@@ -251,16 +267,16 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     const disableDevTools = () => {
       // Detect if devtools is open
       const checkDevTools = setInterval(() => {
-        const devToolsOpen = 
+        const devToolsOpen =
           window.outerHeight - window.innerHeight > 200 ||
           window.outerWidth - window.innerWidth > 200;
-        
+
         if (devToolsOpen) {
           // Pause video and show warning
           if (videoElementRef.current) {
             videoElementRef.current.pause();
           }
-          setSecurityStatus('devtools-detected');
+          setSecurityStatus("devtools-detected");
           setScreenRecordingDetected(true);
           // Don't clear this timeout, keep it showing
         }
@@ -276,9 +292,11 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       // Block getDisplayMedia
       if (navigator.mediaDevices?.getDisplayMedia) {
         const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-        navigator.mediaDevices.getDisplayMedia = async function (...args: any[]) {
+        navigator.mediaDevices.getDisplayMedia = async function (
+          ...args: any[]
+        ) {
           setScreenRecordingDetected(true);
-          throw new Error('Screen recording is disabled for security reasons');
+          throw new Error("Screen recording is disabled for security reasons");
         };
       }
 
@@ -289,7 +307,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           const constraints = args[0] as any;
           if (constraints?.video?.displaySurface) {
             setScreenRecordingDetected(true);
-            throw new Error('Screen capture is disabled');
+            throw new Error("Screen capture is disabled");
           }
           return originalGetUserMedia.apply(this, args);
         };
@@ -301,12 +319,12 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // ==========================================
     const blockMediaAPIs = () => {
       // Block MediaSource API
-      if (typeof MediaSource !== 'undefined') {
+      if (typeof MediaSource !== "undefined") {
         const originalCreateObjectURL = URL.createObjectURL;
         (URL.createObjectURL as any) = function (obj: any) {
           if (obj instanceof MediaSource) {
-            console.warn('MediaSource API is blocked');
-            throw new Error('MediaSource API is blocked for security');
+            console.warn("MediaSource API is blocked");
+            throw new Error("MediaSource API is blocked for security");
           }
           return originalCreateObjectURL.call(URL, obj);
         };
@@ -315,20 +333,20 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       // Block access to video source elements
       const videoElement = videoElementRef.current;
       if (videoElement) {
-        Object.defineProperty(videoElement, 'src', {
+        Object.defineProperty(videoElement, "src", {
           get() {
             return videoUrl;
           },
           set(value: string) {
-            console.warn('Direct src modification blocked');
+            console.warn("Direct src modification blocked");
             return false;
           },
         });
 
         // Block access to srcset
-        Object.defineProperty(videoElement, 'srcset', {
+        Object.defineProperty(videoElement, "srcset", {
           get() {
-            return '';
+            return "";
           },
           set(value: string) {
             return false;
@@ -344,19 +362,19 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       // Generate unique watermark based on user and time
       const timestamp = Date.now();
       const watermark = `${userEmail}_${sessionIdRef.current}_${timestamp}`;
-      
+
       // Create dynamic canvas watermark
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       ctx.fillStyle = `rgba(255, 255, 255, 0.02)`;
-      ctx.font = '12px monospace';
-      
+      ctx.font = "12px monospace";
+
       for (let i = 0; i < 10; i++) {
         ctx.fillText(watermark, i * 150, window.innerHeight / 2);
         ctx.fillText(watermark, i * 150, window.innerHeight / 2 + 30);
@@ -364,9 +382,9 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
       // Protect canvas from toDataURL
       const originalToDataURL = canvas.toDataURL;
-      canvas.toDataURL = function() {
-        console.warn('Canvas export blocked');
-        return '';
+      canvas.toDataURL = function () {
+        console.warn("Canvas export blocked");
+        return "";
       };
     };
 
@@ -377,29 +395,37 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       // Block fetch requests for video URLs
       const originalFetch = window.fetch;
       (window.fetch as any) = function (...args: any[]) {
-        const url = args[0]?.toString() || '';
-        
+        const url = args[0]?.toString() || "";
+
         // Block downloading video files
-        if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
-          console.warn('Video download attempt blocked:', url);
+        if (
+          url.includes(".mp4") ||
+          url.includes(".m3u8") ||
+          url.includes(".webm")
+        ) {
+          console.warn("Video download attempt blocked:", url);
           setScreenRecordingDetected(true);
-          return Promise.reject(new Error('Video download blocked'));
+          return Promise.reject(new Error("Video download blocked"));
         }
-        
+
         return originalFetch.apply(window, args);
       };
 
       // Block XMLHttpRequest for video downloads
       const originalXHROpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function(...args: any[]) {
-        const url = args[1]?.toString() || '';
-        
-        if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
-          console.warn('XHR video download blocked:', url);
+      XMLHttpRequest.prototype.open = function (...args: any[]) {
+        const url = args[1]?.toString() || "";
+
+        if (
+          url.includes(".mp4") ||
+          url.includes(".m3u8") ||
+          url.includes(".webm")
+        ) {
+          console.warn("XHR video download blocked:", url);
           setScreenRecordingDetected(true);
-          throw new Error('Video download blocked');
+          throw new Error("Video download blocked");
         }
-        
+
         return originalXHROpen.apply(this, args);
       };
     };
@@ -412,19 +438,19 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       if (!video) return;
 
       // Disable all download methods
-      if ('controlsList' in video) {
-        (video as any).controlsList?.add?.('nodownload');
+      if ("controlsList" in video) {
+        (video as any).controlsList?.add?.("nodownload");
       }
 
       // Add context menu blocking directly on video
-      video.addEventListener('contextmenu', (e) => {
+      video.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         e.stopPropagation();
         return false;
       });
 
       // Block right-click on video
-      video.addEventListener('mousedown', (e) => {
+      video.addEventListener("mousedown", (e) => {
         if (e.button === 2 || e.button === 1) {
           e.preventDefault();
           e.stopPropagation();
@@ -433,7 +459,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       });
 
       // Protect video properties
-      Object.defineProperty(video, 'controls', {
+      Object.defineProperty(video, "controls", {
         get() {
           return true;
         },
@@ -449,8 +475,10 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       video.onloadedmetadata = () => setDuration(video.duration);
 
       // Log video playback for audit trail
-      video.addEventListener('play', () => {
-        console.log(`[Security] Video playing - User: ${userEmail}, Session: ${sessionIdRef.current}`);
+      video.addEventListener("play", () => {
+        console.log(
+          `[Security] Video playing - User: ${userEmail}, Session: ${sessionIdRef.current}`,
+        );
       });
     };
 
@@ -459,14 +487,14 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // ==========================================
     const protectDocument = () => {
       // Lock document selection
-      document.body.style.userSelect = 'none';
-      (document.body.style as any).webkitUserSelect = 'none';
-      (document.body.style as any).MozUserSelect = 'none';
-      (document.body.style as any).msUserSelect = 'none';
+      document.body.style.userSelect = "none";
+      (document.body.style as any).webkitUserSelect = "none";
+      (document.body.style as any).MozUserSelect = "none";
+      (document.body.style as any).msUserSelect = "none";
 
       // Disable inspector
-      document.addEventListener('keydown', handleKeyDown, true);
-      document.addEventListener('contextmenu', handleContextMenu, true);
+      document.addEventListener("keydown", handleKeyDown, true);
+      document.addEventListener("contextmenu", handleContextMenu, true);
     };
 
     // ==========================================
@@ -475,17 +503,17 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     const protectWindow = () => {
       // Block opening new windows
       const originalOpen = window.open;
-      (window as any).open = function(...args: any[]) {
-        console.warn('Window.open blocked');
+      (window as any).open = function (...args: any[]) {
+        console.warn("Window.open blocked");
         return null;
       };
 
       // Block postMessage for cross-origin attacks
       const originalPostMessage = window.postMessage;
-      (window as any).postMessage = function(...args: any[]) {
+      (window as any).postMessage = function (...args: any[]) {
         const message = args[0];
-        if (typeof message === 'string' && message.includes('video')) {
-          console.warn('PostMessage video extraction blocked');
+        if (typeof message === "string" && message.includes("video")) {
+          console.warn("PostMessage video extraction blocked");
           return;
         }
         return originalPostMessage.apply(window, args);
@@ -497,22 +525,26 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // ==========================================
     const setupAllProtections = () => {
       // Add event listeners
-      document.addEventListener('contextmenu', handleContextMenu, true);
-      document.addEventListener('keydown', handleKeyDown, true);
-      document.addEventListener('mousedown', handleMouseDown, true);
-      document.addEventListener('mouseup', handleMouseUp, true);
-      document.addEventListener('copy', handleCopy, true);
-      document.addEventListener('cut', handleCut, true);
-      document.addEventListener('paste', handlePaste, true);
-      document.addEventListener('dragstart', handleDragStart, true);
-      document.addEventListener('dragover', handleDragOver, true);
-      document.addEventListener('drop', handleDrop, true);
+      document.addEventListener("contextmenu", handleContextMenu, true);
+      document.addEventListener("keydown", handleKeyDown, true);
+      document.addEventListener("mousedown", handleMouseDown, true);
+      document.addEventListener("mouseup", handleMouseUp, true);
+      document.addEventListener("copy", handleCopy, true);
+      document.addEventListener("cut", handleCut, true);
+      document.addEventListener("paste", handlePaste, true);
+      document.addEventListener("dragstart", handleDragStart, true);
+      document.addEventListener("dragover", handleDragOver, true);
+      document.addEventListener("drop", handleDrop, true);
 
       // Container-specific protection
       if (videoRef.current) {
-        videoRef.current.addEventListener('contextmenu', handleContextMenu, true);
-        videoRef.current.addEventListener('mousedown', handleMouseDown, true);
-        videoRef.current.addEventListener('dragstart', handleDragStart, true);
+        videoRef.current.addEventListener(
+          "contextmenu",
+          handleContextMenu,
+          true,
+        );
+        videoRef.current.addEventListener("mousedown", handleMouseDown, true);
+        videoRef.current.addEventListener("dragstart", handleDragStart, true);
       }
 
       // Activate all protection systems
@@ -532,21 +564,33 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // CLEANUP FUNCTION
     // ==========================================
     return () => {
-      document.removeEventListener('contextmenu', handleContextMenu, true);
-      document.removeEventListener('keydown', handleKeyDown, true);
-      document.removeEventListener('mousedown', handleMouseDown, true);
-      document.removeEventListener('mouseup', handleMouseUp, true);
-      document.removeEventListener('copy', handleCopy, true);
-      document.removeEventListener('cut', handleCut, true);
-      document.removeEventListener('paste', handlePaste, true);
-      document.removeEventListener('dragstart', handleDragStart, true);
-      document.removeEventListener('dragover', handleDragOver, true);
-      document.removeEventListener('drop', handleDrop, true);
+      document.removeEventListener("contextmenu", handleContextMenu, true);
+      document.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("mousedown", handleMouseDown, true);
+      document.removeEventListener("mouseup", handleMouseUp, true);
+      document.removeEventListener("copy", handleCopy, true);
+      document.removeEventListener("cut", handleCut, true);
+      document.removeEventListener("paste", handlePaste, true);
+      document.removeEventListener("dragstart", handleDragStart, true);
+      document.removeEventListener("dragover", handleDragOver, true);
+      document.removeEventListener("drop", handleDrop, true);
 
       if (videoRef.current) {
-        videoRef.current.removeEventListener('contextmenu', handleContextMenu, true);
-        videoRef.current.removeEventListener('mousedown', handleMouseDown, true);
-        videoRef.current.removeEventListener('dragstart', handleDragStart, true);
+        videoRef.current.removeEventListener(
+          "contextmenu",
+          handleContextMenu,
+          true,
+        );
+        videoRef.current.removeEventListener(
+          "mousedown",
+          handleMouseDown,
+          true,
+        );
+        videoRef.current.removeEventListener(
+          "dragstart",
+          handleDragStart,
+          true,
+        );
       }
     };
   }, [userEmail]);
@@ -555,11 +599,11 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const getYouTubeEmbedUrl = (url: string) => {
     try {
       // Check if it's a YouTube URL
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      if (url.includes("youtube.com") || url.includes("youtu.be")) {
         const urlObj = new URL(url);
-        const videoId = urlObj.searchParams.get('v') || url.split('/').pop();
-        // and disable keyboard, enable nocookie, and hide logo
-        return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&fs=0&controls=1&disablekb=1&iv_load_policy=3`;
+        const videoId = urlObj.searchParams.get("v") || url.split("/").pop();
+        // and disable keyboard, enable nocookie, and hide logo, add playsinline for iOS
+        return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&fs=1&controls=1&disablekb=1&iv_load_policy=3&playsinline=1`;
       }
       return null;
     } catch {
@@ -568,7 +612,7 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   };
 
   const isYouTubeUrl = (url: string) => {
-    return url.includes('youtube.com') || url.includes('youtu.be');
+    return url.includes("youtube.com") || url.includes("youtu.be");
   };
 
   const embedUrl = isYouTubeUrl(videoUrl) ? getYouTubeEmbedUrl(videoUrl) : null;
@@ -586,14 +630,19 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         return false;
       }}
       style={{
-        userSelect: 'none',
-        WebkitUserSelect: 'none' as any,
-        msUserSelect: 'none' as any,
-        MozUserSelect: 'none' as any,
+        userSelect: "none",
+        WebkitUserSelect: "none" as any,
+        msUserSelect: "none" as any,
+        MozUserSelect: "none" as any,
       }}
     >
       {/* Hidden canvas for screen recording detection */}
-      <canvas ref={canvasRef} width={1} height={1} style={{ display: 'none' }} />
+      <canvas
+        ref={canvasRef}
+        width={1}
+        height={1}
+        style={{ display: "none" }}
+      />
 
       {/* Security Warning Overlay */}
       {screenRecordingDetected && (
@@ -601,9 +650,12 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           <div className="bg-red-500/20 p-5 rounded-full mb-6 border border-red-500/50">
             <ShieldCheck size={64} className="text-red-500 animate-pulse" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-widest">Security Alert</h2>
+          <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-widest">
+            Security Alert
+          </h2>
           <p className="text-red-400 max-w-md font-medium">
-            Screen capture or illegal recording activity has been detected. For security, playback has been paused.
+            Screen capture or illegal recording activity has been detected. For
+            security, playback has been paused.
           </p>
           <div className="mt-8 text-xs text-gray-500 uppercase tracking-tighter">
             System monitored IP: {userEmail}
@@ -612,39 +664,51 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       )}
 
       {/* Cyberpunk Style Header */}
-      <div className="bg-[#1e293b]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between text-white border-b border-blue-900/30">
-        <div className="flex items-center gap-4">
-          <div className="bg-blue-600/20 p-2.5 rounded-xl border border-blue-500/30">
-            <Play size={18} className="text-blue-400" />
+      <div className="bg-[#1e293b]/80 backdrop-blur-md px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between text-white border-b border-blue-900/30 gap-3 md:gap-0">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="bg-blue-600/20 p-2 md:p-2.5 rounded-xl border border-blue-500/30 shrink-0">
+            <Play size={16} className="md:w-[18px] md:h-[18px] text-blue-400" />
           </div>
-          <div>
-            <h3 className="font-bold text-base tracking-tight leading-tight">{videoTitle}</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] uppercase font-black text-blue-400 tracking-widest bg-blue-400/10 px-1.5 py-0.5 rounded">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-sm md:text-base tracking-tight leading-tight truncate">
+              {videoTitle}
+            </h3>
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              <span className="text-[9px] md:text-[10px] uppercase font-black text-blue-400 tracking-widest bg-blue-400/10 px-1.5 py-0.5 rounded shrink-0">
                 Chapter
               </span>
-              <p className="text-xs text-gray-400 font-medium">
-                {courseName} • Lesson {lessonNumber}/{totalLessons}
+              <p className="text-[10px] md:text-xs text-gray-400 font-medium">
+                {courseName} • L{lessonNumber}/{totalLessons}
               </p>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
+        <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto justify-end shrink-0">
+          <div className="text-right hidden md:block">
             <div className="flex items-center gap-1.5 justify-end">
               <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-[10px] font-black text-green-500 uppercase tracking-widest">Encrypted Stream</p>
+              <p className="text-[10px] font-black text-green-500 uppercase tracking-widest">
+                Encrypted
+              </p>
             </div>
-            <p className="text-[10px] text-gray-500 font-mono tracking-tighter">{userEmail}</p>
+            <p className="text-[10px] text-gray-500 font-mono tracking-tighter truncate">
+              {userEmail}
+            </p>
           </div>
-          <div className="bg-blue-600 hover:bg-blue-700 transition-colors p-2 rounded-lg border border-blue-500/50 shadow-lg shadow-blue-900/20 cursor-help">
-            <Lock size={16} className="text-white" />
+          <div
+            className="bg-blue-600 hover:bg-blue-700 transition-colors p-2 rounded-lg border border-blue-500/50 shadow-lg shadow-blue-900/20 cursor-help shrink-0"
+            title="Secure Stream"
+          >
+            <Lock size={14} className="md:w-4 md:h-4 text-white" />
           </div>
         </div>
       </div>
 
       {/* Main Video Stage */}
-      <div className="relative bg-[#020617] w-full" style={{ paddingBottom: '56.25%' }}>
+      <div
+        className="relative bg-[#020617] w-full"
+        style={{ paddingBottom: "56.25%" }}
+      >
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -652,15 +716,16 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             width="100%"
             height="100%"
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
-              border: 'none',
-              pointerEvents: 'auto',
+              border: "none",
+              pointerEvents: "auto",
+              WebkitAllowFullScreen: true as any,
             }}
-            sandbox="allow-autoplay allow-encrypted-media"
+            sandbox="allow-autoplay allow-encrypted-media allow-fullscreen allow-same-origin allow-scripts allow-popups"
             allowFullScreen
-            allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture"
             className="select-none"
           />
         ) : (
@@ -668,82 +733,91 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             ref={videoElementRef}
             src={videoUrl}
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              cursor: 'auto',
-              userSelect: 'none',
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              cursor: "auto",
+              userSelect: "none",
             }}
             controls
             controlsList="nodownload"
             className="select-none"
+            playsInline
           />
         )}
 
         {/* Dynamic Flying Watermark (Premium Security) */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none select-none z-10"
-          style={{ overflow: 'hidden' }}
+          style={{ overflow: "hidden" }}
         >
-          <div 
-            className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
-            style={{ 
-              top: '15%', 
-              left: '5%',
-              transform: 'rotate(-25deg)',
-              textShadow: '0 0 1px rgba(255,255,255,0.1)'
+          <div
+            className="absolute text-[8px] md:text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[0.5em] md:tracking-[1em]"
+            style={{
+              top: "15%",
+              left: "5%",
+              transform: "rotate(-25deg)",
+              textShadow: "0 0 1px rgba(255,255,255,0.1)",
             }}
           >
-            NIKLAUS SOLUTIONS SECURITY • {userEmail} • {userEmail} • {userEmail}
+            NIKLAUS • {userEmail}
           </div>
-          <div 
-            className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
-            style={{ 
-              bottom: '25%', 
-              right: '5%',
-              transform: 'rotate(-25deg)',
-              textShadow: '0 0 1px rgba(255,255,255,0.1)'
+          <div
+            className="absolute text-[8px] md:text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[0.5em] md:tracking-[1em]"
+            style={{
+              bottom: "25%",
+              right: "5%",
+              transform: "rotate(-25deg)",
+              textShadow: "0 0 1px rgba(255,255,255,0.1)",
             }}
           >
-            NIKLAUS SOLUTIONS SECURITY • {userEmail} • {userEmail} • {userEmail} 
+            NIKLAUS • {userEmail}
           </div>
         </div>
 
         {/* Corner Branding (Fui Style) */}
-        <div className="absolute top-4 right-4 pointer-events-none select-none z-20 opacity-40 group-hover:opacity-100 transition-opacity">
-           <div className="flex flex-col items-end">
-              <div className="h-0.5 w-12 bg-blue-500/50 mb-1" />
-              <p className="text-[8px] font-mono text-blue-400 uppercase tracking-tighter">Niklaus Solutions x800</p>
-           </div>
+        <div className="absolute top-2 md:top-4 right-2 md:right-4 pointer-events-none select-none z-20 opacity-40 group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-col items-end">
+            <div className="h-0.5 w-8 md:w-12 bg-blue-500/50 mb-1" />
+            <p className="text-[6px] md:text-[8px] font-mono text-blue-400 uppercase tracking-tighter">
+              Niklaus x800
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Premium Security Footer Notice */}
       {showSecurityWarning && (
-        <div className="bg-[#1e293b] p-5 border-t border-blue-900/30 flex items-start gap-4 transition-all hover:bg-[#334155]/50 group/msg relative">
-          <div className="bg-blue-600/10 p-3 rounded-2xl border border-blue-500/20 shrink-0">
-             <ShieldCheck size={24} className="text-blue-400" />
+        <div className="bg-[#1e293b] p-3 md:p-5 border-t border-blue-900/30 flex flex-col md:flex-row items-start gap-3 md:gap-4 transition-all hover:bg-[#334155]/50 group/msg relative">
+          <div className="bg-blue-600/10 p-2 md:p-3 rounded-2xl border border-blue-500/20 shrink-0">
+            <ShieldCheck size={20} className="md:w-6 md:h-6 text-blue-400" />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h4 className="text-white font-black uppercase tracking-widest text-[11px]">Secure Protocol Active</h4>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h4 className="text-white font-black uppercase tracking-widest text-[10px] md:text-[11px]">
+                Secure Protocol
+              </h4>
               <span className="h-1 w-1 bg-blue-400 rounded-full" />
-              <span className="text-[10px] text-blue-400 font-mono">X-800 SECURITY</span>
+              <span className="text-[9px] md:text-[10px] text-blue-400 font-mono">
+                X-800
+              </span>
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
-              This content is under advanced digital protection. Real-time logging of user ID <span className="text-blue-300 underline underline-offset-4 decoration-blue-500/30">{userEmail}</span> is active. Unauthorized recording or distribution will result in immediate account termination.
+            <p className="text-[10px] md:text-[11px] text-gray-400 leading-relaxed font-medium">
+              Advanced protection active. Unauthorized recording will result in
+              account termination.
             </p>
           </div>
           <button
             onClick={() => setShowSecurityWarning(false)}
-            className="bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors border border-white/10 h-fit"
+            className="bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors border border-white/10 h-fit shrink-0"
+            title="Dismiss"
           >
-            <X size={14} className="text-gray-400" />
+            <X size={12} className="md:w-3.5 md:h-3.5 text-gray-400" />
           </button>
-          
+
           {/* Subtle Progress Trace */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
         </div>
@@ -769,11 +843,11 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           border-radius: 10px;
         }
       `}</style>
-      
+
       {/* Footer Branding */}
-      <div className="bg-[#0f172a] px-6 py-2 border-t border-blue-900/10 flex justify-between items-center text-[9px] font-mono text-gray-500 uppercase tracking-widest">
+      <div className="bg-[#0f172a] px-3 md:px-6 py-1.5 md:py-2 border-t border-blue-900/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 text-[8px] md:text-[9px] font-mono text-gray-500 uppercase tracking-widest">
         <span>© 2026 Niklaus Solutions</span>
-        <span>Secure Stream Protocol v4.0</span>
+        <span className="hidden md:block">Secure Stream Protocol v4.0</span>
       </div>
     </div>
   );

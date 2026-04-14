@@ -21,30 +21,34 @@ interface Video {
 function extractYoutubeVideoId(url: string): string {
   try {
     // Handle youtu.be short URLs
-    if (url.includes('youtu.be/')) {
-      return url.split('youtu.be/')[1]?.split('?')[0] || '';
+    if (url.includes("youtu.be/")) {
+      return url.split("youtu.be/")[1]?.split("?")[0] || "";
     }
     // Handle youtube.com watch URLs
-    if (url.includes('youtube.com')) {
-      const urlParams = new URLSearchParams(url.split('?')[1] || '');
-      return urlParams.get('v') || '';
+    if (url.includes("youtube.com")) {
+      const urlParams = new URLSearchParams(url.split("?")[1] || "");
+      return urlParams.get("v") || "";
     }
     // If it's already just the video ID
-    if (!url.includes('/') && !url.includes('?')) {
+    if (!url.includes("/") && !url.includes("?")) {
       return url;
     }
-    return '';
+    return "";
   } catch {
-    return '';
+    return "";
   }
 }
 
-export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSectionProps) {
+export function VideoCarouselSection({
+  onOpenContactForm,
+}: VideoCarouselSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [sectionHeading, setSectionHeading] = useState("Explore Our Videos");
-  const [sectionDescription, setSectionDescription] = useState("Learn more about Niklaus Solutions through our curated video content");
+  const [sectionDescription, setSectionDescription] = useState(
+    "Learn more about Niklaus Solutions through our curated video content",
+  );
 
   useEffect(() => {
     fetchVideos();
@@ -56,7 +60,7 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
       const q = query(
         collection(db, "videos"),
         where("isActive", "==", true),
-        orderBy("order", "asc")
+        orderBy("order", "asc"),
       );
       const querySnapshot = await getDocs(q);
       const data: Video[] = [];
@@ -73,7 +77,7 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
         } as Video);
       });
       setVideos(data);
-      
+
       // Get section heading and description from first video or defaults
       if (data.length > 0 && data[0].heading) {
         setSectionHeading(data[0].heading);
@@ -86,7 +90,7 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const nextVideo = () => {
     if (videos.length > 0) {
@@ -96,13 +100,18 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
 
   const prevVideo = () => {
     if (videos.length > 0) {
-      setCurrentIndex((prevIndex) => (prevIndex - 1 + videos.length) % videos.length);
+      setCurrentIndex(
+        (prevIndex) => (prevIndex - 1 + videos.length) % videos.length,
+      );
     }
   };
 
   if (loading) {
     return (
-      <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
+      <section
+        id="video-carousel"
+        className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center min-h-[400px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
@@ -114,7 +123,10 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
 
   if (videos.length === 0) {
     return (
-      <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
+      <section
+        id="video-carousel"
+        className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12 text-gray-500">
             <p>No videos available yet.</p>
@@ -128,7 +140,10 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
   const videoId = extractYoutubeVideoId(currentVideo.youtubeUrl);
 
   return (
-    <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
+    <section
+      id="video-carousel"
+      className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title */}
         <motion.div
@@ -155,19 +170,32 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             className="w-full bg-gray-200 rounded-lg overflow-hidden shadow-lg"
-            style={{ aspectRatio: "16 / 9" }}
+            style={{
+              position: "relative",
+              paddingBottom: "56.25%", // 16:9 aspect ratio
+              height: 0,
+            }}
           >
             {videoId ? (
               <iframe
-                src={`https://www.youtube.com/embed/${videoId}`}
+                src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&fs=1&controls=1`}
                 title={currentVideo.title}
                 frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
-                className="w-full h-full"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  WebkitAllowFullScreen: true as any,
+                  display: "block",
+                }}
               ></iframe>
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-300">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
                 <p className="text-gray-600">Invalid video URL</p>
               </div>
             )}
@@ -180,7 +208,10 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
               className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
               aria-label="Previous video"
             >
-              <ChevronLeft size={24} className="group-hover:scale-110 transition-transform" />
+              <ChevronLeft
+                size={24}
+                className="group-hover:scale-110 transition-transform"
+              />
             </button>
 
             <div className="text-center flex-1 px-4">
@@ -194,7 +225,10 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
               className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
               aria-label="Next video"
             >
-              <ChevronRight size={24} className="group-hover:scale-110 transition-transform" />
+              <ChevronRight
+                size={24}
+                className="group-hover:scale-110 transition-transform"
+              />
             </button>
           </div>
         </div>
