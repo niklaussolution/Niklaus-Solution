@@ -151,7 +151,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/pricing"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <PricingManagement />
               </ProtectedRoute>
             }
@@ -175,7 +175,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/trainers"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <TrainersManagement />
               </ProtectedRoute>
             }
@@ -183,7 +183,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/testimonials"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <TestimonialsManagement />
               </ProtectedRoute>
             }
@@ -199,7 +199,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/student-projects"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <StudentProjectsManagement />
               </ProtectedRoute>
             }
@@ -215,7 +215,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/features"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <FeaturesManagement />
               </ProtectedRoute>
             }
@@ -223,7 +223,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/scholarships"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <ScholarshipsManagement />
               </ProtectedRoute>
             }
@@ -231,7 +231,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/companies"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <CompaniesManagement />
               </ProtectedRoute>
             }
@@ -239,7 +239,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/faqs"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <FAQManagement />
               </ProtectedRoute>
             }
@@ -247,7 +247,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/content"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <ContentManagement />
               </ProtectedRoute>
             }
@@ -255,7 +255,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/journeys"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <JourneyManagement />
               </ProtectedRoute>
             }
@@ -263,7 +263,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/videos"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <VideoManagement />
               </ProtectedRoute>
             }
@@ -271,7 +271,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/qa"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <QAManagement />
               </ProtectedRoute>
             }
@@ -287,7 +287,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/files"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <FileManagement />
               </ProtectedRoute>
             }
@@ -295,7 +295,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/links"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <LinkManagement />
               </ProtectedRoute>
             }
@@ -313,7 +313,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/settings"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <Settings />
               </ProtectedRoute>
             }
@@ -321,7 +321,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/admin/contact-submissions"
             element={
-              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <ProtectedRoute requiredRole={["super_admin"]}>
                 <ContactSubmissionsManagement />
               </ProtectedRoute>
             }

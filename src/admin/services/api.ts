@@ -54,6 +54,9 @@ export const api = {
   },
 
   login: async (credentials: any) => {
+    // Define allowed roles for admin panel access
+    const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor'];
+    
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -61,17 +64,27 @@ export const api = {
         credentials.password
       );
 
-      // Get admin info from Firestore
+      // Get admin info from Firestore by email
       const adminsRef = collection(db, 'admins');
-      const q = query(adminsRef, where('firebaseUid', '==', userCredential.user.uid));
+      const q = query(adminsRef, where('email', '==', credentials.email));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        return { error: 'Admin not found' };
+        // No admin record found for this email
+        await signOut(auth);
+        return { error: 'Access denied. You are not authorized to access the admin panel.' };
       }
 
       const adminDoc = querySnapshot.docs[0];
       const adminData = adminDoc.data();
+      const userRole = adminData.role?.trim(); // Trim whitespace from role
+      
+      // Check if the user has an allowed role (editor or super_admin)
+      if (!userRole || !ALLOWED_ADMIN_ROLES.includes(userRole)) {
+        await signOut(auth);
+        return { error: 'Access denied. Your account does not have permission to access the admin panel.' };
+      }
+      
       const token = await userCredential.user.getIdToken();
 
       return {
@@ -80,7 +93,7 @@ export const api = {
           id: userCredential.user.uid,
           username: adminData.username,
           email: adminData.email,
-          role: adminData.role,
+          role: userRole,
         },
       };
     } catch (error: any) {
