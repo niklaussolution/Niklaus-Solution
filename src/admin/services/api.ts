@@ -64,58 +64,13 @@ export const api = {
         credentials.password
       );
 
-      console.log("[v0] Firebase Auth UID:", userCredential.user.uid);
-      console.log("[v0] Firebase Auth Email:", userCredential.user.email);
-
-      // Get admin info from Firestore
+      // Get admin info from Firestore by email
       const adminsRef = collection(db, 'admins');
-      const q = query(adminsRef, where('firebaseUid', '==', userCredential.user.uid));
+      const q = query(adminsRef, where('email', '==', credentials.email));
       const querySnapshot = await getDocs(q);
 
-      console.log("[v0] Query result empty:", querySnapshot.empty);
-      console.log("[v0] Query result size:", querySnapshot.size);
-
       if (querySnapshot.empty) {
-        // Try to find by email as fallback
-        console.log("[v0] Trying to find admin by email...");
-        const emailQuery = query(adminsRef, where('email', '==', userCredential.user.email));
-        const emailQuerySnapshot = await getDocs(emailQuery);
-        
-        console.log("[v0] Email query result empty:", emailQuerySnapshot.empty);
-        
-        if (!emailQuerySnapshot.empty) {
-          const adminDoc = emailQuerySnapshot.docs[0];
-          const adminData = adminDoc.data();
-          console.log("[v0] Found admin by email. Document ID:", adminDoc.id);
-          console.log("[v0] Admin data firebaseUid:", adminData.firebaseUid);
-          console.log("[v0] Admin data role:", adminData.role);
-          
-          // Update the firebaseUid in Firestore to fix the mismatch
-          const { doc, updateDoc } = await import('firebase/firestore');
-          await updateDoc(doc(db, 'admins', adminDoc.id), {
-            firebaseUid: userCredential.user.uid
-          });
-          console.log("[v0] Updated firebaseUid in Firestore");
-          
-          // Check if the user has an allowed role
-          if (!adminData.role || !ALLOWED_ADMIN_ROLES.includes(adminData.role)) {
-            await signOut(auth);
-            return { error: 'Access denied. Your account does not have permission to access the admin panel.' };
-          }
-          
-          const token = await userCredential.user.getIdToken();
-          return {
-            token,
-            admin: {
-              id: userCredential.user.uid,
-              username: adminData.username,
-              email: adminData.email,
-              role: adminData.role,
-            },
-          };
-        }
-        
-        // Sign out the user since they don't have admin privileges
+        // No admin record found for this email
         await signOut(auth);
         return { error: 'Access denied. You are not authorized to access the admin panel.' };
       }
@@ -123,11 +78,8 @@ export const api = {
       const adminDoc = querySnapshot.docs[0];
       const adminData = adminDoc.data();
       
-      console.log("[v0] Admin data found:", adminData);
-      
-      // Check if the user has an allowed role
+      // Check if the user has an allowed role (editor or super_admin)
       if (!adminData.role || !ALLOWED_ADMIN_ROLES.includes(adminData.role)) {
-        // Sign out the user since they don't have the required role
         await signOut(auth);
         return { error: 'Access denied. Your account does not have permission to access the admin panel.' };
       }
@@ -144,7 +96,6 @@ export const api = {
         },
       };
     } catch (error: any) {
-      console.log("[v0] Login error:", error.message);
       return { error: error.message };
     }
   },
