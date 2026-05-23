@@ -16,7 +16,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { admin } = useAuth();
 
-  const isSuperAdmin = admin?.role === "super_admin";
+  const userRole = admin?.role?.trim();
+  const isSuperAdmin = userRole === "super_admin";
+  const isEditor = userRole === "editor";
+
+  // Editor can only access these tabs
+  const editorAllowedPaths = [
+    "/admin/login-requests",
+    "/admin/workshops",
+    "/admin/courses",
+    "/admin/course-videos",
+    "/admin/courses-videos",
+    "/admin/registrations",
+    "/admin/seminar-registrations",
+    "/admin/course-enrollments",
+    "/admin/certificates",
+    "/admin/hackathon-winners",
+  ];
 
   const menuItems = [
     { path: "/admin/login-requests", label: "Login Requests", icon: "🔓" },
@@ -24,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { path: "/admin/courses", label: "Courses", icon: "📚" },
     { path: "/admin/course-videos", label: "Workshop Videos", icon: "📹" },
     { path: "/admin/courses-videos", label: "Course Videos", icon: "🎬" },
-    { path: "/admin/pricing", label: "Pricing Plans", icon: "💰" },
+    { path: "/admin/pricing", label: "Pricing Plans", icon: "💰", superAdminOnly: true },
     {
       path: "/admin/registrations",
       label: "Workshop Registrations",
@@ -41,31 +57,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: "✍️",
     },
     { path: "/admin/certificates", label: "Certificates", icon: "🏆" },
-    { path: "/admin/files", label: "File Sharing", icon: "📤" },
-    { path: "/admin/links", label: "URL Masking", icon: "🔗" },
-    { path: "/admin/trainers", label: "Trainers", icon: "👨‍🏫" },
-    { path: "/admin/testimonials", label: "Testimonials", icon: "⭐" },
+    { path: "/admin/files", label: "File Sharing", icon: "📤", superAdminOnly: true },
+    { path: "/admin/links", label: "URL Masking", icon: "🔗", superAdminOnly: true },
+    { path: "/admin/trainers", label: "Trainers", icon: "👨‍🏫", superAdminOnly: true },
+    { path: "/admin/testimonials", label: "Testimonials", icon: "⭐", superAdminOnly: true },
     {
       path: "/admin/hackathon-winners",
       label: "Hackathon Winners",
       icon: "🏅",
     },
-    { path: "/admin/student-projects", label: "Student Projects", icon: "🎨" },
-    { path: "/admin/content", label: "Content Management", icon: "📝" },
-    { path: "/admin/journeys", label: "Learner Journeys", icon: "🚀" },
-    { path: "/admin/videos", label: "Video Management", icon: "🎥" },
-    { path: "/admin/qa", label: "Support Chat", icon: "💬" },
+    { path: "/admin/student-projects", label: "Student Projects", icon: "🎨", superAdminOnly: true },
+    { path: "/admin/content", label: "Content Management", icon: "📝", superAdminOnly: true },
+    { path: "/admin/journeys", label: "Learner Journeys", icon: "🚀", superAdminOnly: true },
+    { path: "/admin/videos", label: "Video Management", icon: "🎥", superAdminOnly: true },
+    { path: "/admin/qa", label: "Support Chat", icon: "💬", superAdminOnly: true },
     {
       path: "/admin/contact-submissions",
       label: "Contact Submissions",
       icon: "📩",
+      superAdminOnly: true,
     },
-    { path: "/admin/settings", label: "Settings", icon: "⚙️" },
+    { path: "/admin/settings", label: "Settings", icon: "⚙️", superAdminOnly: true },
     {
       path: "/admin/admins",
       label: "Admin Users",
       icon: "🔐",
-      visible: isSuperAdmin,
+      superAdminOnly: true,
     },
   ];
 
@@ -91,7 +108,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
       <ul className="space-y-2 px-4 flex-1">
         {menuItems.map((item) => {
-          if (item.visible === false) return null;
+          // Hide super admin only items from editors
+          if (item.superAdminOnly && !isSuperAdmin) return null;
           const isActive = location.pathname === item.path;
           return (
             <li key={item.path}>
