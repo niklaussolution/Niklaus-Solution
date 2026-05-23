@@ -55,7 +55,7 @@ export const api = {
 
   login: async (credentials: any) => {
     // Define allowed roles for admin panel access
-    const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor', 'creator'];
+    const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor'];
     
     try {
       const userCredential = await signInWithEmailAndPassword(

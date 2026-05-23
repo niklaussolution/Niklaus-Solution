@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
 // Define allowed roles for admin panel access
-const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor', 'creator'];
+const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor'];
 
 interface Admin {
   id: string;

@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Define allowed roles for admin panel access
-const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor', 'creator'];
+const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor'];
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
