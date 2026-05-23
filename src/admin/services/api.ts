@@ -77,9 +77,10 @@ export const api = {
 
       const adminDoc = querySnapshot.docs[0];
       const adminData = adminDoc.data();
+      const userRole = adminData.role?.trim(); // Trim whitespace from role
       
       // Check if the user has an allowed role (editor or super_admin)
-      if (!adminData.role || !ALLOWED_ADMIN_ROLES.includes(adminData.role)) {
+      if (!userRole || !ALLOWED_ADMIN_ROLES.includes(userRole)) {
         await signOut(auth);
         return { error: 'Access denied. Your account does not have permission to access the admin panel.' };
       }
@@ -92,7 +93,7 @@ export const api = {
           id: userCredential.user.uid,
           username: adminData.username,
           email: adminData.email,
-          role: adminData.role,
+          role: userRole,
         },
       };
     } catch (error: any) {
