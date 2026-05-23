@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 // Define allowed roles for admin panel access
 const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor'];
@@ -44,8 +46,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen to Firebase auth state
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const idToken = await user.getIdToken();
-        setToken(idToken);
+        // Verify this user is in the admins collection with a valid role
+        try {
+          const adminsRef = collection(db, 'admins');
+          const q = query(adminsRef, where('email', '==', user.email));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const adminData = querySnapshot.docs[0].data();
+            const userRole = adminData.role?.trim();
+            
+            if (userRole && ALLOWED_ADMIN_ROLES.includes(userRole)) {
+              const idToken = await user.getIdToken();
+              setToken(idToken);
+              // Update admin data from Firestore
+              setAdmin({
+                id: user.uid,
+                username: adminData.username,
+                email: adminData.email,
+                role: userRole,
+              });
+              localStorage.setItem('admin', JSON.stringify({
+                id: user.uid,
+                username: adminData.username,
+                email: adminData.email,
+                role: userRole,
+              }));
+            } else {
+              // User doesn't have valid role - sign them out
+              await signOut(auth);
+              setToken(null);
+              setAdmin(null);
+              localStorage.removeItem('admin');
+            }
+          } else {
+            // User not in admins collection - sign them out
+            await signOut(auth);
+            setToken(null);
+            setAdmin(null);
+            localStorage.removeItem('admin');
+          }
+        } catch (error) {
+          console.error('Error verifying admin:', error);
+          await signOut(auth);
+          setToken(null);
+          setAdmin(null);
+          localStorage.removeItem('admin');
+        }
       } else {
         setToken(null);
         setAdmin(null);
