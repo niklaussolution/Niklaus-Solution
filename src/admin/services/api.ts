@@ -54,6 +54,9 @@ export const api = {
   },
 
   login: async (credentials: any) => {
+    // Define allowed roles for admin panel access
+    const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor', 'creator'];
+    
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -67,11 +70,21 @@ export const api = {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        return { error: 'Admin not found' };
+        // Sign out the user since they don't have admin privileges
+        await signOut(auth);
+        return { error: 'Access denied. You are not authorized to access the admin panel.' };
       }
 
       const adminDoc = querySnapshot.docs[0];
       const adminData = adminDoc.data();
+      
+      // Check if the user has an allowed role
+      if (!adminData.role || !ALLOWED_ADMIN_ROLES.includes(adminData.role)) {
+        // Sign out the user since they don't have the required role
+        await signOut(auth);
+        return { error: 'Access denied. Your account does not have permission to access the admin panel.' };
+      }
+      
       const token = await userCredential.user.getIdToken();
 
       return {

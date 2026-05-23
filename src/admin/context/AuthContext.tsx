@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
+// Define allowed roles for admin panel access
+const ALLOWED_ADMIN_ROLES = ['super_admin', 'editor', 'creator'];
+
 interface Admin {
   id: string;
   username: string;
@@ -28,7 +31,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const savedAdmin = localStorage.getItem('admin');
     if (savedAdmin) {
-      setAdmin(JSON.parse(savedAdmin));
+      const parsedAdmin = JSON.parse(savedAdmin);
+      // Validate that the saved admin has an allowed role
+      if (parsedAdmin.role && ALLOWED_ADMIN_ROLES.includes(parsedAdmin.role)) {
+        setAdmin(parsedAdmin);
+      } else {
+        // Clear invalid admin data
+        localStorage.removeItem('admin');
+      }
     }
 
     // Listen to Firebase auth state
@@ -39,6 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setToken(null);
         setAdmin(null);
+        localStorage.removeItem('admin');
       }
       setIsLoading(false);
     });
@@ -47,6 +58,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = (newToken: string, newAdmin: Admin) => {
+    // Validate role before allowing login
+    if (!newAdmin.role || !ALLOWED_ADMIN_ROLES.includes(newAdmin.role)) {
+      console.error('Invalid role for admin access');
+      return;
+    }
     setToken(newToken);
     setAdmin(newAdmin);
     localStorage.setItem('admin', JSON.stringify(newAdmin));
@@ -69,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       token,
       login,
       logout,
-      isAuthenticated: !!token,
+      isAuthenticated: !!token && !!admin && ALLOWED_ADMIN_ROLES.includes(admin.role),
       isLoading,
     }}>
       {children}
