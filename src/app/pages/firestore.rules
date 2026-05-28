@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    // Checks if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Retrieves the admin document for the current user
+    function getAdminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+
+    // Checks if the current user is a super_admin
+    function isSuperAdmin() {
+      return isSignedIn() && getAdminData().role == 'super_admin';
+    }
+
+    // Checks if the current user is an editor or super_admin
+    function isEditor() {
+      return isSignedIn() && (getAdminData().role == 'super_admin' || getAdminData().role == 'editor');
+    }
+
+    // --- Collection Rules ---
+
+    // Admins: Super admins can manage other admins. Admins can read their own data.
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isSuperAdmin());
+      allow write: if isSuperAdmin(); // Only super_admin can create/update/delete admin users
+    }
+
+    // Students: Students can manage their own profile. Admins can manage all students.
+    match /students/{studentId} {
+      allow read: if isSignedIn() && (request.auth.uid == studentId || isEditor());
+      allow write: if isSignedIn() && (request.auth.uid == studentId || isEditor());
+    }
+
+    // Student Messages (nested under students): Students can send/read their own messages. Admins can read/write all.
+    match /students/{studentId}/messages/{messageId} {
+      allow create: if isSignedIn() && request.auth.uid == studentId;
+      allow read: if isSignedIn() && (request.auth.uid == studentId || isEditor());
+      allow write: if isEditor(); // Admins can manage messages
+    }
+
+    // Workshops & Courses: Publicly readable. Only editors can create/update/delete.
+    match /workshops/{id} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+    match /courses/{id} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Workshop/Course Videos: Only logged-in users can read. Only editors can manage.
+    match /workshop_videos/{id} {
+      allow read: if isSignedIn();
+      allow write: if isEditor();
+    }
+    match /courseVideos/{id} { // Assuming this is similar to workshop_videos
+      allow read: if isSignedIn();
+      allow write: if isEditor();
+    }
+
+    // Seminar Registrations: Anyone can create. Only editors can read/delete.
+    match /seminarRegistrations/{regId} {
+      allow create: if true;
+      allow read, delete: if isEditor();
+    }
+
+    // Login Requests: Students create their own. Admins can read/update/delete.
+    match /loginRequests/{requestId} {
+      allow create: if isSignedIn() && request.auth.uid == requestId; // Student creates their own request
+      allow read: if isSignedIn() && (request.auth.uid == requestId || isEditor()); // Student reads own, admin reads all
+      allow update, delete: if isEditor(); // Admins manage requests
+    }
+
+    // Certificates: Publicly readable for verification. Only editors can create/update/delete.
+    match /certificates/{certId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Contact Submissions: Anyone can create. Only editors can read/manage.
+    match /contactSubmissions/{subId} {
+      allow create: if true;
+      allow read, write, delete: if isEditor();
+    }
+
+    // Masked Links: Publicly readable for redirection. Only super_admins can manage.
+    match /maskedLinks/{linkId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // Shared Files: Public files are readable by anyone. Private files only by assigned students or admins.
+    match /sharedFiles/{fileId} {
+      allow read: if resource.data.isPublic == true || (isSignedIn() && resource.data.assignedStudents.hasAny([request.auth.uid])) || isEditor();
+      allow write: if isSuperAdmin();
+    }
+
+    // Wishlists: Students manage their own. Admins can manage all.
+    match /wishlists/{wishlistId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == wishlistId || isEditor());
+    }
+
+    // Registrations (Orders/Enrollments): Students read their own. Admins manage all.
+    match /registrations/{regId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.studentId || isEditor());
+      allow write: if isEditor();
+    }
+
+    // Quiz Attempts: Students manage their own. Admins manage all.
+    match /quizAttempts/{attemptId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == resource.data.studentId || isEditor());
+    }
+
+    // Questions: Students create/read/update their own. Admins manage all.
+    match /questions/{questionId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.studentId || isEditor());
+      allow update, delete: if isEditor(); // Admins can update/delete any question
+    }
+
+    // Student Progress: Students manage their own. Admins manage all.
+    match /studentProgress/{progressId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.studentId || isEditor());
+      allow write: if isSignedIn() && (request.auth.uid == resource.data.studentId || isEditor());
+    }
+
+    // Generic Content Collections (Pricing, Features, Scholarships, Companies, FAQs, Content, Journeys, Videos, QA, Quiz, Student Projects, Course Enrollments):
+    // Publicly readable. Only editors (or super_admins) can manage.
+    match /{collection}/{id} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Global fallback: Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
