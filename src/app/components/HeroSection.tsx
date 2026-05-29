@@ -78,7 +78,11 @@ export function HeroSection() {
   }
 
   return (
-    <section id="home" className="relative pt-24 md:pt-32 pb-16 md:pb-24 bg-gradient-to-b from-orange-50/30 to-white overflow-hidden">
+    <section 
+      id="home" 
+      className="relative pt-24 md:pt-32 pb-16 md:pb-24 bg-cover bg-center bg-no-repeat overflow-hidden"
+      style={{ backgroundImage: "url('/image.png')" }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
@@ -150,11 +154,11 @@ export function HeroSection() {
             className="relative"
           >
             <div className="relative">
-              <div className="overflow-hidden rounded-3xl">
+              <div className="overflow-hidden rounded-3xl bg-white/10 shadow-2xl backdrop-blur-sm">
                 <ImageWithFallback
-                  src={heroContent.heroImage}
+                  src="/heropic.png"
                   alt="Smart Learning"
-                  className="shadow-2xl w-full hover:scale-105 transition-transform duration-700"
+                  className="w-full h-auto hover:scale-105 transition-transform duration-700"
                 />
               </div>
 
@@ -163,7 +167,7 @@ export function HeroSection() {
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.5 }}
-                className="absolute -top-6 -left-6 bg-white rounded-2xl shadow-xl p-4 md:p-6"
+                className="absolute -top-10 -left-6 bg-white rounded-2xl shadow-xl p-4 md:p-6 z-10"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">

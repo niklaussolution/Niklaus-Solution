@@ -38,12 +38,17 @@ export function PricingSection({ onOpenContactForm }: PricingSectionProps) {
     try {
       const plansRef = collection(db, "pricingPlans");
       const snapshot = await getDocs(plansRef);
-      const plansData: PricingPlan[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as any),
-      }));
+      const plansData: PricingPlan[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          isActive: data.isActive === true || String(data.isActive).toLowerCase() === 'true',
+          isPopular: data.isPopular === true || String(data.isPopular).toLowerCase() === 'true',
+        } as PricingPlan;
+      });
       // Filter only active plans and sort by isPopular first, then by order
-      const activePlans = plansData.filter((plan) => plan.isActive !== false);
+      const activePlans = plansData.filter((plan) => plan.isActive);
       activePlans.sort((a, b) => {
         if (a.isPopular !== b.isPopular) {
           return b.isPopular ? 1 : -1;

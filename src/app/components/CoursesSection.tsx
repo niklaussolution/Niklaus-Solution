@@ -36,6 +36,7 @@ export function CoursesSection({ onOpenContactForm }: CoursesSectionProps) {
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -44,12 +45,18 @@ export function CoursesSection({ onOpenContactForm }: CoursesSectionProps) {
   const fetchCourses = async () => {
     try {
       const coursesRef = collection(db, "courses");
-      const q = query(coursesRef, where("isActive", "==", true));
-      const snapshot = await getDocs(q);
-      const coursesData: Course[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as any),
-      }));
+      // Fetch all courses to show all batches even if the admin toggle is not working correctly
+      const snapshot = await getDocs(coursesRef);
+      const coursesData: Course[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          // Resilience check: ensures data is treated as boolean even if saved as string in admin
+          isActive: data.isActive === true || String(data.isActive).toLowerCase() === 'true',
+          isFeatured: data.isFeatured === true || String(data.isFeatured).toLowerCase() === 'true',
+        } as Course;
+      });
       // Sort by featured first, then by title
       coursesData.sort((a, b) => {
         if (a.isFeatured !== b.isFeatured) {
@@ -163,89 +170,107 @@ export function CoursesSection({ onOpenContactForm }: CoursesSectionProps) {
         </motion.div>
 
         {/* Courses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCourses.map((course, index) => (
-            <motion.div
-              key={course.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white rounded-lg shadow-lg hover:shadow-xl transition overflow-hidden"
+        <div 
+          className="relative overflow-hidden py-8"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          <div className="flex">
+            <div
+              className="flex gap-8"
+              style={{ 
+                width: "max-content",
+                animation: "marquee-courses 30s linear infinite",
+                animationPlayState: isPaused ? "paused" : "running"
+              }}
             >
-              {/* Header with Color */}
-              <div className={`h-32 ${course.color} relative p-6 text-white`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">{course.title}</h3>
-                    <p className="text-sm opacity-90">by {course.instructor}</p>
-                  </div>
-                  {course.isFeatured && (
-                    <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
-                      Featured
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 space-y-4">
-                <p className="text-gray-600 text-sm line-clamp-2">{course.description}</p>
-
-                {/* Tags */}
-                <div className="flex gap-2">
-                  <span
-                    className={`text-xs font-medium px-3 py-1 rounded-full ${
-                      levelColors[course.level] || "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {course.level}
-                  </span>
-                  <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-800">
-                    {course.duration}
-                  </span>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                  <div className="text-center">
-                    <Clock size={18} className="mx-auto text-blue-600 mb-1" />
-                    <p className="text-xs text-gray-600">Self-Paced</p>
-                  </div>
-                  <div className="text-center">
-                    <Users size={18} className="mx-auto text-blue-600 mb-1" />
-                    <p className="text-xs text-gray-600">
-                      {course.enrolled}/{course.capacity} Enrolled
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <Award size={18} className="mx-auto text-blue-600 mb-1" />
-                    <p className="text-xs text-gray-600">Certificate</p>
-                  </div>
-                </div>
-
-                {/* Price */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-gray-600 text-sm mb-1">Course Fee</p>
-                  <p className="text-2xl font-bold text-blue-600">₹{course.price}</p>
-                </div>
-
-                {/* Button */}
-                <button
-                  onClick={() => handleEnroll(course.id)}
-                  disabled={course.enrolled >= course.capacity}
-                  className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition ${
-                    course.enrolled >= course.capacity
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
+              <style>{`
+                @keyframes marquee-courses {
+                  0% { transform: translateX(-50%); }
+                  100% { transform: translateX(0%); }
+                }
+              `}</style>
+              {/* Render courses twice for a seamless infinite loop */}
+              {[...filteredCourses, ...filteredCourses].map((course, index) => (
+                <div
+                  key={`${course.id}-${index}`}
+                  className="w-[320px] md:w-[380px] bg-white rounded-lg shadow-lg hover:shadow-xl transition overflow-hidden flex-shrink-0"
                 >
-                  {course.enrolled >= course.capacity ? "Course Full" : "Enroll Now"}
-                  {course.enrolled < course.capacity && <ChevronRight size={18} />}
-                </button>
-              </div>
-            </motion.div>
-          ))}
+                  {/* Header with Color */}
+                  <div className={`h-32 ${course.color} relative p-6 text-white`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">{course.title}</h3>
+                        <p className="text-sm opacity-90">by {course.instructor}</p>
+                      </div>
+                      {course.isFeatured && (
+                        <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                          Featured
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6 space-y-4">
+                    <p className="text-gray-600 text-sm line-clamp-2">{course.description}</p>
+
+                    {/* Tags */}
+                    <div className="flex gap-2">
+                      <span
+                        className={`text-xs font-medium px-3 py-1 rounded-full ${
+                          levelColors[course.level] || "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {course.level}
+                      </span>
+                      <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-800">
+                        {course.duration}
+                      </span>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                      <div className="text-center">
+                        <Clock size={18} className="mx-auto text-blue-600 mb-1" />
+                        <p className="text-xs text-gray-600">Self-Paced</p>
+                      </div>
+                      <div className="text-center">
+                        <Users size={18} className="mx-auto text-blue-600 mb-1" />
+                        <p className="text-xs text-gray-600">
+                          {course.enrolled}/{course.capacity} Enrolled
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <Award size={18} className="mx-auto text-blue-600 mb-1" />
+                        <p className="text-xs text-gray-600">Certificate</p>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-gray-600 text-sm mb-1">Course Fee</p>
+                      <p className="text-2xl font-bold text-blue-600">₹{course.price}</p>
+                    </div>
+
+                    {/* Button */}
+                    <button
+                      onClick={() => handleEnroll(course.id)}
+                      disabled={course.enrolled >= course.capacity}
+                      className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition ${
+                        course.enrolled >= course.capacity
+                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                    >
+                      {course.enrolled >= course.capacity ? "Course Full" : "Enroll Now"}
+                      {course.enrolled < course.capacity && <ChevronRight size={18} />}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {filteredCourses.length === 0 && (

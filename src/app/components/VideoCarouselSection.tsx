@@ -1,5 +1,5 @@
-import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { motion, useAnimationControls } from "motion/react";
+import { MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
@@ -28,11 +28,12 @@ function extractYoutubeVideoId(url: string): string {
 }
 
 export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSectionProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [sectionHeading, setSectionHeading] = useState("Explore Our Videos");
   const [sectionDescription, setSectionDescription] = useState("Learn more about Niklaus Solutions through our curated video content");
+  const [isPaused, setIsPaused] = useState(false);
+  const controls = useAnimationControls();
 
   useEffect(() => {
     fetchVideos();
@@ -41,12 +42,8 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      const q = query(
-        collection(db, "videos"),
-        where("isActive", "==", true),
-        orderBy("order", "asc")
-      );
-      const querySnapshot = await getDocs(q);
+      // Fetch all videos from the collection to ensure all content is visible
+      const querySnapshot = await getDocs(collection(db, "videos"));
       const data: Video[] = [];
       querySnapshot.forEach((docSnap) => {
         const video = docSnap.data();
@@ -57,16 +54,18 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
           heading: video.heading,
           description: video.description,
           order: video.order,
-          isActive: video.isActive,
+          isActive: video.isActive === true || String(video.isActive).toLowerCase() === 'true',
         } as Video);
       });
-      setVideos(data);
+      
+      const sortedData = data.sort((a, b) => (a.order || 0) - (b.order || 0));
+      setVideos(sortedData);
       
       // Get section heading and description from first video or defaults
-      if (data.length > 0 && data[0].heading) {
-        setSectionHeading(data[0].heading);
-        if (data[0].description) {
-          setSectionDescription(data[0].description);
+      if (sortedData.length > 0 && sortedData[0].heading) {
+        setSectionHeading(sortedData[0].heading);
+        if (sortedData[0].description) {
+          setSectionDescription(sortedData[0].description);
         }
       }
     } catch (err) {
@@ -75,18 +74,6 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
       setLoading(false);
     }
   }
-
-  const nextVideo = () => {
-    if (videos.length > 0) {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % videos.length);
-    }
-  };
-
-  const prevVideo = () => {
-    if (videos.length > 0) {
-      setCurrentIndex((prevIndex) => (prevIndex - 1 + videos.length) % videos.length);
-    }
-  };
 
   if (loading) {
     return (
@@ -112,9 +99,6 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
     );
   }
 
-  const currentVideo = videos[currentIndex];
-  const videoId = extractYoutubeVideoId(currentVideo.youtubeUrl);
-
   return (
     <section id="video-carousel" className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,55 +119,57 @@ export function VideoCarouselSection({ onOpenContactForm }: VideoCarouselSection
         </motion.div>
 
         {/* Video Carousel */}
-        <div className="relative">
+        <div 
+          className="relative overflow-hidden py-4"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
           {/* Video Display */}
-          <motion.div
-            key={currentVideo.id}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-sm mx-auto bg-gray-200 rounded-2xl overflow-hidden shadow-2xl"
-            style={{ aspectRatio: "9 / 16" }}
-          >
-            {videoId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}`}
-                title={currentVideo.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              ></iframe>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                <p className="text-gray-600">Invalid video URL</p>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center mt-8">
-            <button
-              onClick={prevVideo}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
-              aria-label="Previous video"
+          <div className="flex">
+            <div
+              className="flex gap-6 md:gap-8"
+              style={{ 
+                width: "max-content",
+                animation: "marquee-videos 25s linear infinite",
+                animationPlayState: isPaused ? "paused" : "running"
+              }}
             >
-              <ChevronLeft size={24} className="group-hover:scale-110 transition-transform" />
-            </button>
-
-            <div className="text-center flex-1 px-4">
-              <p className="text-gray-600 font-semibold">
-                {currentVideo.title}
-              </p>
+              <style>{`
+                @keyframes marquee-videos {
+                  0% { transform: translateX(-50%); }
+                  100% { transform: translateX(0%); }
+                }
+              `}</style>
+              {/* Render videos twice for seamless looping */}
+              {[...videos, ...videos].map((video, idx) => {
+                const videoId = extractYoutubeVideoId(video.youtubeUrl);
+                return (
+                  <div
+                    key={`${video.id}-${idx}`}
+                    className="w-[280px] md:w-[320px] bg-gray-200 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-shadow flex-shrink-0"
+                    style={{ aspectRatio: "9 / 16" }}
+                  >
+                    {videoId ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`}
+                        title={video.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      ></iframe>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                        <p className="text-gray-600 text-sm p-4 text-center">Video Unavailable</p>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                      <p className="text-white font-semibold text-sm truncate">{video.title}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            <button
-              onClick={nextVideo}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 hover:bg-orange-500 text-gray-700 hover:text-white transition-all shadow-md hover:shadow-lg group"
-              aria-label="Next video"
-            >
-              <ChevronRight size={24} className="group-hover:scale-110 transition-transform" />
-            </button>
           </div>
         </div>
 
