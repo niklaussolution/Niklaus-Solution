@@ -154,13 +154,11 @@ export function HeroSection() {
             className="relative"
           >
             <div className="relative">
-              <div className="overflow-hidden rounded-3xl bg-white/10 shadow-2xl backdrop-blur-sm">
-                <ImageWithFallback
-                  src="/heropic.png"
-                  alt="Smart Learning"
-                  className="w-full h-auto hover:scale-105 transition-transform duration-700"
-                />
-              </div>
+              <ImageWithFallback
+                src="/heropic.png"
+                alt="Smart Learning"
+                className="w-full h-auto scale-110 transition-transform duration-700"
+              />
 
               {/* Floating Card 1 - Top Left */}
               <motion.div
