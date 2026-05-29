@@ -5,6 +5,7 @@ import {
   Trash2,
   Search,
   Filter,
+  ArrowUpDown,
   AlertCircle,
   X,
   Download,
@@ -60,6 +61,10 @@ export const RegistrationsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'Pending' | 'Confirmed' | 'Cancelled'>('all');
   const [error, setError] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Registration | ''; direction: 'asc' | 'desc' }>({
+    key: 'createdAt',
+    direction: 'desc'
+  });
   const [success, setSuccess] = useState('');
   const [stats, setStats] = useState<Stats | null>(null);
   const [selectedRegistrations, setSelectedRegistrations] = useState<string[]>([]);
@@ -381,18 +386,45 @@ export const RegistrationsManagement: React.FC = () => {
     a.click();
   };
 
-  const filteredRegistrations = registrations.filter((reg) => {
-    const matchesSearch =
-      reg.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reg.phone.includes(searchTerm) ||
-      reg.workshopTitle.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleSort = (key: keyof Registration) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
-    const matchesStatus =
-      filterStatus === 'all' || reg.status === filterStatus;
+  const filteredRegistrations = registrations
+    .filter((reg) => {
+      const matchesSearch =
+        reg.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        reg.phone.includes(searchTerm) ||
+        reg.workshopTitle.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus =
+        filterStatus === 'all' || reg.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      
+      let aValue: any = a[sortConfig.key] ?? '';
+      let bValue: any = b[sortConfig.key] ?? '';
+
+      // Case-insensitive string comparison for alphabets
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
 
   const statusColors = {
     Pending: 'bg-yellow-100 text-yellow-800',
@@ -412,17 +444,17 @@ export const RegistrationsManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="p-3 sm:p-6">
+      <div className="p-3 sm:p-6 bg-gradient-to-br from-orange-50 via-white to-orange-100 min-h-screen">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Registrations</h1>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">Registrations</h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage user registrations for workshops</p>
           </div>
           <div className="flex gap-2 flex-col sm:flex-row">
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-xs sm:text-sm w-full sm:w-auto"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 active:scale-95 font-black text-xs sm:text-sm w-full sm:w-auto uppercase tracking-wider"
             >
               <Plus size={16} className="sm:block hidden" />
               <Plus size={14} className="sm:hidden" />
@@ -431,7 +463,7 @@ export const RegistrationsManagement: React.FC = () => {
             </button>
             <button
               onClick={exportToCSV}
-              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-xs sm:text-sm w-full sm:w-auto"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-8 py-2 sm:py-3 bg-white/50 backdrop-blur-md border border-orange-200 text-orange-600 rounded-xl hover:bg-orange-50 transition-all shadow-md font-black text-xs sm:text-sm w-full sm:w-auto uppercase tracking-wider"
             >
               <Download size={16} className="sm:block hidden" />
               <Download size={14} className="sm:hidden" />
@@ -471,47 +503,47 @@ export const RegistrationsManagement: React.FC = () => {
         {/* Stats */}
         {stats && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-              <p className="text-gray-600 text-sm">Total Registrations</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+            <div className="bg-white/70 backdrop-blur-xl border border-white/50 p-6 rounded-2xl shadow-xl">
+              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Total Registrations</p>
+              <p className="text-3xl font-black text-slate-900 mt-1">{stats.total}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-              <p className="text-gray-600 text-sm">Pending</p>
-              <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
+            <div className="bg-white/70 backdrop-blur-xl border border-white/50 p-6 rounded-2xl shadow-xl">
+              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Pending</p>
+              <p className="text-3xl font-black text-amber-600 mt-1">{stats.pending}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-              <p className="text-gray-600 text-sm">Confirmed</p>
-              <p className="text-3xl font-bold text-green-600">{stats.confirmed}</p>
+            <div className="bg-white/70 backdrop-blur-xl border border-white/50 p-6 rounded-2xl shadow-xl">
+              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Confirmed</p>
+              <p className="text-3xl font-black text-emerald-600 mt-1">{stats.confirmed}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-              <p className="text-gray-600 text-sm">Cancelled</p>
-              <p className="text-3xl font-bold text-red-600">{stats.cancelled}</p>
+            <div className="bg-white/70 backdrop-blur-xl border border-white/50 p-6 rounded-2xl shadow-xl">
+              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Cancelled</p>
+              <p className="text-3xl font-black text-rose-600 mt-1">{stats.cancelled}</p>
             </div>
           </div>
         )}
 
         {/* Filters and Search */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div className="mb-6 bg-white/60 backdrop-blur-md border border-white/40 p-4 rounded-2xl shadow-lg">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-3.5 text-slate-400" size={20} />
               <input
                 type="text"
                 placeholder="Search by name, email, phone, or workshop..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold text-sm"
               />
             </div>
 
             {/* Filters */}
             <div className="flex gap-2">
-              <Filter size={20} className="text-gray-600 mt-2" />
+              <Filter size={20} className="text-slate-600 mt-2.5" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-black uppercase tracking-widest text-xs md:text-sm text-slate-600"
               >
                 <option value="all">All Status</option>
                 <option value="Pending">Pending</option>
@@ -523,11 +555,11 @@ export const RegistrationsManagement: React.FC = () => {
         </div>
 
         {/* Registrations Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+        <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 overflow-hidden">
           {filteredRegistrations.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-slate-900/5 border-b border-white/20">
                   <tr>
                     <th className="px-6 py-4 text-left">
                       <input
@@ -541,27 +573,31 @@ export const RegistrationsManagement: React.FC = () => {
                         className="w-4 h-4 rounded"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Name
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Email
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Phone
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Organization
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Workshop
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Date
-                    </th>
+                    {[
+                      { key: 'userName', label: 'Name' },
+                      { key: 'email', label: 'Email' },
+                      { key: 'phone', label: 'Phone' },
+                      { key: 'organization', label: 'Organization' },
+                      { key: 'workshopTitle', label: 'Workshop' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'createdAt', label: 'Date' },
+                    ].map((col) => (
+                      <th 
+                        key={col.key}
+                        className="px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors group"
+                        onClick={() => handleSort(col.key as keyof Registration)}
+                      >
+                        <div className="flex items-center gap-1">
+                          {col.label}
+                          <ArrowUpDown 
+                            size={14} 
+                            className={`transition-opacity ${
+                              sortConfig.key === col.key ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover:opacity-50'
+                            }`} 
+                          />
+                        </div>
+                      </th>
+                    ))}
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                       Actions
                     </th>

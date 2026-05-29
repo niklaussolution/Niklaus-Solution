@@ -196,10 +196,10 @@ export const LoginRequestsManagement: React.FC = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center justify-center h-screen bg-white">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Loading login requests...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4" />
+            <p className="text-orange-900 font-bold uppercase tracking-tighter">Initializing Session Audit...</p>
           </div>
         </div>
       </AdminLayout>
@@ -208,68 +208,68 @@ export const LoginRequestsManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Login Requests</h1>
+      <div className="container mx-auto px-4 py-8 bg-white min-h-screen">
+        <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-8 tracking-tighter">Login Requests</h1>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Pending</p>
+                <p className="text-3xl font-black text-amber-600">{stats.pending}</p>
               </div>
-              <div className="bg-yellow-100 rounded-full p-3">
-                <Clock className="text-yellow-600" size={24} />
+              <div className="bg-amber-100 rounded-2xl p-3">
+                <Clock className="text-amber-600" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Approved</p>
-                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Approved</p>
+                <p className="text-3xl font-black text-emerald-600">{stats.approved}</p>
               </div>
-              <div className="bg-green-100 rounded-full p-3">
-                <CheckCircle className="text-green-600" size={24} />
+              <div className="bg-emerald-100 rounded-2xl p-3">
+                <CheckCircle className="text-emerald-600" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Rejected</p>
-                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Rejected</p>
+                <p className="text-3xl font-black text-rose-600">{stats.rejected}</p>
               </div>
-              <div className="bg-red-100 rounded-full p-3">
-                <XCircle className="text-red-600" size={24} />
+              <div className="bg-rose-100 rounded-2xl p-3">
+                <XCircle className="text-rose-600" size={24} />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-3.5 text-slate-400" size={20} />
               <input
                 type="text"
                 placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-bold"
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter size={20} className="text-gray-500" />
+              <Filter size={20} className="text-slate-500" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-black uppercase tracking-widest text-slate-600"
               >
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -280,7 +280,7 @@ export const LoginRequestsManagement: React.FC = () => {
 
             <button
               onClick={() => fetchLoginRequests(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+              className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black px-8 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-sm uppercase tracking-wider"
             >
               Refresh
             </button>
@@ -290,14 +290,14 @@ export const LoginRequestsManagement: React.FC = () => {
         {/* Login Requests Grid */}
         <div className="grid grid-cols-1 gap-6">
           {filteredRequests.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500">
+            <div className="bg-white/40 backdrop-blur-sm rounded-3xl border border-white/30 p-12 text-center text-slate-500">
               <p className="text-lg">No login requests found matching your filters</p>
             </div>
           ) : (
             filteredRequests.map((request) => (
-              <div key={request.id} className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                {/* Card Header - Student Identity */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div key={request.id} className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 overflow-hidden hover:shadow-orange-500/10 transition-all duration-500 group">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                  {/* Card Header - Student Identity */}
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/30 text-2xl font-bold">
                       {request.studentName.charAt(0)}

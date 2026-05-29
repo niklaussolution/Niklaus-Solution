@@ -103,7 +103,7 @@ export const AdminManagement: React.FC = () => {
               setShowForm(!showForm);
               setFormData({ username: '', email: '', password: '', role: 'editor' });
             }}
-            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-xs sm:text-sm w-full sm:w-auto"
+            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 active:scale-95 font-black text-xs sm:text-sm w-full sm:w-auto uppercase tracking-wider"
           >
             {showForm ? 'Cancel' : <>
               <Plus size={14} className="sm:hidden" />
@@ -218,12 +218,12 @@ export const AdminManagement: React.FC = () => {
                     <td className="px-4 py-2">{admin.username}</td>
                     <td className="px-4 py-2">{admin.email}</td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        admin.role === 'super_admin' ? 'bg-purple-200 text-purple-800' :
-                        admin.role === 'editor' ? 'bg-blue-200 text-blue-800' :
-                        'bg-gray-200 text-gray-800'
+                      <span className={`px-3 py-1 rounded-lg text-xs font-black tracking-widest shadow-sm ${
+                        admin.role === 'super_admin' ? 'bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 text-amber-950 border border-yellow-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' :
+                        admin.role === 'editor' ? 'bg-orange-100 text-orange-600' :
+                        'bg-slate-100 text-slate-500'
                       }`}>
-                        {admin.role.replace('_', ' ')}
+                        {admin.role === 'super_admin' ? '👑 SUPER ADMIN' : admin.role.replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
                     <td className="px-4 py-2">

@@ -12,6 +12,7 @@ interface Video {
   thumbnail?: string;
   description?: string;
   heading?: string;
+  frameTitle?: string;
   order: number;
   isActive: boolean;
 }
@@ -34,6 +35,7 @@ export const VideoManagement: React.FC = () => {
     youtubeUrl: '',
     thumbnail: '',
     heading: '',
+    frameTitle: '',
     description: '',
     order: 0,
     isActive: true,
@@ -92,7 +94,7 @@ export const VideoManagement: React.FC = () => {
           addToast('Video saved successfully!', 'success');
         }
       }
-      setFormData({ title: '', youtubeUrl: '', thumbnail: '', heading: '', description: '', order: 0, isActive: true });
+      setFormData({ title: '', youtubeUrl: '', thumbnail: '', heading: '', frameTitle: '', description: '', order: 0, isActive: true });
       setShowForm(false);
       setEditingId(null);
       fetchVideos();
@@ -108,6 +110,7 @@ export const VideoManagement: React.FC = () => {
       youtubeUrl: item.youtubeUrl,
       thumbnail: item.thumbnail || '',
       heading: item.heading || '',
+      frameTitle: item.frameTitle || '',
       description: item.description || '',
       order: item.order,
       isActive: item.isActive,
@@ -136,7 +139,7 @@ export const VideoManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="p-3 sm:p-6">
+      <div className="p-3 sm:p-6 bg-white min-h-screen">
         {/* Toast Notifications */}
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {toasts.map((toast) => (
@@ -163,14 +166,14 @@ export const VideoManagement: React.FC = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Video Management</h1>
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">Video Management</h1>
           <button
             onClick={() => {
               setShowForm(!showForm);
               setEditingId(null);
-              setFormData({ title: '', youtubeUrl: '', thumbnail: '', heading: '', description: '', order: 0, isActive: true });
+              setFormData({ title: '', youtubeUrl: '', thumbnail: '', heading: '', frameTitle: '', description: '', order: 0, isActive: true });
             }}
-            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-xs sm:text-sm w-full sm:w-auto"
+            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 active:scale-95 font-black text-xs sm:text-sm w-full sm:w-auto uppercase tracking-wider"
           >
             {showForm ? 'Cancel' : <>
               <Plus size={14} className="sm:hidden" />
@@ -182,8 +185,8 @@ export const VideoManagement: React.FC = () => {
         </div>
 
         {showForm && (
-          <div className="bg-white p-6 rounded shadow mb-6">
-            <h2 className="text-2xl font-bold mb-4">{editingId ? 'Edit' : 'Add New'} Video</h2>
+          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl border border-white/50 mb-8">
+            <h2 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">{editingId ? 'Edit' : 'Add New'} Video</h2>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -193,7 +196,7 @@ export const VideoManagement: React.FC = () => {
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="Video title"
                   />
                 </div>
@@ -204,8 +207,19 @@ export const VideoManagement: React.FC = () => {
                     type="text"
                     value={formData.heading}
                     onChange={(e) => setFormData({ ...formData, heading: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="Section heading for videos"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-bold mb-2">Frame Title</label>
+                  <input
+                    type="text"
+                    value={formData.frameTitle}
+                    onChange={(e) => setFormData({ ...formData, frameTitle: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
+                    placeholder="Title shown inside the video frame"
                   />
                 </div>
 
@@ -216,7 +230,7 @@ export const VideoManagement: React.FC = () => {
                     value={formData.youtubeUrl}
                     onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="https://www.youtube.com/watch?v=..."
                   />
                 </div>
@@ -227,7 +241,7 @@ export const VideoManagement: React.FC = () => {
                     type="url"
                     value={formData.thumbnail}
                     onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="Thumbnail image URL"
                   />
                 </div>
@@ -237,7 +251,7 @@ export const VideoManagement: React.FC = () => {
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-medium resize-none"
                     placeholder="Video description"
                     rows={3}
                   />
@@ -249,7 +263,7 @@ export const VideoManagement: React.FC = () => {
                     type="number"
                     value={formData.order}
                     onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                   />
                 </div>
 
@@ -259,7 +273,7 @@ export const VideoManagement: React.FC = () => {
                       type="checkbox"
                       checked={formData.isActive}
                       onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                      className="mr-2"
+                      className="mr-2 w-5 h-5 rounded-md accent-orange-500"
                     />
                     Active
                   </label>
@@ -268,7 +282,7 @@ export const VideoManagement: React.FC = () => {
 
               <button
                 type="submit"
-                className="mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                className="mt-6 w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black rounded-2xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-xl shadow-orange-500/20 active:scale-95 uppercase tracking-widest"
               >
                 {editingId ? 'Update' : 'Create'} Video
               </button>
@@ -281,7 +295,7 @@ export const VideoManagement: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {videos.map((video) => (
-              <div key={video._id} className="bg-white rounded shadow overflow-hidden">
+              <div key={video._id} className="bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/50 overflow-hidden group hover:shadow-orange-500/10 transition-all duration-500">
                 {video.thumbnail && (
                   <img
                     src={video.thumbnail}
@@ -290,24 +304,24 @@ export const VideoManagement: React.FC = () => {
                   />
                 )}
                 <div className="p-4">
-                  <h3 className="font-bold text-gray-800 mb-2">{video.title}</h3>
+                  <h3 className="font-black text-slate-900 mb-2 tracking-tight">{video.title}</h3>
                   <p className="text-sm text-gray-600 mb-4 truncate">{video.youtubeUrl}</p>
                   <div className="flex justify-between items-center">
-                    <span className={`px-2 py-1 rounded text-sm ${
-                      video.isActive ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${
+                      video.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                     }`}>
                       {video.isActive ? 'Active' : 'Inactive'}
                     </span>
                     <div className="space-x-2">
                       <button
                         onClick={() => handleEdit(video)}
-                        className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                        className="px-3 py-1 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition shadow-md active:scale-95 text-xs font-black uppercase"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(video._id)}
-                        className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                        className="px-3 py-1 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition shadow-md active:scale-95 text-xs font-black uppercase"
                       >
                         Delete
                       </button>

@@ -280,11 +280,11 @@ export const CoursesManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-white min-h-screen p-3 sm:p-6 rounded-[3rem]">
         {/* Alerts */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3">
+            <AlertCircle className="text-rose-600 flex-shrink-0 mt-0.5" size={20} />
             <div>
               <h3 className="text-red-900 font-semibold">Error</h3>
               <p className="text-red-700 text-sm">{error}</p>
@@ -293,23 +293,23 @@ export const CoursesManagement: React.FC = () => {
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
-            <p className="text-green-700">{success}</p>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+            <CheckCircle className="text-emerald-600 flex-shrink-0 mt-0.5" size={20} />
+            <p className="text-emerald-700 font-bold">{success}</p>
           </div>
         )}
 
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Courses ({filteredCourses.length})</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">Courses ({filteredCourses.length})</h2>
           <button
             onClick={() => {
               resetForm();
               setShowForm(!showForm);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-sm uppercase tracking-wider font-black flex items-center gap-2"
           >
-            <Plus size={20} />
+            <Plus size={20} className="font-black" />
             Add Course
           </button>
         </div>
@@ -333,7 +333,7 @@ export const CoursesManagement: React.FC = () => {
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="Course title"
                   />
                 </div>
@@ -344,7 +344,7 @@ export const CoursesManagement: React.FC = () => {
                     name="instructor"
                     value={formData.instructor}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="Instructor name"
                   />
                 </div>
@@ -357,7 +357,7 @@ export const CoursesManagement: React.FC = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-medium"
                   placeholder="Course description"
                 />
               </div>
@@ -369,7 +369,7 @@ export const CoursesManagement: React.FC = () => {
                     name="level"
                     value={formData.level}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-black uppercase tracking-widest text-slate-600 text-sm"
                   >
                     <option>Beginner</option>
                     <option>Intermediate</option>
@@ -383,7 +383,7 @@ export const CoursesManagement: React.FC = () => {
                     name="duration"
                     value={formData.duration}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                     placeholder="e.g. 4 weeks"
                   />
                 </div>
@@ -394,7 +394,7 @@ export const CoursesManagement: React.FC = () => {
                     name="price"
                     value={formData.price}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                   />
                 </div>
                 <div>
@@ -404,7 +404,7 @@ export const CoursesManagement: React.FC = () => {
                     name="capacity"
                     value={formData.capacity}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold"
                   />
                 </div>
               </div>
@@ -453,7 +453,7 @@ export const CoursesManagement: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 active:scale-95 transition-all"
               >
                 {editingId ? 'Update Course' : 'Create Course'}
               </button>
@@ -462,23 +462,23 @@ export const CoursesManagement: React.FC = () => {
         )}
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 flex gap-4 flex-wrap">
+        <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-3xl p-6 flex gap-4 flex-wrap shadow-xl">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <Search size={20} className="absolute left-3 top-2.5 text-gray-400" />
+              <Search size={20} className="absolute left-4 top-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search courses..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2"
+                className="w-full bg-white/50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold text-sm"
               />
             </div>
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="border border-gray-300 rounded-lg px-4 py-2"
+            className="bg-white/50 border border-slate-200 rounded-2xl px-6 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-black uppercase tracking-widest text-xs md:text-sm text-slate-600"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -487,7 +487,7 @@ export const CoursesManagement: React.FC = () => {
           <select
             value={filterLevel}
             onChange={(e) => setFilterLevel(e.target.value as any)}
-            className="border border-gray-300 rounded-lg px-4 py-2"
+            className="bg-white/50 border border-slate-200 rounded-2xl px-6 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-black uppercase tracking-widest text-xs md:text-sm text-slate-600"
           >
             <option value="all">All Levels</option>
             <option value="Beginner">Beginner</option>
@@ -497,10 +497,10 @@ export const CoursesManagement: React.FC = () => {
         </div>
 
         {/* Courses Table */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-[2.5rem] overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-slate-900/5 border-b border-white/20">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Title</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Instructor</th>

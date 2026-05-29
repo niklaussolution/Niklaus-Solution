@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
-import { Trash2, Search, Plus, AlertCircle, Download, X, Check, Loader } from 'lucide-react';
+import { Trash2, Search, Plus, AlertCircle, Download, X, Check, Loader, ArrowUpDown } from 'lucide-react';
 import { db } from '../config/firebase';
 import { collection, getDocs, deleteDoc, doc, addDoc, query, where, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { api } from '../services/api';
@@ -42,6 +42,10 @@ export const CourseEnrollmentsManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'Active' | 'Completed' | 'Dropped'>('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Enrollment | ''; direction: 'asc' | 'desc' }>({
+    key: 'enrollmentDate',
+    direction: 'desc'
+  });
   const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -275,14 +279,41 @@ export const CourseEnrollmentsManagement: React.FC = () => {
     }
   };
 
-  const filteredEnrollments = enrollments.filter((enrollment) => {
-    const matchesSearch =
-      enrollment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enrollment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enrollment.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || enrollment.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const handleSort = (key: keyof Enrollment) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const filteredEnrollments = enrollments
+    .filter((enrollment) => {
+      const matchesSearch =
+        enrollment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enrollment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enrollment.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || enrollment.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      
+      let aValue: any = a[sortConfig.key] ?? '';
+      let bValue: any = b[sortConfig.key] ?? '';
+
+      // Case-insensitive string comparison for alphabetical sorting
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
 
   const stats = {
     total: enrollments.length,
@@ -303,48 +334,43 @@ export const CourseEnrollmentsManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gradient-to-br from-orange-50 via-white to-orange-100 min-h-screen p-4 sm:p-8 rounded-[3rem]">
         {/* Alerts */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-            <p className="text-red-700">{error}</p>
+          <div className="bg-rose-50/70 backdrop-blur-md border border-rose-200 rounded-2xl p-4 flex items-start gap-3 shadow-lg">
+            <AlertCircle className="text-rose-600 flex-shrink-0 mt-0.5" size={20} />
+            <p className="text-rose-700 font-bold">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
-            <p className="text-green-700">{success}</p>
+          <div className="bg-emerald-50/70 backdrop-blur-md border border-emerald-200 rounded-2xl p-4 flex items-start gap-3 shadow-lg">
+            <Check size={20} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+            <p className="text-emerald-700 font-bold">{success}</p>
           </div>
         )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-gray-600 text-sm">Total Enrollments</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-gray-600 text-sm">Active</p>
-            <p className="text-3xl font-bold text-blue-600">{stats.active}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-gray-600 text-sm">Completed</p>
-            <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-gray-600 text-sm">Dropped</p>
-            <p className="text-3xl font-bold text-red-600">{stats.dropped}</p>
-          </div>
+          {[
+            { label: 'Total Enrollments', value: stats.total, color: 'text-slate-900' },
+            { label: 'Active', value: stats.active, color: 'text-amber-600' },
+            { label: 'Completed', value: stats.completed, color: 'text-emerald-600' },
+            { label: 'Dropped', value: stats.dropped, color: 'text-rose-600' },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-xl">
+              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">{stat.label}</p>
+              <p className={`text-3xl font-black mt-1 ${stat.color}`}>{stat.value}</p>
+            </div>
+          ))}
         </div>
 
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Enrollments ({filteredEnrollments.length})</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">Enrollments ({filteredEnrollments.length})</h2>
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-sm uppercase tracking-wider font-black flex items-center gap-2"
           >
             <Plus size={20} />
             Add Enrollment
@@ -442,23 +468,23 @@ export const CourseEnrollmentsManagement: React.FC = () => {
         )}
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 flex gap-4 flex-wrap">
+        <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-3xl p-6 flex gap-4 flex-wrap shadow-xl">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <Search size={20} className="absolute left-3 top-2.5 text-gray-400" />
+              <Search size={20} className="absolute left-4 top-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search enrollments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2"
+                className="w-full bg-white/50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold text-sm"
               />
             </div>
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="border border-gray-300 rounded-lg px-4 py-2"
+            className="bg-white/50 border border-slate-200 rounded-2xl px-6 py-3 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-black uppercase tracking-widest text-xs md:text-sm text-slate-600"
           >
             <option value="all">All Status</option>
             <option value="Active">Active</option>
@@ -468,16 +494,34 @@ export const CourseEnrollmentsManagement: React.FC = () => {
         </div>
 
         {/* Enrollments Table */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-[2.5rem] overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-slate-900/5 border-b border-white/20">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Student Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Course</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Enrollment Date</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                  {[
+                    { key: 'studentName', label: 'Student Name' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'courseTitle', label: 'Course' },
+                    { key: 'enrollmentDate', label: 'Enrollment Date' },
+                    { key: 'status', label: 'Status' },
+                  ].map((col) => (
+                    <th 
+                      key={col.key}
+                      className="px-6 py-3 text-left text-sm font-semibold text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort(col.key as keyof Enrollment)}
+                    >
+                      <div className="flex items-center gap-1">
+                        {col.label}
+                        <ArrowUpDown 
+                          size={14} 
+                          className={`transition-opacity ${
+                            sortConfig.key === col.key ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover:opacity-50'
+                          }`} 
+                        />
+                      </div>
+                    </th>
+                  ))}
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
                 </tr>
               </thead>

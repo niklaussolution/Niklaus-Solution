@@ -76,8 +76,8 @@ export const LoginPage: React.FC = () => {
   }, [loginEmail, loginPassword, login, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4 relative overflow-hidden">
+      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-gray-100 relative z-10">
         
         {/* Header */}
         <div className="text-center mb-6">
@@ -102,7 +102,7 @@ export const LoginPage: React.FC = () => {
                 onChange={(e) => setLoginEmail(e.target.value)}
                 required
                 autoFocus
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all text-sm"
                 placeholder="admin@example.com"
               />
             </div>
@@ -114,7 +114,7 @@ export const LoginPage: React.FC = () => {
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all text-sm"
                 placeholder="••••••••"
               />
             </div>
@@ -122,7 +122,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 text-sm"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-3 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 active:scale-95 disabled:opacity-50 text-sm tracking-wide uppercase"
             >
               {loginLoading ? 'Logging in...' : 'Login'}
             </button>

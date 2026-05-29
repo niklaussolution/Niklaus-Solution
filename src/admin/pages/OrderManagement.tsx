@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Search, Download, Filter, AlertCircle } from 'lucide-react';
+import { Search, Download, Filter, AlertCircle, ArrowUpDown } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -24,6 +24,10 @@ export const OrderManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<'all' | 'Completed' | 'Pending' | 'Failed'>('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Order | ''; direction: 'asc' | 'desc' }>({
+    key: 'registrationDate',
+    direction: 'desc'
+  });
   const [totalRevenue, setTotalRevenue] = useState(0);
 
   useEffect(() => {
@@ -50,24 +54,46 @@ export const OrderManagement: React.FC = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.workshopTitle?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPaymentStatus = filterPaymentStatus === 'all' || order.paymentStatus === filterPaymentStatus;
-    
-    let matchesDateRange = true;
-    if (dateRange.start && dateRange.end) {
-      const orderDate = new Date(order.registrationDate);
-      const startDate = new Date(dateRange.start);
-      const endDate = new Date(dateRange.end);
-      matchesDateRange = orderDate >= startDate && orderDate <= endDate;
+  const handleSort = (key: keyof Order) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
+    setSortConfig({ key, direction });
+  };
 
-    return matchesSearch && matchesPaymentStatus && matchesDateRange;
-  });
+  const filteredOrders = orders
+    .filter(order => {
+      const matchesSearch = 
+        order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.workshopTitle?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesPaymentStatus = filterPaymentStatus === 'all' || order.paymentStatus === filterPaymentStatus;
+      
+      let matchesDateRange = true;
+      if (dateRange.start && dateRange.end) {
+        const orderDate = new Date(order.registrationDate);
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        matchesDateRange = orderDate >= startDate && orderDate <= endDate;
+      }
+
+      return matchesSearch && matchesPaymentStatus && matchesDateRange;
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      
+      let aValue: any = a[sortConfig.key] ?? '';
+      let bValue: any = b[sortConfig.key] ?? '';
+
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const handleExport = () => {
     // Create CSV content
@@ -118,47 +144,38 @@ export const OrderManagement: React.FC = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <p className="text-gray-600 text-sm">Total Orders</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{orders.length}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <p className="text-gray-600 text-sm">Total Revenue</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">₹{totalRevenue.toLocaleString()}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <p className="text-gray-600 text-sm">Completed</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">
-                {orders.filter(o => o.paymentStatus === 'Completed').length}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <p className="text-gray-600 text-sm">Pending</p>
-              <p className="text-3xl font-bold text-orange-600 mt-2">
-                {orders.filter(o => o.paymentStatus === 'Pending').length}
-              </p>
-            </div>
+            {[
+              { label: 'Total Orders', value: orders.length, color: 'text-amber-600' },
+              { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString()}`, color: 'text-emerald-600' },
+              { label: 'Completed', value: orders.filter(o => o.paymentStatus === 'Completed').length, color: 'text-emerald-500' },
+              { label: 'Pending', value: orders.filter(o => o.paymentStatus === 'Pending').length, color: 'text-amber-500' },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-xl">
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">{stat.label}</p>
+                <p className={`text-3xl font-black mt-1 ${stat.color}`}>{stat.value}</p>
+              </div>
+            ))}
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-3xl p-6 mb-8 shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Search</label>
                 <input
                   type="text"
                   placeholder="Name, email, or workshop..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Payment Status</label>
                 <select
                   value={filterPaymentStatus}
                   onChange={(e) => setFilterPaymentStatus(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-black uppercase tracking-widest text-slate-600 text-sm"
                 >
                   <option value="all">All</option>
                   <option value="Completed">Completed</option>
@@ -167,21 +184,21 @@ export const OrderManagement: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">From Date</label>
                 <input
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">To Date</label>
                 <input
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all font-bold text-sm"
                 />
               </div>
             </div>
@@ -190,20 +207,38 @@ export const OrderManagement: React.FC = () => {
           {/* Orders Table */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
             </div>
           ) : filteredOrders.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white/70 backdrop-blur-xl border border-white/50 rounded-[2.5rem] overflow-hidden shadow-2xl">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-slate-900/5 border-b border-white/20">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Order ID</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Customer</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Workshop</th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Amount</th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Status</th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Payment</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                    {[
+                      { key: 'id', label: 'Order ID' },
+                      { key: 'userName', label: 'Customer' },
+                      { key: 'workshopTitle', label: 'Workshop' },
+                      { key: 'amount', label: 'Amount', align: 'center' },
+                      { key: 'status', label: 'Status', align: 'center' },
+                      { key: 'paymentStatus', label: 'Payment', align: 'center' },
+                      { key: 'registrationDate', label: 'Date' },
+                    ].map((col) => (
+                      <th 
+                        key={col.key}
+                        className={`px-6 py-3 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors group ${col.align === 'center' ? 'text-center' : 'text-left'}`}
+                        onClick={() => handleSort(col.key as keyof Order)}
+                      >
+                        <div className={`flex items-center gap-1 ${col.align === 'center' ? 'justify-center' : ''}`}>
+                          {col.label}
+                          <ArrowUpDown 
+                            size={14} 
+                            className={`transition-opacity ${
+                              sortConfig.key === col.key ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover:opacity-50'
+                            }`} 
+                          />
+                        </div>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
