@@ -193,7 +193,7 @@ export const HackathonWinnersSection: React.FC<HackathonWinnersSectionProps> = (
                 >
                   <div className="group relative h-full bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
                     {/* Image Container */}
-                    <div className="relative h-64 sm:h-72 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                       {winner.imageUrl ? (
                         <img
                           src={winner.imageUrl}
