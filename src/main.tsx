@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import App from "./app/App";
 import { AuthProvider } from "./admin/context/AuthContext";
 import { ProtectedRoute } from "./admin/components/ProtectedRoute";
@@ -335,6 +336,7 @@ createRoot(document.getElementById("root")!).render(
             }
           />
         </Routes>
+        <Analytics />
       </StudentProvider>
     </AuthProvider>
   </BrowserRouter>,
