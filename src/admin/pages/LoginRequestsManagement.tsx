@@ -16,6 +16,7 @@ import {
   Maximize,
   Compass,
   Cpu,
+  Phone,
 } from 'lucide-react';
 import { db } from '../../config/firebase';
 import { collection, getDocs, updateDoc, doc, query, where, deleteDoc } from 'firebase/firestore';
@@ -25,6 +26,7 @@ interface LoginRequest {
   studentId: string;
   studentName: string;
   studentEmail: string;
+  phone?: string;
   createdAt: any;
   updatedAt?: any;
   approved: boolean;
@@ -90,13 +92,24 @@ export const LoginRequestsManagement: React.FC = () => {
     try {
       if (showLoading) setLoading(true);
       const requestsCollection = collection(db, 'loginRequests');
-      const snapshot = await getDocs(requestsCollection);
+      const studentsCollection = collection(db, 'students');
+      const [snapshot, studentsSnapshot] = await Promise.all([
+        getDocs(requestsCollection),
+        getDocs(studentsCollection),
+      ]);
+
+      const studentPhoneById: Record<string, string> = {};
+      studentsSnapshot.docs.forEach((studentDoc) => {
+        const phone = studentDoc.data().phone;
+        if (phone) studentPhoneById[studentDoc.id] = phone;
+      });
 
       const requestsData: LoginRequest[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         studentId: doc.data().studentId || 'N/A',
         studentName: doc.data().studentName || 'N/A',
         studentEmail: doc.data().studentEmail || 'N/A',
+        phone: doc.data().phone || studentPhoneById[doc.data().studentId] || '',
         createdAt: doc.data().createdAt,
         updatedAt: doc.data().updatedAt,
         approved: doc.data().approved || false,
@@ -307,6 +320,9 @@ export const LoginRequestsManagement: React.FC = () => {
                       <p className="text-blue-100 flex items-center gap-2">
                         <Globe size={14} /> {request.studentEmail}
                       </p>
+                      <p className="text-blue-100 flex items-center gap-2">
+                        <Phone size={14} /> {request.phone || 'Not Provided'}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -337,6 +353,10 @@ export const LoginRequestsManagement: React.FC = () => {
                         Network Details
                       </div>
                       <div className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500">Phone Number</span>
+                          <span className="font-mono font-semibold text-gray-800 bg-gray-50 px-2 py-1 rounded border border-gray-100">{request.phone || 'Not Provided'}</span>
+                        </div>
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-gray-500">IP Address</span>
                           <span className="font-mono font-semibold text-gray-800 bg-gray-50 px-2 py-1 rounded border border-gray-100">{request.ipAddress}</span>

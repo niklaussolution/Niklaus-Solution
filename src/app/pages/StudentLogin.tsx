@@ -103,6 +103,7 @@ export const StudentLogin = () => {
           approved: false,
           rejected: false,
           token: token,
+          phone: studentData.phone || '',
           ipAddress,
           deviceName,
           browser: getBrowser(),
