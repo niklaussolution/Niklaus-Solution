@@ -28,6 +28,11 @@ export const StudentSignup = () => {
     e.preventDefault();
     setError('');
 
+    if (!formData.phone.trim()) {
+      setError('Phone number is required');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -104,6 +109,7 @@ export const StudentSignup = () => {
         approved: false,
         rejected: false,
         token: token,
+        phone: formData.phone,
         ipAddress,
         deviceName: `${navigator.platform} - ${navigator.userAgent.split(')')[0].split('(')[1]}`,
         browser: getBrowser(),
@@ -199,6 +205,8 @@ export const StudentSignup = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   placeholder="Your phone number"
+                  autoComplete="tel"
+                  required
                 />
               </div>
 
