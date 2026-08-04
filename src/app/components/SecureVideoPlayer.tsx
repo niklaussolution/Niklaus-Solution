@@ -249,12 +249,21 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // LAYER 6: DEVTOOLS DETECTION & BLOCKING
     // ==========================================
     const disableDevTools = () => {
+      // The outerHeight/innerHeight gap heuristic only means anything on
+      // desktop, where a docked DevTools panel shrinks the viewport but not
+      // the window. On mobile, browser chrome (address bar, nav buttons)
+      // routinely creates a >200px gap on its own, which falsely triggered
+      // this and permanently locked students out of the video (see below -
+      // this state is intentionally never auto-cleared).
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+      if (isMobile) return () => {};
+
       // Detect if devtools is open
       const checkDevTools = setInterval(() => {
-        const devToolsOpen = 
+        const devToolsOpen =
           window.outerHeight - window.innerHeight > 200 ||
           window.outerWidth - window.innerWidth > 200;
-        
+
         if (devToolsOpen) {
           // Pause video and show warning
           if (videoElementRef.current) {
