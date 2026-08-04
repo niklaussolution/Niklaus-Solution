@@ -31,25 +31,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedAdmin = localStorage.getItem('admin');
-    if (savedAdmin) {
-      try {
-        const parsedAdmin = JSON.parse(savedAdmin);
-        // Validate that the saved admin has an allowed role
-        if (parsedAdmin.role && ALLOWED_ADMIN_ROLES.includes(parsedAdmin.role)) {
-          setAdmin(parsedAdmin);
-        } else {
-          // Clear invalid admin data
-          localStorage.removeItem('admin');
-        }
-      } catch {
-        // Corrupted localStorage value - clear it instead of crashing
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    const start = async () => {
+      // Security: don't restore a previous admin session across a page
+      // refresh/reload - only affects /admin/* routes so student sessions
+      // (which share the same Firebase Auth instance) are left untouched.
+      if (window.location.pathname.startsWith('/admin')) {
+        await signOut(auth).catch(() => {});
         localStorage.removeItem('admin');
       }
-    }
+      if (cancelled) return;
 
-    // Listen to Firebase auth state
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // Verify this user is in the admins collection with a valid role
         try {
@@ -109,9 +104,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem('admin');
       }
       setIsLoading(false);
-    });
+      });
+    };
 
-    return unsubscribe;
+    start();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   const login = (newToken: string, newAdmin: Admin) => {
