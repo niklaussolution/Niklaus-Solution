@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 // Define allowed roles for admin panel access
@@ -53,47 +53,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (user) {
         // Verify this user is in the admins collection with a valid role
         try {
-          const adminsRef = collection(db, 'admins');
-          const q = query(adminsRef, where('email', '==', user.email));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            const adminData = querySnapshot.docs[0].data();
+          // Use getDoc with UID. This is faster and doesn't trigger "Missing Permissions" for students
+          let adminDocData: any = null;
+          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+          if (adminDoc.exists()) {
+            adminDocData = adminDoc.data();
+          } else {
+            // Some admin records were created with an auto-generated document ID
+            // instead of the Firebase UID - fall back to looking them up by the
+            // firebaseUid field so those accounts don't get logged out on refresh.
+            const q = query(collection(db, 'admins'), where('firebaseUid', '==', user.uid));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) adminDocData = snapshot.docs[0].data();
+          }
+
+          if (adminDocData) {
+            const adminData = adminDocData;
             const userRole = adminData.role?.trim();
             
             if (userRole && ALLOWED_ADMIN_ROLES.includes(userRole)) {
               const idToken = await user.getIdToken();
               setToken(idToken);
-              // Update admin data from Firestore
-              setAdmin({
+              const adminInfo = {
                 id: user.uid,
                 username: adminData.username,
                 email: adminData.email,
                 role: userRole,
-              });
-              localStorage.setItem('admin', JSON.stringify({
-                id: user.uid,
-                username: adminData.username,
-                email: adminData.email,
-                role: userRole,
-              }));
+              };
+              setAdmin(adminInfo);
+              localStorage.setItem('admin', JSON.stringify(adminInfo));
             } else {
-              // User doesn't have valid role - sign them out
-              await signOut(auth);
+              // Not an admin role - just clear admin state, DON'T sign out (user might be a student)
               setToken(null);
               setAdmin(null);
               localStorage.removeItem('admin');
             }
           } else {
-            // User not in admins collection - sign them out
-            await signOut(auth);
+            // User not in admins collection - just clear admin state
             setToken(null);
             setAdmin(null);
             localStorage.removeItem('admin');
           }
-        } catch (error) {
-          console.error('Error verifying admin:', error);
-          await signOut(auth);
+        } catch (error: any) {
+          // Ignore permission errors (expected for students)
+          if (error.code !== 'permission-denied') {
+            console.error('AuthContext: Error verifying admin:', error);
+          }
           setToken(null);
           setAdmin(null);
           localStorage.removeItem('admin');
