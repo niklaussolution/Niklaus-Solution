@@ -371,40 +371,6 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     };
 
     // ==========================================
-    // LAYER 10: NETWORK REQUEST MONITORING
-    // ==========================================
-    const monitorNetworkRequests = () => {
-      // Block fetch requests for video URLs
-      const originalFetch = window.fetch;
-      (window.fetch as any) = function (...args: any[]) {
-        const url = args[0]?.toString() || '';
-        
-        // Block downloading video files
-        if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
-          console.warn('Video download attempt blocked:', url);
-          setScreenRecordingDetected(true);
-          return Promise.reject(new Error('Video download blocked'));
-        }
-        
-        return originalFetch.apply(window, args);
-      };
-
-      // Block XMLHttpRequest for video downloads
-      const originalXHROpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function(...args: any[]) {
-        const url = args[1]?.toString() || '';
-        
-        if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
-          console.warn('XHR video download blocked:', url);
-          setScreenRecordingDetected(true);
-          throw new Error('Video download blocked');
-        }
-        
-        return originalXHROpen.apply(this, args);
-      };
-    };
-
-    // ==========================================
     // LAYER 11: VIDEO ELEMENT PROTECTION
     // ==========================================
     const protectVideoElement = () => {
@@ -519,7 +485,6 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       blockScreenRecordingAPIs();
       blockMediaAPIs();
       applyCanvasProtection();
-      monitorNetworkRequests();
       protectVideoElement();
       protectDocument();
       protectWindow();
