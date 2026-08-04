@@ -367,13 +367,13 @@ export const RegistrationsManagement: React.FC = () => {
     ];
 
     const rows = filteredRegistrations.map((reg) => [
-      reg.userName,
-      reg.email,
-      reg.phone,
-      reg.organization,
-      reg.workshopTitle,
-      reg.status,
-      new Date(reg.createdAt).toLocaleDateString(),
+      reg.userName || '',
+      reg.email || '',
+      reg.phone || '',
+      reg.organization || '',
+      reg.workshopTitle || '',
+      reg.status || '',
+      formatRegDate(reg.createdAt),
     ]);
 
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
@@ -396,11 +396,12 @@ export const RegistrationsManagement: React.FC = () => {
 
   const filteredRegistrations = registrations
     .filter((reg) => {
+      const term = searchTerm.toLowerCase();
       const matchesSearch =
-        reg.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        reg.phone.includes(searchTerm) ||
-        reg.workshopTitle.toLowerCase().includes(searchTerm.toLowerCase());
+        (reg.userName || '').toLowerCase().includes(term) ||
+        (reg.email || '').toLowerCase().includes(term) ||
+        (reg.phone || '').includes(searchTerm) ||
+        (reg.workshopTitle || '').toLowerCase().includes(term);
 
       const matchesStatus =
         filterStatus === 'all' || reg.status === filterStatus;
@@ -426,10 +427,17 @@ export const RegistrationsManagement: React.FC = () => {
       return 0;
     });
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     Pending: 'bg-yellow-100 text-yellow-800',
     Confirmed: 'bg-green-100 text-green-800',
     Cancelled: 'bg-red-100 text-red-800',
+  };
+
+  const formatRegDate = (value: unknown) => {
+    if (!value) return '-';
+    const seconds = (value as { seconds?: number })?.seconds;
+    const date = typeof seconds === 'number' ? new Date(seconds * 1000) : new Date(value as string | number);
+    return isNaN(date.getTime()) ? '-' : date.toLocaleDateString();
   };
 
   if (loading) {
@@ -637,14 +645,14 @@ export const RegistrationsManagement: React.FC = () => {
                       <td className="px-6 py-4 text-sm">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            statusColors[reg.status]
+                            statusColors[reg.status] || 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {reg.status}
+                          {reg.status || 'Unknown'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
-                        {new Date(reg.createdAt).toLocaleDateString()}
+                        {formatRegDate(reg.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex gap-2">

@@ -34,6 +34,8 @@ import { ContactSubmissionsManagement } from "./admin/pages/ContactSubmissionsMa
 import { FileManagement } from "./admin/pages/FileManagement";
 import { LinkManagement } from "./admin/pages/LinkManagement";
 import { SeminarRegistrationsManagement } from "./admin/pages/SeminarRegistrationsManagement";
+import { GoogleAdsRegistrationsManagement } from "./admin/pages/GoogleAdsRegistrationsManagement";
+import { WorkshopReviewsManagement } from "./admin/pages/WorkshopReviewsManagement";
 import { LinkRedirect } from "./app/pages/LinkRedirect";
 import { ShippingPolicy } from "./app/pages/ShippingPolicy";
 import { TermsAndConditions } from "./app/pages/TermsAndConditions";
@@ -48,6 +50,11 @@ import { WaitingForApproval } from "./app/pages/WaitingForApproval";
 import { SeminarPage } from "./app/pages/SeminarPage";
 import { StudentProvider } from "./app/context/StudentContext";
 import { StudentProtectedRoute } from "./app/components/StudentProtectedRoute";
+import { ErrorBoundary } from "./app/components/ErrorBoundary";
+import WorkshopLandingPage from "./app/workshop/pages/LandingPage";
+import WorkshopThankYouPage from "./app/workshop/pages/ThankYouPage";
+import WorkshopNotReadyPage from "./app/workshop/pages/NotReadyPage";
+import WorkshopReviewPage from "./app/workshop/pages/ReviewPage";
 /* import MyCertificates from "./app/pages/MyCertificates"; */
 import "./styles/index.css";
 
@@ -63,6 +70,7 @@ function ScrollToTop() {
 }
 
 createRoot(document.getElementById("root")!).render(
+  <ErrorBoundary>
   <BrowserRouter
     future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
   >
@@ -101,6 +109,11 @@ createRoot(document.getElementById("root")!).render(
             path="/my-certificates"
             element={<Navigate to="/#certificates" replace />}
           />
+          {/* Cyber Security Awareness Workshop registration funnel - native routes (no iframe) */}
+          <Route path="/workshop" element={<WorkshopLandingPage />} />
+          <Route path="/workshop/thankyoupage" element={<WorkshopThankYouPage />} />
+          <Route path="/workshop/notreadypage" element={<WorkshopNotReadyPage />} />
+          <Route path="/workshop/review" element={<WorkshopReviewPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route
             path="/terms-and-conditions"
@@ -334,8 +347,28 @@ createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/google-ads-registrations"
+            element={
+              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <GoogleAdsRegistrationsManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/workshop-reviews"
+            element={
+              <ProtectedRoute requiredRole={["super_admin", "editor"]}>
+              <WorkshopReviewsManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch-all: unknown paths redirect home instead of rendering blank */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </StudentProvider>
     </AuthProvider>
-  </BrowserRouter>,
+  </BrowserRouter>
+  </ErrorBoundary>,
 );

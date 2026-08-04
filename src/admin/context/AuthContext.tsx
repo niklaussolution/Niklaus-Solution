@@ -33,12 +33,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const savedAdmin = localStorage.getItem('admin');
     if (savedAdmin) {
-      const parsedAdmin = JSON.parse(savedAdmin);
-      // Validate that the saved admin has an allowed role
-      if (parsedAdmin.role && ALLOWED_ADMIN_ROLES.includes(parsedAdmin.role)) {
-        setAdmin(parsedAdmin);
-      } else {
-        // Clear invalid admin data
+      try {
+        const parsedAdmin = JSON.parse(savedAdmin);
+        // Validate that the saved admin has an allowed role
+        if (parsedAdmin.role && ALLOWED_ADMIN_ROLES.includes(parsedAdmin.role)) {
+          setAdmin(parsedAdmin);
+        } else {
+          // Clear invalid admin data
+          localStorage.removeItem('admin');
+        }
+      } catch {
+        // Corrupted localStorage value - clear it instead of crashing
         localStorage.removeItem('admin');
       }
     }
