@@ -29,6 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     "/admin/courses-videos",
     "/admin/registrations",
     "/admin/seminar-registrations",
+    "/admin/google-ads-registrations",
+    "/admin/workshop-reviews",
     "/admin/course-enrollments",
     "/admin/certificates",
     "/admin/hackathon-winners",
@@ -50,6 +52,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       path: "/admin/seminar-registrations",
       label: "Seminar Registrations",
       icon: "🎤",
+    },
+    {
+      path: "/admin/google-ads-registrations",
+      label: "Google Ads Registrations",
+      icon: "📈",
+    },
+    {
+      path: "/admin/workshop-reviews",
+      label: "Workshop Reviews",
+      icon: "📝",
     },
     {
       path: "/admin/course-enrollments",
