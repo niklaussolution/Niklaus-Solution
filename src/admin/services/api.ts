@@ -7,6 +7,7 @@ import {
 import {
   collection,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   doc,
@@ -28,8 +29,9 @@ export const api = {
         credentials.password
       );
 
-      // Store admin info in Firestore
-      await addDoc(collection(db, 'admins'), {
+      // Store admin info in Firestore, keyed by the Firebase UID so session
+      // restore on refresh (which looks up admins/{uid} directly) works.
+      await setDoc(doc(db, 'admins', userCredential.user.uid), {
         username: credentials.username,
         email: credentials.email,
         firebaseUid: userCredential.user.uid,

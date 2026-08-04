@@ -27,7 +27,10 @@ service cloud.firestore {
 
     // Admins: Super admins can manage other admins. Admins can read their own data.
     match /admins/{adminId} {
-      allow read: if isSignedIn() && (request.auth.uid == adminId || isSuperAdmin());
+      // Some admin records were created with an auto-generated document ID instead
+      // of the Firebase UID, so also allow a signed-in user to read a record where
+      // the firebaseUid field matches their own UID (used as a session-restore fallback).
+      allow read: if isSignedIn() && (request.auth.uid == adminId || resource.data.firebaseUid == request.auth.uid || isSuperAdmin());
       allow write: if isSuperAdmin(); // Only super_admin can create/update/delete admin users
     }
 
