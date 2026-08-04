@@ -265,6 +265,15 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // LAYER 6: DEVTOOLS DETECTION & BLOCKING
     // ==========================================
     const disableDevTools = () => {
+      // The outerHeight/innerHeight gap heuristic only means anything on
+      // desktop, where a docked DevTools panel shrinks the viewport but not
+      // the window. On mobile, browser chrome (address bar, nav buttons)
+      // routinely creates a >200px gap on its own, which falsely triggered
+      // this and permanently locked students out of the video (this state
+      // is intentionally never auto-cleared below).
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+      if (isMobile) return () => {};
+
       // Detect if devtools is open
       const checkDevTools = setInterval(() => {
         const devToolsOpen =
@@ -389,48 +398,6 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     };
 
     // ==========================================
-    // LAYER 10: NETWORK REQUEST MONITORING
-    // ==========================================
-    const monitorNetworkRequests = () => {
-      // Block fetch requests for video URLs
-      const originalFetch = window.fetch;
-      (window.fetch as any) = function (...args: any[]) {
-        const url = args[0]?.toString() || "";
-
-        // Block downloading video files
-        if (
-          url.includes(".mp4") ||
-          url.includes(".m3u8") ||
-          url.includes(".webm")
-        ) {
-          console.warn("Video download attempt blocked:", url);
-          setScreenRecordingDetected(true);
-          return Promise.reject(new Error("Video download blocked"));
-        }
-
-        return originalFetch.apply(window, args);
-      };
-
-      // Block XMLHttpRequest for video downloads
-      const originalXHROpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function (...args: any[]) {
-        const url = args[1]?.toString() || "";
-
-        if (
-          url.includes(".mp4") ||
-          url.includes(".m3u8") ||
-          url.includes(".webm")
-        ) {
-          console.warn("XHR video download blocked:", url);
-          setScreenRecordingDetected(true);
-          throw new Error("Video download blocked");
-        }
-
-        return originalXHROpen.apply(this, args);
-      };
-    };
-
-    // ==========================================
     // LAYER 11: VIDEO ELEMENT PROTECTION
     // ==========================================
     const protectVideoElement = () => {
@@ -551,7 +518,6 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       blockScreenRecordingAPIs();
       blockMediaAPIs();
       applyCanvasProtection();
-      monitorNetworkRequests();
       protectVideoElement();
       protectDocument();
       protectWindow();
