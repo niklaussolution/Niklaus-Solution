@@ -1507,6 +1507,7 @@ export const StudentDashboard = () => {
                     <div className="flex-1 bg-black flex items-center justify-center p-0 md:p-4">
                       <div className="w-full max-w-5xl">
                         <SecureVideoPlayer
+                          key={selectedCourseVideo.video.id}
                           videoUrl={selectedCourseVideo.video.videoUrl}
                           videoTitle={selectedCourseVideo.video.title}
                           courseName={selectedCourseVideo.course}
