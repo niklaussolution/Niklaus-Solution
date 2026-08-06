@@ -5,6 +5,7 @@ interface StudentContextType {
   studentName: string | null;
   token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   logout: () => void;
   setStudentInfo: (id: string, name: string, token: string) => void;
 }
@@ -15,6 +16,7 @@ export const StudentProvider = ({ children }: { children: ReactNode }) => {
   const [studentId, setStudentId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check for stored credentials on mount
@@ -28,6 +30,7 @@ export const StudentProvider = ({ children }: { children: ReactNode }) => {
       setStudentName(storedName);
       setToken(storedToken);
     }
+    setIsLoading(false);
   }, []);
 
   const logout = () => {
@@ -56,6 +59,7 @@ export const StudentProvider = ({ children }: { children: ReactNode }) => {
     studentName,
     token,
     isAuthenticated: !!token,
+    isLoading,
     logout,
     setStudentInfo,
   };
