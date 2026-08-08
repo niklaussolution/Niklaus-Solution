@@ -24,6 +24,7 @@ import {
   Save,
   Upload,
   Loader,
+  Play,
 } from 'lucide-react';
 import {
   ref,
@@ -84,6 +85,7 @@ export const CourseVideosManagement: React.FC = () => {
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<CourseVideo | null>(null);
 
   const addToast = (message: string, type: 'success' | 'error') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -550,6 +552,14 @@ export const CourseVideosManagement: React.FC = () => {
 
                                 <div className="flex gap-2">
                                   <button
+                                    onClick={() => setPlayingVideo(video)}
+                                    disabled={!video.videoUrl}
+                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title={video.videoUrl ? 'Play' : 'No video file'}
+                                  >
+                                    <Play size={18} />
+                                  </button>
+                                  <button
                                     onClick={() =>
                                       handleEditVideo(course, video)
                                     }
@@ -798,6 +808,38 @@ export const CourseVideosManagement: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Video Preview Modal */}
+        {playingVideo && (
+          <div
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            onClick={() => setPlayingVideo(null)}
+          >
+            <div
+              className="bg-black rounded-lg overflow-hidden w-full max-w-3xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+                <h3 className="text-white font-semibold truncate pr-4">
+                  {playingVideo.title}
+                </h3>
+                <button
+                  onClick={() => setPlayingVideo(null)}
+                  className="text-gray-300 hover:text-white transition flex-shrink-0"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+              <video
+                key={playingVideo.id}
+                src={playingVideo.videoUrl}
+                controls
+                autoPlay
+                className="w-full max-h-[75vh]"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
