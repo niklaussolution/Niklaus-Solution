@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "../config/firebase";
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -15,10 +17,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const location = useLocation();
   const { admin } = useAuth();
+  const [newContactCount, setNewContactCount] = useState(0);
+  const previousCountRef = useRef<number | null>(null);
 
   const userRole = admin?.role?.trim();
   const isSuperAdmin = userRole === "super_admin";
   const isEditor = userRole === "editor";
+
+  // Live unread count + browser notification for new contact submissions (super admin only)
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const q = query(collection(db, "contactSubmissions"), where("status", "==", "new"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const count = snapshot.size;
+      setNewContactCount(count);
+
+      if (
+        previousCountRef.current !== null &&
+        count > previousCountRef.current &&
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
+        const added = snapshot.docChanges().filter((c) => c.type === "added");
+        const latest = added[added.length - 1]?.doc.data() as any;
+        new Notification("New Contact Submission", {
+          body: latest ? `${latest.fullName} - ${latest.subject}` : "A new message was received",
+          icon: "/icons/favicon.png",
+        });
+      }
+      previousCountRef.current = count;
+    });
+
+    return unsubscribe;
+  }, [isSuperAdmin]);
 
   // Editor can only access these tabs
   const editorAllowedPaths = [
@@ -38,6 +74,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const menuItems = [
     { path: "/admin/login-requests", label: "Login Requests", icon: "🔓" },
+    {
+      path: "/admin/contact-submissions",
+      label: "Contact Submissions",
+      icon: "📩",
+      superAdminOnly: true,
+      badge: newContactCount,
+    },
     { path: "/admin/workshops", label: "Workshops", icon: "🎓" },
     { path: "/admin/courses", label: "Courses", icon: "📚" },
     { path: "/admin/course-videos", label: "Workshop Videos", icon: "📹" },
@@ -83,12 +126,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { path: "/admin/journeys", label: "Learner Journeys", icon: "🚀", superAdminOnly: true },
     { path: "/admin/videos", label: "Video Management", icon: "🎥", superAdminOnly: true },
     { path: "/admin/qa", label: "Support Chat", icon: "💬", superAdminOnly: true },
-    {
-      path: "/admin/contact-submissions",
-      label: "Contact Submissions",
-      icon: "📩",
-      superAdminOnly: true,
-    },
     { path: "/admin/settings", label: "Settings", icon: "⚙️", superAdminOnly: true },
     {
       path: "/admin/admins",
@@ -128,12 +165,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Link
                 to={item.path}
                 onClick={handleMenuItemClick}
-                className={`flex items-center space-x-3 p-3 rounded transition ${
+                className={`flex items-center justify-between p-3 rounded transition ${
                   isActive ? "bg-blue-600" : "hover:bg-gray-700"
                 }`}
               >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="flex items-center space-x-3">
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </span>
+                {!!item.badge && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             </li>
           );

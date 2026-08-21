@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail, Phone, MessageSquare, Trash2, Check, Clock } from "lucide-react";
+import { Mail, Phone, MessageSquare, Trash2, Check, Clock, Download } from "lucide-react";
 import { db } from "../../admin/config/firebase";
 import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, addDoc } from "firebase/firestore";
 import { AdminLayout } from "../components/AdminLayout";
@@ -123,6 +123,36 @@ export function ContactSubmissionsManagement() {
     }
   };
 
+  const escapeCsvField = (value: string) => {
+    const str = String(value ?? "");
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+
+  const handleExportExcel = () => {
+    const headers = ["Name", "Email", "Mobile No", "Subject", "Message", "Status", "Submitted"];
+    const rows = filteredSubmissions.map((s) => [
+      s.fullName,
+      s.email,
+      s.phone,
+      s.subject,
+      s.message,
+      s.status,
+      formatDate(s.submittedAt),
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map(escapeCsvField).join(","))
+      .join("\r\n");
+
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contact-submissions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "N/A";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -155,6 +185,13 @@ export function ContactSubmissionsManagement() {
             <p className="text-xs sm:text-sm text-gray-600 mt-2">Manage and respond to contact form submissions</p>
           </div>
           <div className="flex gap-2 sm:gap-4 items-center w-full sm:w-auto">
+            <button
+              onClick={handleExportExcel}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs sm:text-sm font-semibold transition"
+            >
+              <Download size={16} />
+              Export Excel
+            </button>
             <button
               onClick={addTestSubmission}
               className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-xs sm:text-sm font-semibold transition"
