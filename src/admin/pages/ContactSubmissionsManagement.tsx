@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Mail, Phone, MessageSquare, Trash2, Check, Clock, Download } from "lucide-react";
 import { db } from "../../admin/config/firebase";
-import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, addDoc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, addDoc, writeBatch } from "firebase/firestore";
 import { AdminLayout } from "../components/AdminLayout";
 
 interface ContactSubmission {
@@ -21,6 +21,7 @@ export function ContactSubmissionsManagement() {
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [filterStatus, setFilterStatus] = useState<"all" | "new" | "read" | "resolved">("all");
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -93,8 +94,66 @@ export function ContactSubmissionsManagement() {
     }
   };
 
-  const filteredSubmissions = filterStatus === "all" 
-    ? submissions 
+  const BATCH_LIMIT = 450;
+
+  const handleMarkAllAsRead = async () => {
+    const newOnes = submissions.filter((s) => s.status === "new");
+    if (newOnes.length === 0) return;
+    if (!confirm(`Mark all ${newOnes.length} new submission(s) as read?`)) return;
+
+    setMarkingAllRead(true);
+    try {
+      for (let i = 0; i < newOnes.length; i += BATCH_LIMIT) {
+        const batch = writeBatch(db);
+        newOnes.slice(i, i + BATCH_LIMIT).forEach((s) => {
+          batch.update(doc(db, "contactSubmissions", s.id), { status: "read" });
+        });
+        await batch.commit();
+      }
+      setSubmissions(
+        submissions.map((s) => (s.status === "new" ? { ...s, status: "read" } : s))
+      );
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+      alert("Error marking all submissions as read");
+    } finally {
+      setMarkingAllRead(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (submissions.length === 0) return;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete ALL ${submissions.length} contact submissions? This cannot be undone.`
+      )
+    )
+      return;
+    // Second confirmation since this is destructive and irreversible
+    if (!confirm("This will delete every submission shown here. Click OK to confirm you really want to proceed."))
+      return;
+
+    setMarkingAllRead(true);
+    try {
+      for (let i = 0; i < submissions.length; i += BATCH_LIMIT) {
+        const batch = writeBatch(db);
+        submissions.slice(i, i + BATCH_LIMIT).forEach((s) => {
+          batch.delete(doc(db, "contactSubmissions", s.id));
+        });
+        await batch.commit();
+      }
+      setSubmissions([]);
+      setShowDetails(false);
+    } catch (error) {
+      console.error("Error deleting all submissions:", error);
+      alert("Error deleting all submissions");
+    } finally {
+      setMarkingAllRead(false);
+    }
+  };
+
+  const filteredSubmissions = filterStatus === "all"
+    ? submissions
     : submissions.filter((s) => s.status === filterStatus);
 
   const getStatusColor = (status: string) => {
@@ -184,13 +243,29 @@ export function ContactSubmissionsManagement() {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Contact Submissions</h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-2">Manage and respond to contact form submissions</p>
           </div>
-          <div className="flex gap-2 sm:gap-4 items-center w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2 sm:gap-4 items-center w-full sm:w-auto">
             <button
               onClick={handleExportExcel}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs sm:text-sm font-semibold transition"
             >
               <Download size={16} />
               Export Excel
+            </button>
+            <button
+              onClick={handleMarkAllAsRead}
+              disabled={markingAllRead || submissions.filter((s) => s.status === "new").length === 0}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-xs sm:text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Check size={16} />
+              Mark All Read
+            </button>
+            <button
+              onClick={handleDeleteAll}
+              disabled={markingAllRead || submissions.length === 0}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs sm:text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={16} />
+              Delete All
             </button>
             <button
               onClick={addTestSubmission}
