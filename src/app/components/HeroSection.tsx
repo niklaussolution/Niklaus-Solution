@@ -1,6 +1,5 @@
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
-import { Download, PlayCircle, Users, Award, MessageSquareText } from "lucide-react";
+import { Download, PlayCircle, Users, Award } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useEffect, useState } from "react";
 import { db } from "../../admin/config/firebase";
@@ -130,13 +129,6 @@ export function HeroSection() {
               >
                 Get in Touch
               </button>
-              <Link
-                to="/feedback"
-                className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl border-2 border-gray-300 hover:bg-gray-200 transition-all shadow-md hover:shadow-lg font-semibold"
-              >
-                <MessageSquareText size={20} />
-                Feedback
-              </Link>
             </div>
 
             <div className="flex items-center gap-8 text-gray-600">
