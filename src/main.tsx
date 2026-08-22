@@ -42,6 +42,7 @@ import { TermsAndConditions } from "./app/pages/TermsAndConditions";
 import { CancellationsAndRefunds } from "./app/pages/CancellationsAndRefunds";
 import { PrivacyPolicy } from "./app/pages/PrivacyPolicy";
 import { Contact } from "./app/pages/Contact";
+import { Feedback } from "./app/pages/Feedback";
 import { StudentLogin } from "./app/pages/StudentLogin";
 import { StudentSignup } from "./app/pages/StudentSignup";
 import { StudentDashboard } from "./app/pages/StudentDashboard";
@@ -80,6 +81,7 @@ createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/feedback" element={<Feedback />} />
           <Route path="/seminar" element={<SeminarPage />} />
           {/* Student Routes */}
           <Route path="/student/login" element={<StudentLogin />} />

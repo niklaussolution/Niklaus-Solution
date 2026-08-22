@@ -92,6 +92,12 @@ service cloud.firestore {
       allow read, write, delete: if isEditor();
     }
 
+    // Program Feedback: Anyone can submit. Only editors can read/manage.
+    match /programFeedback/{feedbackId} {
+      allow create: if true;
+      allow read, write, delete: if isEditor();
+    }
+
     // Masked Links: Publicly readable for redirection. Only super_admins can manage.
     match /maskedLinks/{linkId} {
       allow read: if true;
