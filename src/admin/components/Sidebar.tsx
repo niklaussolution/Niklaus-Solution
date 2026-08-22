@@ -18,7 +18,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { admin } = useAuth();
   const [newContactCount, setNewContactCount] = useState(0);
+  const [newFeedbackCount, setNewFeedbackCount] = useState(0);
   const previousCountRef = useRef<number | null>(null);
+  const previousFeedbackCountRef = useRef<number | null>(null);
 
   const userRole = admin?.role?.trim();
   const isSuperAdmin = userRole === "super_admin";
@@ -56,6 +58,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return unsubscribe;
   }, [isSuperAdmin]);
 
+  // Live unread count + browser notification for new feedback submissions (super admin only)
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    const q = query(collection(db, "programFeedback"), where("status", "==", "new"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const count = snapshot.size;
+      setNewFeedbackCount(count);
+
+      if (
+        previousFeedbackCountRef.current !== null &&
+        count > previousFeedbackCountRef.current &&
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
+        const added = snapshot.docChanges().filter((c) => c.type === "added");
+        const latest = added[added.length - 1]?.doc.data() as any;
+        new Notification("New Feedback Submission", {
+          body: latest ? `${latest.studentName} - ${latest.programTopic}` : "New feedback was received",
+          icon: "/icons/favicon.png",
+        });
+      }
+      previousFeedbackCountRef.current = count;
+    });
+
+    return unsubscribe;
+  }, [isSuperAdmin]);
+
   // Editor can only access these tabs
   const editorAllowedPaths = [
     "/admin/login-requests",
@@ -80,6 +110,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: "📩",
       superAdminOnly: true,
       badge: newContactCount,
+    },
+    {
+      path: "/admin/feedback",
+      label: "Feedback",
+      icon: "💬",
+      superAdminOnly: true,
+      badge: newFeedbackCount,
     },
     { path: "/admin/workshops", label: "Workshops", icon: "🎓" },
     { path: "/admin/courses", label: "Courses", icon: "📚" },

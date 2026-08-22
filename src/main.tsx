@@ -31,6 +31,7 @@ import { AdminManagement } from "./admin/pages/AdminManagement";
 import { Settings } from "./admin/pages/Settings";
 import { JourneyManagement } from "./admin/pages/JourneyManagement";
 import { ContactSubmissionsManagement } from "./admin/pages/ContactSubmissionsManagement";
+import { FeedbackManagement } from "./admin/pages/FeedbackManagement";
 import { FileManagement } from "./admin/pages/FileManagement";
 import { LinkManagement } from "./admin/pages/LinkManagement";
 import { SeminarRegistrationsManagement } from "./admin/pages/SeminarRegistrationsManagement";
@@ -338,6 +339,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute requiredRole={["super_admin"]}>
                 <ContactSubmissionsManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/feedback"
+            element={
+              <ProtectedRoute requiredRole={["super_admin"]}>
+                <FeedbackManagement />
               </ProtectedRoute>
             }
           />
