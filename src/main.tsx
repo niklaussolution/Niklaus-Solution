@@ -32,6 +32,7 @@ import { Settings } from "./admin/pages/Settings";
 import { JourneyManagement } from "./admin/pages/JourneyManagement";
 import { ContactSubmissionsManagement } from "./admin/pages/ContactSubmissionsManagement";
 import { FeedbackManagement } from "./admin/pages/FeedbackManagement";
+import { EnquiryManagement } from "./admin/pages/EnquiryManagement";
 import { FileManagement } from "./admin/pages/FileManagement";
 import { LinkManagement } from "./admin/pages/LinkManagement";
 import { SeminarRegistrationsManagement } from "./admin/pages/SeminarRegistrationsManagement";
@@ -44,6 +45,7 @@ import { CancellationsAndRefunds } from "./app/pages/CancellationsAndRefunds";
 import { PrivacyPolicy } from "./app/pages/PrivacyPolicy";
 import { Contact } from "./app/pages/Contact";
 import { Feedback } from "./app/pages/Feedback";
+import { Enquiry } from "./app/pages/Enquiry";
 import { StudentLogin } from "./app/pages/StudentLogin";
 import { StudentSignup } from "./app/pages/StudentSignup";
 import { StudentDashboard } from "./app/pages/StudentDashboard";
@@ -83,6 +85,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/" element={<App />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/enquiry" element={<Enquiry />} />
           <Route path="/seminar" element={<SeminarPage />} />
           {/* Student Routes */}
           <Route path="/student/login" element={<StudentLogin />} />
@@ -347,6 +350,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute requiredRole={["super_admin"]}>
                 <FeedbackManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/enquiries"
+            element={
+              <ProtectedRoute requiredRole={["super_admin"]}>
+                <EnquiryManagement />
               </ProtectedRoute>
             }
           />

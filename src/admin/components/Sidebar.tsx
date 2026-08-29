@@ -19,8 +19,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { admin } = useAuth();
   const [newContactCount, setNewContactCount] = useState(0);
   const [newFeedbackCount, setNewFeedbackCount] = useState(0);
+  const [newEnquiryCount, setNewEnquiryCount] = useState(0);
   const previousCountRef = useRef<number | null>(null);
   const previousFeedbackCountRef = useRef<number | null>(null);
+  const previousEnquiryCountRef = useRef<number | null>(null);
 
   const userRole = admin?.role?.trim();
   const isSuperAdmin = userRole === "super_admin";
@@ -86,6 +88,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return unsubscribe;
   }, [isSuperAdmin]);
 
+  // Live unread count + browser notification for new enquiries (super admin only)
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    const q = query(collection(db, "courseEnquiries"), where("status", "==", "new"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const count = snapshot.size;
+      setNewEnquiryCount(count);
+
+      if (
+        previousEnquiryCountRef.current !== null &&
+        count > previousEnquiryCountRef.current &&
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
+        const added = snapshot.docChanges().filter((c) => c.type === "added");
+        const latest = added[added.length - 1]?.doc.data() as any;
+        new Notification("New Enquiry", {
+          body: latest ? `${latest.name} - ${latest.course}` : "A new enquiry was received",
+          icon: "/icons/favicon.png",
+        });
+      }
+      previousEnquiryCountRef.current = count;
+    });
+
+    return unsubscribe;
+  }, [isSuperAdmin]);
+
   // Editor can only access these tabs
   const editorAllowedPaths = [
     "/admin/login-requests",
@@ -117,6 +147,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: "💬",
       superAdminOnly: true,
       badge: newFeedbackCount,
+    },
+    {
+      path: "/admin/enquiries",
+      label: "Enquiries",
+      icon: "📨",
+      superAdminOnly: true,
+      badge: newEnquiryCount,
     },
     { path: "/admin/workshops", label: "Workshops", icon: "🎓" },
     { path: "/admin/courses", label: "Courses", icon: "📚" },
