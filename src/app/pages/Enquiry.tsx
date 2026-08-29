@@ -3,9 +3,9 @@ import { Footer } from "../components/Footer";
 import { Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import { db } from "../../admin/config/firebase";
-import { collection, addDoc, getDocs, Timestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 
-interface Workshop {
+interface CourseOption {
   id: string;
   title: string;
 }
@@ -55,7 +55,7 @@ export function Enquiry() {
     };
   }, []);
 
-  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [courseOptions, setCourseOptions] = useState<CourseOption[]>([]);
   const [formData, setFormData] = useState<EnquiryFormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,19 +63,20 @@ export function Enquiry() {
   const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
-    const fetchWorkshops = async () => {
+    const fetchCourseOptions = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "workshops"));
-        const data: Workshop[] = snapshot.docs.map((doc) => ({
+        const q = query(collection(db, "enquiryCourses"), orderBy("order", "asc"));
+        const snapshot = await getDocs(q);
+        const data: CourseOption[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           title: (doc.data() as any).title,
         }));
-        setWorkshops(data);
+        setCourseOptions(data);
       } catch (error) {
-        // Non-fatal - the dropdown will just show the "Other" fallback option
+        // Non-fatal - the field just won't show any autocomplete suggestions
       }
     };
-    fetchWorkshops();
+    fetchCourseOptions();
   }, []);
 
   const handleChange = (
@@ -130,7 +131,7 @@ export function Enquiry() {
       }
     }
 
-    if (!formData.course.trim()) newErrors.course = "Please select a course";
+    if (!formData.course.trim()) newErrors.course = "Please enter the course you're interested in";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -297,22 +298,23 @@ export function Enquiry() {
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     Which Course? *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     name="course"
+                    list="course-suggestions"
                     value={formData.course}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white ${
+                    placeholder="Type the course you're interested in"
+                    autoComplete="off"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
                       errors.course ? "border-red-500" : "border-gray-300"
                     }`}
-                  >
-                    <option value="">Select a course</option>
-                    {workshops.map((w) => (
-                      <option key={w.id} value={w.title}>
-                        {w.title}
-                      </option>
+                  />
+                  <datalist id="course-suggestions">
+                    {courseOptions.map((c) => (
+                      <option key={c.id} value={c.title} />
                     ))}
-                    <option value="Other">Other</option>
-                  </select>
+                  </datalist>
                   {errors.course && (
                     <p className="text-red-600 text-sm mt-1">{errors.course}</p>
                   )}

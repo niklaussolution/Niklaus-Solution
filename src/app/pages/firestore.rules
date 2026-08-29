@@ -104,6 +104,13 @@ service cloud.firestore {
       allow read, write, delete: if isEditor();
     }
 
+    // Enquiry Course Suggestions: Publicly readable (used as autocomplete on
+    // the /enquiry form). Only editors can add/remove suggestions.
+    match /enquiryCourses/{courseId} {
+      allow read: if true;
+      allow write, delete: if isEditor();
+    }
+
     // Masked Links: Publicly readable for redirection. Only super_admins can manage.
     match /maskedLinks/{linkId} {
       allow read: if true;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Send, Trash2, Check, Clock, Download, Phone, Mail, MessageCircle } from "lucide-react";
+import { Send, Trash2, Check, Clock, Download, Phone, Mail, MessageCircle, Settings, Plus, X } from "lucide-react";
 import { db } from "../../admin/config/firebase";
-import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, writeBatch } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, updateDoc, addDoc, query, orderBy, writeBatch } from "firebase/firestore";
 import { AdminLayout } from "../components/AdminLayout";
 
 interface Enquiry {
@@ -16,6 +16,12 @@ interface Enquiry {
   status: "new" | "read" | "resolved";
 }
 
+interface CourseOption {
+  id: string;
+  title: string;
+  order: number;
+}
+
 export function EnquiryManagement() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,10 +29,59 @@ export function EnquiryManagement() {
   const [showDetails, setShowDetails] = useState(false);
   const [filterStatus, setFilterStatus] = useState<"all" | "new" | "read" | "resolved">("all");
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [courseOptions, setCourseOptions] = useState<CourseOption[]>([]);
+  const [showManageCourses, setShowManageCourses] = useState(false);
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [addingCourse, setAddingCourse] = useState(false);
 
   useEffect(() => {
     fetchEnquiries();
+    fetchCourseOptions();
   }, []);
+
+  const fetchCourseOptions = async () => {
+    try {
+      const q = query(collection(db, "enquiryCourses"), orderBy("order", "asc"));
+      const snapshot = await getDocs(q);
+      setCourseOptions(
+        snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as any) } as CourseOption))
+      );
+    } catch (error) {
+      console.error("Error fetching course options:", error);
+    }
+  };
+
+  const handleAddCourseOption = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const title = newCourseTitle.trim();
+    if (!title) return;
+
+    setAddingCourse(true);
+    try {
+      await addDoc(collection(db, "enquiryCourses"), {
+        title,
+        order: courseOptions.length,
+      });
+      setNewCourseTitle("");
+      await fetchCourseOptions();
+    } catch (error) {
+      console.error("Error adding course option:", error);
+      alert("Error adding course");
+    } finally {
+      setAddingCourse(false);
+    }
+  };
+
+  const handleDeleteCourseOption = async (id: string) => {
+    if (!confirm("Remove this course from the enquiry form's suggestions?")) return;
+    try {
+      await deleteDoc(doc(db, "enquiryCourses", id));
+      setCourseOptions(courseOptions.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error("Error deleting course option:", error);
+      alert("Error deleting course");
+    }
+  };
 
   const fetchEnquiries = async () => {
     try {
@@ -249,6 +304,13 @@ export function EnquiryManagement() {
             >
               <Trash2 size={16} />
               Delete All
+            </button>
+            <button
+              onClick={() => setShowManageCourses(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm font-semibold transition"
+            >
+              <Settings size={16} />
+              Manage Courses
             </button>
             <div className="flex-1 sm:flex-none bg-orange-100 px-3 sm:px-4 py-2 sm:py-3 rounded-lg">
               <p className="text-xs text-gray-600">Total</p>
@@ -536,6 +598,71 @@ export function EnquiryManagement() {
                     <span>WhatsApp</span>
                   </a>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manage Courses Modal */}
+        {showManageCourses && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold">Manage Courses</h2>
+                  <p className="text-blue-100 text-xs mt-1">
+                    Shown as suggestions on the /enquiry form
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowManageCourses(false)}
+                  className="text-white hover:bg-blue-800 p-2 rounded"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-6 space-y-4">
+                <form onSubmit={handleAddCourseOption} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCourseTitle}
+                    onChange={(e) => setNewCourseTitle(e.target.value)}
+                    placeholder="e.g. Ethical Hacking Workshop"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={addingCourse || !newCourseTitle.trim()}
+                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={16} />
+                    Add
+                  </button>
+                </form>
+
+                {courseOptions.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No courses added yet. Add one above.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {courseOptions.map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      >
+                        <span className="text-sm text-gray-900">{c.title}</span>
+                        <button
+                          onClick={() => handleDeleteCourseOption(c.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
