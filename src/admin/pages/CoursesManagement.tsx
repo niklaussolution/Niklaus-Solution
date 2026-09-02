@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { useAuth } from '../context/AuthContext';
 import { Trash2, Edit, Plus, Search, Filter, X, AlertCircle } from 'lucide-react';
@@ -48,6 +48,16 @@ export const CoursesManagement: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<'all' | 'Beginner' | 'Intermediate' | 'Advanced'>('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const alertRef = useRef<HTMLDivElement>(null);
+
+  // The alert banner renders at the top of a long form - without this, a
+  // validation error while scrolled down near the submit button is
+  // invisible and looks like the button did nothing.
+  useEffect(() => {
+    if (error || success) {
+      alertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [error, success]);
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -104,11 +114,19 @@ export const CoursesManagement: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as any;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-      [name]: name === 'price' || name === 'capacity' ? parseFloat(value) : value,
-    }));
+    if (type === 'checkbox') {
+      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+      return;
+    }
+    if (name === 'price' || name === 'capacity') {
+      // parseFloat('') is NaN, which would slip past validateForm's `< 0` /
+      // `<= 0` checks (NaN comparisons are always false) and get written to
+      // Firestore silently. Fall back to 0 instead of ever storing NaN.
+      const parsed = parseFloat(value);
+      setFormData((prev) => ({ ...prev, [name]: isNaN(parsed) ? 0 : parsed }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAddOutcome = () => {
@@ -168,12 +186,12 @@ export const CoursesManagement: React.FC = () => {
       setError('Instructor name is required');
       return false;
     }
-    if (formData.price < 0) {
-      setError('Price cannot be negative');
+    if (isNaN(formData.price) || formData.price < 0) {
+      setError('Please enter a valid price (0 or more)');
       return false;
     }
-    if (formData.capacity <= 0) {
-      setError('Capacity must be greater than 0');
+    if (isNaN(formData.capacity) || formData.capacity <= 0) {
+      setError('Please enter a valid capacity (greater than 0)');
       return false;
     }
     return true;
@@ -282,6 +300,7 @@ export const CoursesManagement: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6 bg-white min-h-screen p-3 sm:p-6 rounded-[3rem]">
         {/* Alerts */}
+        <div ref={alertRef} />
         {error && (
           <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3">
             <AlertCircle className="text-rose-600 flex-shrink-0 mt-0.5" size={20} />
