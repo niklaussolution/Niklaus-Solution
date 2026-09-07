@@ -41,6 +41,7 @@ interface CourseVideo {
   duration?: string;
   order: number;
   isActive: boolean;
+  vpsPath?: string;
 }
 
 interface StudentCourse {
@@ -62,6 +63,8 @@ export const StudentCoursesPage: React.FC = () => {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<CourseVideo | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | null>(null);
+  const [videoLinkError, setVideoLinkError] = useState("");
 
   useEffect(() => {
     const studentId = localStorage.getItem('studentId');
@@ -155,6 +158,45 @@ export const StudentCoursesPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // If a video is hosted on our own VPS (vpsPath set), fetch a short-lived
+  // signed streaming URL from the VPS backend instead of using videoUrl directly.
+  useEffect(() => {
+    setResolvedVideoUrl(null);
+    setVideoLinkError("");
+
+    if (!selectedVideo) return;
+
+    if (!selectedVideo.vpsPath) {
+      setResolvedVideoUrl(selectedVideo.videoUrl);
+      return;
+    }
+
+    const fetchSignedUrl = async () => {
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) {
+          setVideoLinkError("Please log in again to watch this video.");
+          return;
+        }
+        const res = await fetch(
+          `https://videos.theniklaus.com/api/video-link?path=${encodeURIComponent(selectedVideo.vpsPath!)}`,
+          { headers: { Authorization: `Bearer ${idToken}` } }
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          setVideoLinkError(data.error || "Unable to load this video.");
+          return;
+        }
+        setResolvedVideoUrl(data.url);
+      } catch (err) {
+        console.error("Error fetching signed video URL:", err);
+        setVideoLinkError("Unable to load this video.");
+      }
+    };
+
+    fetchSignedUrl();
+  }, [selectedVideo]);
 
   const toggleCourseExpanded = (courseId: string) => {
     setExpandedCourseId(expandedCourseId === courseId ? null : courseId);
@@ -435,12 +477,22 @@ export const StudentCoursesPage: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full overflow-hidden">
             <div className="relative bg-black aspect-video">
-              <video
-                src={selectedVideo.videoUrl}
-                controls
-                autoPlay
-                className="w-full h-full"
-              />
+              {videoLinkError ? (
+                <div className="w-full h-full flex items-center justify-center text-white text-sm px-6 text-center">
+                  {videoLinkError}
+                </div>
+              ) : resolvedVideoUrl ? (
+                <video
+                  src={resolvedVideoUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white text-sm">
+                  Loading video...
+                </div>
+              )}
             </div>
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
