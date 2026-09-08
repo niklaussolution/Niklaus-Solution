@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Radio } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,34 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onMenuClick, sidebarOpen = false }) => {
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
+  const [liveViewers, setLiveViewers] = useState<number | null>(null);
+
+  useEffect(() => {
+    const adminKey = import.meta.env.VITE_VPS_ADMIN_KEY;
+    if (!adminKey) return;
+
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await fetch('https://videos.theniklaus.com/admin/active-viewers', {
+          headers: { 'X-Admin-Key': adminKey },
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setLiveViewers(data.count);
+        }
+      } catch {
+        // ignore transient network errors, keep showing the last known count
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -50,12 +79,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick, sidebarOpen = false
         </div>
       </div>
 
-      <button
-        onClick={handleLogout}
-        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
-      >
-        Logout
-      </button>
+      <div className="flex items-center gap-3">
+        {liveViewers !== null && (
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 rounded-lg"
+            title="Students currently watching a video"
+          >
+            <Radio size={14} className={liveViewers > 0 ? 'text-green-400 animate-pulse' : 'text-gray-500'} />
+            <span className="text-sm text-gray-200">{liveViewers} watching now</span>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+        >
+          Logout
+        </button>
+      </div>
     </nav>
   );
 };
