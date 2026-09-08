@@ -27,10 +27,46 @@ import {
 } from 'lucide-react';
 import {
   ref,
-  uploadBytesResumable,
-  getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
+
+// Course videos are now hosted on our own VPS instead of Firebase Storage.
+const VPS_UPLOAD_URL = 'https://videos.theniklaus.com/admin/upload-video';
+const VPS_DELETE_URL = 'https://videos.theniklaus.com/admin/video';
+const VPS_ADMIN_KEY = import.meta.env.VITE_VPS_ADMIN_KEY || '';
+
+function uploadToVPS(file: File, courseId: string, onProgress: (pct: number) => void): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', VPS_UPLOAD_URL);
+    xhr.setRequestHeader('X-Admin-Key', VPS_ADMIN_KEY);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status === 200 && data.vpsPath) resolve(data.vpsPath);
+        else reject(new Error(data.error || 'Upload failed'));
+      } catch {
+        reject(new Error('Upload failed'));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Upload failed - network error'));
+    const formData = new FormData();
+    formData.append('courseId', courseId);
+    formData.append('file', file);
+    xhr.send(formData);
+  });
+}
+
+async function deleteFromVPS(vpsPath: string): Promise<void> {
+  await fetch(VPS_DELETE_URL, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': VPS_ADMIN_KEY },
+    body: JSON.stringify({ vpsPath }),
+  });
+}
 
 interface Course {
   id: string;
@@ -51,6 +87,7 @@ interface CourseVideo {
   createdAt?: Date;
   updatedAt?: Date;
   fileName?: string;
+  vpsPath?: string;
 }
 
 interface Toast {
@@ -205,8 +242,6 @@ export const CoursesVideosManagement: React.FC = () => {
 
     setIsUploading(true);
     try {
-      let videoUrl = '';
-
       if (editingVideoId && !videoFormData.videoFile) {
         // Editing without uploading new file
         const videoRef = doc(db, 'courseVideos', editingVideoId);
@@ -220,25 +255,8 @@ export const CoursesVideosManagement: React.FC = () => {
         });
         addToast('Video updated successfully', 'success');
       } else if (videoFormData.videoFile) {
-        // Upload file
-        const fileName = `${selectedCourse.id}/${Date.now()}_${videoFormData.videoFile.name}`;
-        const fileRef = ref(storage, `courseVideos/${fileName}`);
-        const uploadTask = uploadBytesResumable(fileRef, videoFormData.videoFile);
-
-        await new Promise((resolve, reject) => {
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setUploadProgress(Math.round(progress));
-            },
-            reject,
-            async () => {
-              videoUrl = await getDownloadURL(fileRef);
-              resolve(null);
-            }
-          );
-        });
+        // Upload file directly to the VPS (course videos no longer go to Firebase Storage)
+        const vpsPath = await uploadToVPS(videoFormData.videoFile, selectedCourse.id, setUploadProgress);
 
         if (editingVideoId) {
           // Update existing video
@@ -246,8 +264,10 @@ export const CoursesVideosManagement: React.FC = () => {
           const oldVideo = Array.from(coursesWithVideos.values())
             .flat()
             .find((v) => v.id === editingVideoId);
-          
-          if (oldVideo?.fileName) {
+
+          if (oldVideo?.vpsPath) {
+            deleteFromVPS(oldVideo.vpsPath).catch((err) => console.warn('Error deleting old VPS file:', err));
+          } else if (oldVideo?.fileName) {
             try {
               await deleteObject(ref(storage, `courseVideos/${oldVideo.fileName}`));
             } catch (deleteErr) {
@@ -257,12 +277,12 @@ export const CoursesVideosManagement: React.FC = () => {
 
           await updateDoc(oldVideoRef, {
             title: videoFormData.title,
-            videoUrl: videoUrl,
+            videoUrl: '',
+            vpsPath,
             description: videoFormData.description,
             duration: videoFormData.duration,
             order: videoFormData.order,
             isActive: videoFormData.isActive,
-            fileName: fileName,
             updatedAt: new Date(),
           });
           addToast('Video updated successfully', 'success');
@@ -271,12 +291,12 @@ export const CoursesVideosManagement: React.FC = () => {
           await addDoc(collection(db, 'courseVideos'), {
             courseId: selectedCourse.id,
             title: videoFormData.title,
-            videoUrl: videoUrl,
+            videoUrl: '',
+            vpsPath,
             description: videoFormData.description,
             duration: videoFormData.duration,
             order: videoFormData.order,
             isActive: videoFormData.isActive,
-            fileName: fileName,
             createdAt: new Date(),
             updatedAt: new Date(),
           });
@@ -303,7 +323,13 @@ export const CoursesVideosManagement: React.FC = () => {
         .flat()
         .find((v) => v.id === videoId);
 
-      if (video?.fileName) {
+      if (video?.vpsPath) {
+        try {
+          await deleteFromVPS(video.vpsPath);
+        } catch (deleteErr) {
+          console.warn('Error deleting VPS file:', deleteErr);
+        }
+      } else if (video?.fileName) {
         try {
           await deleteObject(ref(storage, `courseVideos/${video.fileName}`));
         } catch (deleteErr) {
