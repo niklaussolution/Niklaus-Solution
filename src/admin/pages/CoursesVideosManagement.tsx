@@ -118,6 +118,27 @@ export const CoursesVideosManagement: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<CourseVideo | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const openPreview = async (video: CourseVideo) => {
+    setPlayingVideo(video);
+    setPreviewUrl(null);
+    if (video.vpsPath) {
+      try {
+        const res = await fetch(
+          `https://videos.theniklaus.com/admin/preview-link?path=${encodeURIComponent(video.vpsPath)}`,
+          { headers: { 'X-Admin-Key': VPS_ADMIN_KEY } }
+        );
+        const data = await res.json();
+        if (res.ok) setPreviewUrl(data.url);
+        else addToast(data.error || 'Unable to load preview', 'error');
+      } catch {
+        addToast('Unable to load preview', 'error');
+      }
+    } else {
+      setPreviewUrl(video.videoUrl);
+    }
+  };
 
   const addToast = (message: string, type: 'success' | 'error') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -583,10 +604,10 @@ export const CoursesVideosManagement: React.FC = () => {
                           </div>
                           <div className="flex gap-2 ml-4">
                             <button
-                              onClick={() => setPlayingVideo(video)}
-                              disabled={!video.videoUrl}
+                              onClick={() => openPreview(video)}
+                              disabled={!video.videoUrl && !video.vpsPath}
                               className="text-green-600 hover:text-green-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                              title={video.videoUrl ? 'Play' : 'No video file'}
+                              title={video.videoUrl || video.vpsPath ? 'Play' : 'No video file'}
                             >
                               <Play size={18} />
                             </button>
@@ -634,13 +655,19 @@ export const CoursesVideosManagement: React.FC = () => {
                   <X size={22} />
                 </button>
               </div>
-              <video
-                key={playingVideo.id}
-                src={playingVideo.videoUrl}
-                controls
-                autoPlay
-                className="w-full max-h-[75vh]"
-              />
+              {previewUrl ? (
+                <video
+                  key={playingVideo.id}
+                  src={previewUrl}
+                  controls
+                  autoPlay
+                  className="w-full max-h-[75vh]"
+                />
+              ) : (
+                <div className="w-full h-64 flex items-center justify-center text-white text-sm">
+                  Loading video...
+                </div>
+              )}
             </div>
           </div>
         )}
