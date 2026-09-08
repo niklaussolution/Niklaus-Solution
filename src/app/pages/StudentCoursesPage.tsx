@@ -20,7 +20,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 
 interface Course {
   id: string;
@@ -174,7 +174,19 @@ export const StudentCoursesPage: React.FC = () => {
 
     const fetchSignedUrl = async () => {
       try {
-        const idToken = await auth.currentUser?.getIdToken();
+        // Right after a page refresh, Firebase Auth may still be restoring
+        // the session (auth.currentUser is briefly null), so wait for the
+        // auth state to settle instead of failing immediately.
+        const user =
+          auth.currentUser ??
+          (await new Promise<typeof auth.currentUser>((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (u) => {
+              unsubscribe();
+              resolve(u);
+            });
+          }));
+
+        const idToken = await user?.getIdToken();
         if (!idToken) {
           setVideoLinkError("Please log in again to watch this video.");
           return;
