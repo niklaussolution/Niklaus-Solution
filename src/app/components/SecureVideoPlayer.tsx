@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { AlertCircle, Lock, ShieldCheck, Play, Info, CheckCircle2, X } from 'lucide-react';
+import { AlertCircle, Lock, ShieldCheck, Play, Info, CheckCircle2, X, PictureInPicture2, Gauge } from 'lucide-react';
 
 interface SecureVideoPlayerProps {
   videoUrl: string;
@@ -8,7 +8,11 @@ interface SecureVideoPlayerProps {
   userEmail?: string;
   lessonNumber?: number;
   totalLessons?: number;
+  videoId?: string;
+  onEnded?: () => void;
 }
+
+const PLAYBACK_SPEEDS = [1, 1.25, 1.5, 2, 0.75];
 
 export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   videoUrl,
@@ -17,6 +21,8 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   userEmail = 'student@niklaussolutions.com',
   lessonNumber = 1,
   totalLessons = 1,
+  videoId,
+  onEnded,
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
@@ -27,7 +33,29 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [securityStatus, setSecurityStatus] = useState('active');
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const sessionIdRef = useRef(Math.random().toString(36).substring(2, 15));
+
+  const cyclePlaybackSpeed = () => {
+    const currentIndex = PLAYBACK_SPEEDS.indexOf(playbackSpeed);
+    const next = PLAYBACK_SPEEDS[(currentIndex + 1) % PLAYBACK_SPEEDS.length];
+    setPlaybackSpeed(next);
+    if (videoElementRef.current) videoElementRef.current.playbackRate = next;
+  };
+
+  const togglePictureInPicture = async () => {
+    const video = videoElementRef.current;
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await video.requestPictureInPicture();
+      }
+    } catch (err) {
+      console.warn('Picture-in-Picture not available:', err);
+    }
+  };
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -418,10 +446,47 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       });
 
       // Monitor play/pause
+      const progressKey = videoId ? `video-progress-${videoId}` : null;
+      let lastSavedAt = 0;
+
       video.onplay = () => setIsPlaying(true);
       video.onpause = () => setIsPlaying(false);
-      video.ontimeupdate = () => setCurrentTime(video.currentTime);
-      video.onloadedmetadata = () => setDuration(video.duration);
+      video.ontimeupdate = () => {
+        setCurrentTime(video.currentTime);
+        // Resume support: persist progress every ~5s, not on every tick
+        if (progressKey && Date.now() - lastSavedAt > 5000) {
+          lastSavedAt = Date.now();
+          try {
+            localStorage.setItem(progressKey, String(video.currentTime));
+          } catch {
+            // ignore storage errors (private browsing, quota, etc.)
+          }
+        }
+      };
+      video.onloadedmetadata = () => {
+        setDuration(video.duration);
+        if (progressKey) {
+          try {
+            const saved = parseFloat(localStorage.getItem(progressKey) || '0');
+            // Don't resume into the last few seconds - just start over instead
+            if (saved > 5 && saved < video.duration - 5) {
+              video.currentTime = saved;
+            }
+          } catch {
+            // ignore storage errors
+          }
+        }
+      };
+      video.addEventListener('ended', () => {
+        if (progressKey) {
+          try {
+            localStorage.removeItem(progressKey);
+          } catch {
+            // ignore storage errors
+          }
+        }
+        onEnded?.();
+      });
 
       // Log video playback for audit trail
       video.addEventListener('play', () => {
@@ -611,6 +676,21 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             </div>
             <p className="text-[10px] text-gray-500 font-mono tracking-tighter">{userEmail}</p>
           </div>
+          <button
+            onClick={cyclePlaybackSpeed}
+            title="Playback speed"
+            className="flex items-center gap-1 bg-[#0f172a] hover:bg-blue-600/30 transition-colors px-2.5 py-2 rounded-lg border border-blue-500/30 text-white"
+          >
+            <Gauge size={16} />
+            <span className="text-xs font-bold">{playbackSpeed}x</span>
+          </button>
+          <button
+            onClick={togglePictureInPicture}
+            title="Picture-in-Picture"
+            className="bg-[#0f172a] hover:bg-blue-600/30 transition-colors p-2 rounded-lg border border-blue-500/30 text-white"
+          >
+            <PictureInPicture2 size={16} />
+          </button>
           <div className="bg-blue-600 hover:bg-blue-700 transition-colors p-2 rounded-lg border border-blue-500/50 shadow-lg shadow-blue-900/20 cursor-help">
             <Lock size={16} className="text-white" />
           </div>

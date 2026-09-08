@@ -233,6 +233,17 @@ export const StudentCoursesPage: React.FC = () => {
     navigate("/student/dashboard");
   };
 
+  const playNextVideo = () => {
+    if (!selectedCourse || !selectedVideo) return;
+    const sorted = [...selectedCourse.videos].sort((a, b) => a.order - b.order);
+    const currentIndex = sorted.findIndex((v) => v.id === selectedVideo.id);
+    const next = sorted[currentIndex + 1];
+    if (next) {
+      setSelectedVideoId(next.id);
+      setSelectedVideo(next);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100 items-center justify-center">
@@ -505,12 +516,15 @@ export const StudentCoursesPage: React.FC = () => {
               </div>
             ) : resolvedVideoUrl ? (
               <SecureVideoPlayer
+                key={selectedVideo.id}
                 videoUrl={resolvedVideoUrl}
+                videoId={selectedVideo.id}
                 videoTitle={selectedVideo.title}
                 courseName={selectedCourse?.course?.title || ""}
                 userEmail={studentEmail}
                 lessonNumber={selectedVideo.order}
                 totalLessons={selectedCourse?.videos.length || 1}
+                onEnded={playNextVideo}
               />
             ) : (
               <div className="bg-black rounded-2xl aspect-video flex flex-col items-center justify-center gap-3 text-white">
