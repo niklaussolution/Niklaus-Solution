@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { db, auth } from "../../admin/config/firebase";
 import {
@@ -21,6 +22,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
+import { SecureVideoPlayer } from "../components/SecureVideoPlayer";
 
 interface Course {
   id: string;
@@ -62,7 +64,9 @@ export const StudentCoursesPage: React.FC = () => {
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<CourseVideo | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<StudentCourse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [studentEmail, setStudentEmail] = useState("");
   const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | null>(null);
   const [videoLinkError, setVideoLinkError] = useState("");
 
@@ -87,8 +91,9 @@ export const StudentCoursesPage: React.FC = () => {
         return;
       }
       
-      const studentEmail = studentSnap.data().email;
-      fetchCourses(studentEmail);
+      const email = studentSnap.data().email;
+      setStudentEmail(email);
+      fetchCourses(email);
     } catch (err) {
       console.error("Error fetching student:", err);
       navigate("/student/login");
@@ -277,6 +282,12 @@ export const StudentCoursesPage: React.FC = () => {
           <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <img src="/icons/logo.png" alt="Niklaus Solutions" className="h-8" />
+          <span className="text-lg font-bold text-gray-900">
+            Niklaus <span className="text-orange-500">Solutions</span>
+          </span>
+        </div>
         <button
           onClick={handleBackToDashboard}
           className="text-blue-600 hover:text-blue-800 font-medium mb-4 flex items-center gap-2"
@@ -437,7 +448,7 @@ export const StudentCoursesPage: React.FC = () => {
                           <div
                             key={video.id}
                             className="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-400 transition cursor-pointer"
-                            onClick={() => { setSelectedVideoId(video.id); setSelectedVideo(video); }}
+                            onClick={() => { setSelectedVideoId(video.id); setSelectedVideo(video); setSelectedCourse(studentCourse); }}
                           >
                             <div className="flex items-start gap-4">
                               <div className="flex-shrink-0">
@@ -487,41 +498,35 @@ export const StudentCoursesPage: React.FC = () => {
       {/* Video Player Modal */}
       {selectedVideoId && selectedVideo && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full overflow-hidden">
-            <div className="relative bg-black aspect-video">
-              {videoLinkError ? (
-                <div className="w-full h-full flex items-center justify-center text-white text-sm px-6 text-center">
-                  {videoLinkError}
-                </div>
-              ) : resolvedVideoUrl ? (
-                <video
-                  src={resolvedVideoUrl}
-                  controls
-                  autoPlay
-                  className="w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-white text-sm">
-                  Loading video...
-                </div>
-              )}
-            </div>
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                {selectedVideo.title}
-              </h3>
+          <div className="max-w-4xl w-full">
+            {videoLinkError ? (
+              <div className="bg-black rounded-2xl aspect-video flex items-center justify-center text-white text-sm px-6 text-center">
+                {videoLinkError}
+              </div>
+            ) : resolvedVideoUrl ? (
+              <SecureVideoPlayer
+                videoUrl={resolvedVideoUrl}
+                videoTitle={selectedVideo.title}
+                courseName={selectedCourse?.course?.title || ""}
+                userEmail={studentEmail}
+                lessonNumber={selectedVideo.order}
+                totalLessons={selectedCourse?.videos.length || 1}
+              />
+            ) : (
+              <div className="bg-black rounded-2xl aspect-video flex flex-col items-center justify-center gap-3 text-white">
+                <Loader2 size={32} className="animate-spin text-blue-400" />
+                <span className="text-sm text-gray-300">Loading video...</span>
+              </div>
+            )}
+            <div className="bg-white rounded-b-lg p-6">
               <p className="text-gray-600 mb-4">{selectedVideo.description}</p>
-              {selectedVideo.duration && (
-                <p className="text-sm text-gray-600">
-                  Duration: {selectedVideo.duration}
-                </p>
-              )}
               <button
                 onClick={() => {
                   setSelectedVideoId(null);
                   setSelectedVideo(null);
+                  setSelectedCourse(null);
                 }}
-                className="mt-4 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium"
               >
                 Close
               </button>
