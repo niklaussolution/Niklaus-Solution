@@ -119,8 +119,12 @@ export const CoursesVideosManagement: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<CourseVideo | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Guards against a stale preview-link response landing after the admin
+  // has already clicked Play on a different video.
+  const previewRequestRef = React.useRef(0);
 
   const openPreview = async (video: CourseVideo) => {
+    const requestId = ++previewRequestRef.current;
     setPlayingVideo(video);
     setPreviewUrl(null);
     if (video.vpsPath) {
@@ -130,9 +134,11 @@ export const CoursesVideosManagement: React.FC = () => {
           { headers: { 'X-Admin-Key': VPS_ADMIN_KEY } }
         );
         const data = await res.json();
+        if (previewRequestRef.current !== requestId) return;
         if (res.ok) setPreviewUrl(data.url);
         else addToast(data.error || 'Unable to load preview', 'error');
       } catch {
+        if (previewRequestRef.current !== requestId) return;
         addToast('Unable to load preview', 'error');
       }
     } else {

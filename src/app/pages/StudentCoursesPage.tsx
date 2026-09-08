@@ -173,9 +173,17 @@ export const StudentCoursesPage: React.FC = () => {
     if (!selectedVideo) return;
 
     if (!selectedVideo.vpsPath) {
-      setResolvedVideoUrl(selectedVideo.videoUrl);
+      if (selectedVideo.videoUrl) {
+        setResolvedVideoUrl(selectedVideo.videoUrl);
+      } else {
+        setVideoLinkError("This video isn't available right now. Please try another lesson or contact support.");
+      }
       return;
     }
+
+    // Guards against a stale response landing after the user has already
+    // switched to a different video (fast auto-next, rapid lesson clicks).
+    let cancelled = false;
 
     const fetchSignedUrl = async () => {
       try {
@@ -192,6 +200,7 @@ export const StudentCoursesPage: React.FC = () => {
           }));
 
         const idToken = await user?.getIdToken();
+        if (cancelled) return;
         if (!idToken) {
           setVideoLinkError("Please log in again to watch this video.");
           return;
@@ -201,18 +210,23 @@ export const StudentCoursesPage: React.FC = () => {
           { headers: { Authorization: `Bearer ${idToken}` } }
         );
         const data = await res.json();
+        if (cancelled) return;
         if (!res.ok) {
           setVideoLinkError(data.error || "Unable to load this video.");
           return;
         }
         setResolvedVideoUrl(data.url);
       } catch (err) {
+        if (cancelled) return;
         console.error("Error fetching signed video URL:", err);
         setVideoLinkError("Unable to load this video.");
       }
     };
 
     fetchSignedUrl();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedVideo]);
 
   const toggleCourseExpanded = (courseId: string) => {
