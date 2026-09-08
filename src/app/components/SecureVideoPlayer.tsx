@@ -657,33 +657,15 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           />
         )}
 
-        {/* Dynamic Flying Watermark (Premium Security) */}
-        <div 
-          className="absolute inset-0 pointer-events-none select-none z-10"
-          style={{ overflow: 'hidden' }}
+        {/* Brand Watermark */}
+        <div
+          className="absolute pointer-events-none select-none z-10 flex items-center gap-2 opacity-40"
+          style={{ right: '5%', top: '62%' }}
         >
-          <div 
-            className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
-            style={{ 
-              top: '15%', 
-              left: '5%',
-              transform: 'rotate(-25deg)',
-              textShadow: '0 0 1px rgba(255,255,255,0.1)'
-            }}
-          >
-            NIKLAUS SOLUTIONS SECURITY • {userEmail} • {userEmail} • {userEmail}
-          </div>
-          <div 
-            className="absolute text-[10px] font-mono text-white/5 whitespace-nowrap uppercase tracking-[1em]"
-            style={{ 
-              bottom: '25%', 
-              right: '5%',
-              transform: 'rotate(-25deg)',
-              textShadow: '0 0 1px rgba(255,255,255,0.1)'
-            }}
-          >
-            NIKLAUS SOLUTIONS SECURITY • {userEmail} • {userEmail} • {userEmail} 
-          </div>
+          <img src="/icons/logo.png" alt="" className="h-5 w-5" />
+          <span className="text-white text-xs font-semibold tracking-wide whitespace-nowrap">
+            Niklaus Solutions
+          </span>
         </div>
 
         {/* Corner Branding (Fui Style) */}
