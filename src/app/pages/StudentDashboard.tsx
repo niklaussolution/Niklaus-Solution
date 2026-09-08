@@ -90,6 +90,7 @@ export const StudentDashboard = () => {
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [courseEnrollmentCount, setCourseEnrollmentCount] = useState(0);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [studentProgress, setStudentProgress] = useState<Map<string, StudentProgress>>(new Map());
@@ -225,6 +226,28 @@ export const StudentDashboard = () => {
 
     fetchStudentProfile();
   }, [navigate]);
+
+  // Course enrollments (the newer "Courses" system) live in a separate
+  // collection from the legacy enrolledWorkshops array, so the "Enrolled
+  // Courses" stat needs both counted together.
+  useEffect(() => {
+    const fetchCourseEnrollmentCount = async () => {
+      if (!student?.email) {
+        setCourseEnrollmentCount(0);
+        return;
+      }
+      try {
+        const enrollmentsRef = collection(db, 'courseEnrollments');
+        const q = query(enrollmentsRef, where('email', '==', student.email));
+        const snapshot = await getDocs(q);
+        setCourseEnrollmentCount(snapshot.size);
+      } catch (err) {
+        console.error('Error fetching course enrollment count:', err);
+      }
+    };
+
+    fetchCourseEnrollmentCount();
+  }, [student?.email]);
 
   // Fetch videos for enrolled courses
   useEffect(() => {
@@ -756,7 +779,9 @@ export const StudentDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-gray-500 text-sm mb-2">Enrolled Courses</p>
-                      <p className="text-3xl font-bold text-blue-600">{student?.enrolledWorkshops?.length || 0}</p>
+                      <p className="text-3xl font-bold text-blue-600">
+                        {(student?.enrolledWorkshops?.length || 0) + courseEnrollmentCount}
+                      </p>
                     </div>
                     <BookOpen size={32} className="text-blue-600 opacity-20" />
                   </div>
