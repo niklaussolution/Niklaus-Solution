@@ -289,10 +289,11 @@ export const CourseEnrollmentsManagement: React.FC = () => {
 
   const filteredEnrollments = enrollments
     .filter((enrollment) => {
+      const search = searchTerm.toLowerCase();
       const matchesSearch =
-        enrollment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enrollment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enrollment.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
+        (enrollment.studentName || '').toLowerCase().includes(search) ||
+        (enrollment.email || '').toLowerCase().includes(search) ||
+        (enrollment.courseTitle || '').toLowerCase().includes(search);
       const matchesStatus = filterStatus === 'all' || enrollment.status === filterStatus;
       return matchesSearch && matchesStatus;
     })
