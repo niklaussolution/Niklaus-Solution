@@ -659,11 +659,11 @@ export const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
         {/* Brand Watermark */}
         <div
-          className="absolute pointer-events-none select-none z-10 flex items-center gap-2 opacity-40"
-          style={{ right: '5%', top: '62%' }}
+          className="absolute pointer-events-none select-none z-10 flex items-center gap-2 opacity-60"
+          style={{ right: '5%', top: '80%' }}
         >
-          <img src="/icons/logo.png" alt="" className="h-5 w-5" />
-          <span className="text-white text-xs font-semibold tracking-wide whitespace-nowrap">
+          <img src="/icons/logo.png" alt="" className="h-7 w-7" />
+          <span className="text-white text-sm font-semibold tracking-wide whitespace-nowrap">
             Niklaus Solutions
           </span>
         </div>
